@@ -32,4 +32,8 @@ That is the worst one we have faced during our test phase.
 Also, important things are still missing, like complete handling of the ending scoreboard, and persistence-related stuff to matches.
 
 
+# Contributors
+[@SoWeBegin](https://github.com/SoWeBegin) - Most Core stuff, original author
+avlad - Linux support, CMake & some Core stuff
+TipicoDev - some Core stuff
 
