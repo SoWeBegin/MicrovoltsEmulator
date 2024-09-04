@@ -33,7 +33,7 @@ Also, important things are still missing, like complete handling of the ending s
 
 
 # Contributors
-[@SoWeBegin](https://github.com/SoWeBegin) - Most Core stuff, original author
-avlad - Linux support, CMake & some Core stuff
-TipicoDev - some Core stuff
+- [@SoWeBegin](https://github.com/SoWeBegin) - Most Core stuff, original author
+- avlad - Linux support, CMake & some Core stuff
+- TipicoDev - some Core stuff
 
