@@ -15,6 +15,11 @@ The instructions to build, compile and finally start the emulator will not be sh
 We don't want people to host their own servers without having the necessary knowledge on how to solve possible new issues.
 The goal here is to make the game better. Not to host multiple identical servers for no reason.
 
+## Client Version
+The emulator is targeted for the client version: ENG_1.1.1.158 (Surge)
+It may or may not work completely for other older or newer versions.
+*Note: The client will not be published here and you're required to find it on your own.*
+
 # Current state in brief
 It is hard to give an in-depth overview of what works and what doesn't. But in brief:
 ## Authentication server
