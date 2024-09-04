@@ -1,7 +1,8 @@
 # Introduction
 This is a server-emulator for MicroVolts, completely written in C++(20).
 Here's a quick video demonstration:
-https://streamable.com/8xrk6e
+
+[![Little red ridning hood](https://i.sstatic.net/XCRlR.png)](https://streamable.com/e/8xrk6e "Little red riding hood - Click to Watch!")
 
 ## Reasons for open-sourceness
 - Give an idea on how the emulator is written, and possibly inspire new people to create their own better version.
