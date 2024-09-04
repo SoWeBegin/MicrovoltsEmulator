@@ -1,8 +1,7 @@
 # Introduction
 This is a server-emulator for MicroVolts, completely written in C++(20).
 Here's a quick video demonstration:
-
-<iframe src="https://streamable.com/e/8xrk6e" width="640" height="360" frameborder="0" allowfullscreen></iframe>
+https://github.com/user-attachments/assets/1358c65e-dffb-40cf-a51e-674485ec9021
 
 ## Reasons for open-sourceness
 - Give an idea on how the emulator is written, and possibly inspire new people to create their own better version.
