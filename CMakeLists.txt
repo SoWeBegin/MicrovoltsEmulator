@@ -26,8 +26,8 @@ include_directories(PUBLIC ${Boost_INCLUDE_DIRS})
 include_directories(PUBLIC ${CMAKE_SOURCE_DIR}/ExternalLibraries)
 
 # COMMON LIBRARY
-include_directories(PUBLIC ${CMAKE_SOURCE_DIR}/ExternalLibraries/asio-1.24.0/include)
-add_subdirectory(${CMAKE_SOURCE_DIR}/thirdparty/SQLiteCpp)
+# include_directories(PUBLIC ${CMAKE_SOURCE_DIR}/ExternalLibraries/asio-1.24.0/include)  // unnedeed, asio was removed from ExternaLibraries
+# add_subdirectory(${CMAKE_SOURCE_DIR}/thirdparty/SQLiteCpp)  // unnedeed, should be now taken care of with vcpkg.json
 
 add_subdirectory(Common)
 include_directories(${CMAKE_CURRENT_LIST_DIR}/Common/include)
