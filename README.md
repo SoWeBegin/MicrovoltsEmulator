@@ -24,6 +24,7 @@ Most dependencies are already provided inside the `vcpkg.json` file. Instruction
 - next, move the `vcpkg.json` inside the newly created `vcpkg folder`
 - on command prompt: `vcpkg install`
 - open the project on visual studio. For each project (MainServer, CastServer, AuthServer, Common): Project properties => Release => Configuration properties => vcpkg => In "Installed Directory", add the path to the installed directory of vcpkg (example: `..\ExternalLibraries\vcpkg\vcpkg_installed`)
+- N.B only `release` mode has all relative (necessary) paths. If you want to use `debug` mode, you'll need to copy paste the paths from the `release` one.
 
 ## Client Version
 The emulator is targeted for the client version: ENG_1.1.1.158 (Surge). (Constant database password: `!dptmzpdl@xmfkdlvhtm@goqm!`) </br>
