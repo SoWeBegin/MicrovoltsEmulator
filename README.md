@@ -24,7 +24,7 @@ Most dependencies are already provided inside the `vcpkg.json` file. Instruction
 - then, `cd vcpkg` and next `.\bootstrap-vcpkg.bat`
 - integrate with visual studio: `.\vcpkg integrate install`
 - next, move the `vcpkg.json` inside the newly created `vcpkg` folder
-- on command prompt: `vcpkg install`
+- on command prompt: `vcpkg install` (or `.\vcpkg install`)
 - open the project on visual studio. For each project (MainServer, CastServer, AuthServer, Common): Project properties => Release => Configuration properties => vcpkg => In "Installed Directory", add the path to the installed directory of vcpkg (example: `..\ExternalLibraries\vcpkg\vcpkg_installed`)
 - N.B only `release` mode has all relative (necessary) paths. If you want to use `debug` mode, you'll need to copy paste the paths from the `release` one.
 
