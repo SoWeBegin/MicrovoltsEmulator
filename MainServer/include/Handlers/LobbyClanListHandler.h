@@ -40,7 +40,7 @@ namespace Main
                 Main::Structures::SingleLobbyClanList singlePlayerList;
             
                 singlePlayerList.level = partialAccountData.playerLevel;
-                strncpy(singlePlayerList.name, partialAccountData.nickname, sizeof(singlePlayerList.name));
+                strcpy_s(singlePlayerList.name, partialAccountData.nickname);
                 singlePlayerList.uniqueId.server = partialAccountData.uniqueId.server;
                 singlePlayerList.uniqueId.session = partialAccountData.uniqueId.session;
                 singlePlayerList.uniqueId.unknown = partialAccountData.uniqueId.unknown;
