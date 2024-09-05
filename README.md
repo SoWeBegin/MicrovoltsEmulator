@@ -38,7 +38,7 @@ Also, important things are still missing, like complete handling of the ending s
 
 
 # Contributors
-- [@SoWeBegin](https://github.com/SoWeBegin) - Most Core stuff, original author
-- avlad - Linux support, CMake & Core stuff
-- TipicoDev - some Core stuff
+- [@SoWeBegin](https://github.com/171) - Most Core stuff, original author
+- [@avlad](https://github.com/SoWeBegin) - Linux support, CMake & Core stuff
+- [@TipicoDev](https://github.com/TipicoDev) - some Core stuff
 
