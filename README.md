@@ -54,4 +54,5 @@ Also, important things are still missing, like complete handling of the ending s
 - [@SoWeBegin](https://github.com/SoWeBegin) - Most Core stuff, original author
 - [@avlad](https://github.com/avlad171) - Linux support, CMake & Core stuff
 - [@TipicoDev](https://github.com/TipicoDev) - some Core stuff
+- [@sw1ndle777](https://github.com/sw1ndle777) - bugs & fixes
 
