@@ -1,4 +1,6 @@
 # Introduction
+*If you appreciate our work and the public source code base, make sure to give us a star!**
+
 This is a server-emulator for MicroVolts, completely written in C++(20).
 Here's a quick video demonstration:
 
