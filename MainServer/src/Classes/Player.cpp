@@ -55,7 +55,6 @@ namespace Main
 			}
 		}
 
-
 		const AccountInfo& Player::getAccountInfo() const
 		{
 			return m_accountInfo;
@@ -108,8 +107,7 @@ namespace Main
 
 		void Player::setPlayerName(const char* playerName)
 		{
-			//strcpy_s(m_accountInfo.nickname, playerName);
-			strncpy(m_accountInfo.nickname, playerName, sizeof(m_accountInfo.nickname));
+			strcpy_s(m_accountInfo.nickname, playerName);
 		}
 
 		bool Player::hasEnoughInventorySpace(std::uint16_t totalNewItems) const
@@ -141,7 +139,6 @@ namespace Main
 		{
 			return Main::Structures::MuteInfo{ m_isMuted, m_muteReason, m_mutedBy, m_mutedUntil };
 		}
-
 
 		void Player::mute(const std::string& reason, const std::string& mutedBy, const std::string& mutedUntil)
 		{
@@ -394,7 +391,7 @@ namespace Main
 				{
 					item.energy += energyAdded;
 					m_accountInfo.battery -= energyAdded;
-					return std::pair{ item.energy, (uint64_t)m_accountInfo.battery };
+					return std::pair{ item.energy, m_accountInfo.battery };
 				}
 			}
 			for (auto& [itemType, item] : m_equippedItemByCharacter.at(m_accountInfo.latestSelectedCharacter))
@@ -403,7 +400,7 @@ namespace Main
 				{
 					item.energy += energyAdded;
 					m_accountInfo.battery -= energyAdded;
-					return std::pair{ item.energy, (uint64_t)m_accountInfo.battery };
+					return std::pair{ item.energy, m_accountInfo.battery };
 				}
 			}
 			return std::nullopt;
