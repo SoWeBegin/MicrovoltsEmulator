@@ -102,11 +102,8 @@ namespace Main
 
 					if (query.executeStep())
 					{
-						//strcpy_s(playerInfoStructure.nickname, sizeof(playerInfoStructure.nickname), query.getColumn("Nickname").getString().c_str());
-						//strcpy_s(playerInfoStructure.clanName, sizeof(playerInfoStructure.clanName), query.getColumn("Clanname").getString().c_str());
-
-						strncpy(playerInfoStructure.nickname, query.getColumn("Nickname").getString().c_str(), sizeof(playerInfoStructure.nickname));
-						strncpy(playerInfoStructure.clanName, query.getColumn("Clanname").getString().c_str(), sizeof(playerInfoStructure.clanName));
+						strcpy_s(playerInfoStructure.nickname, sizeof(playerInfoStructure.nickname), query.getColumn("Nickname").getString().c_str());
+						strcpy_s(playerInfoStructure.clanName, sizeof(playerInfoStructure.clanName), query.getColumn("Clanname").getString().c_str());
 
 						playerInfoStructure.accountID = playerID;
 						playerInfoStructure.accountKey = static_cast<std::uint32_t>(query.getColumn("AccountKey").getInt());
@@ -613,7 +610,7 @@ namespace Main
 				try
 				{
 					SQLite::Transaction transaction(db);
-					SQLite::Statement query(db, "UPDATE Users SET MeleeKills = ?, RifleKills = ?, ShotgunKills = ?, SniperKills = ?, GatlingKills = ?, "
+					SQLite::Statement query(db, "UPDATE Users SET MeleeKills = ?, RifleKills = ?, ShotgunKills = ?, SniperKills = ?, GatlingKills = ?, " 
 						 "BazookaKills = ? , GrenadeKills = ? , HighestKillstreak = ? , Kills = ? , Deaths = ? , Headshots = ? , Assists = ?, "
 						" Experience = ?, MicroPoints = ?, Wins = ?, Loses = ?, Draws = ?, Level = ? WHERE AccountID = ?");
 
