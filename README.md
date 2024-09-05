@@ -17,7 +17,7 @@ The goal here is to make the game better. Not to host multiple identical servers
 
 ## Dependencies
 Most dependencies are already provided inside the `vcpkg.json` file. Instructions: </br>
-- Open your terminal and `cd <YourProjectPath>/ExternaLibraries`
+- Open your terminal and `cd <YourProjectPath>/ExternalLibraries`
 - then, `git clone https://github.com/microsoft/vcpkg.git`
 - then, `cd vcpkg` and next `.\bootstrap-vcpkg.bat`
 - integrate with visual studio: `.\vcpkg integrate install`
