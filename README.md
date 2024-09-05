@@ -16,7 +16,7 @@ We don't want people to host their own servers without having the necessary know
 The goal here is to make the game better. Not to host multiple identical servers for no reason.
 
 ## Client Version
-The emulator is targeted for the client version: ENG_1.1.1.158 (Surge).</br>
+The emulator is targeted for the client version: ENG_1.1.1.158 (Surge).</br> (Constant database password: `!dptmzpdl@xmfkdlvhtm@goqm!`)
 It may or may not work completely for other older or newer versions.</br>
 *Note: The client will not be published here and you're required to find it on your own.*
 
