@@ -1,14 +1,14 @@
+
+#include "../../include/Database/DbPlayerInfo.h"
+#include "../../include/Structures/AuthAccountInfo.h"
+#include "../../include/AuthEnums.h"
 #include <chrono>
 #include <format>
 #include <string>
 #include <utility>
-#include <iostream>
-
 #include "../include/Network/Packet.h"
 #include "../include/Utils/Utils.h"
-#include "../../include/Database/DbPlayerInfo.h"
-#include "../../include/Structures/AuthAccountInfo.h"
-#include "../../include/AuthEnums.h"
+#include <iostream>
 
 namespace Auth
 {
@@ -65,10 +65,8 @@ namespace Auth
 					{
 						playerInfo.setExtra(Auth::Enums::Login::SUCCESS);
 						playerInfoStructure.accountId = static_cast<std::uint32_t>(query.getColumn("AccountID").getInt());
-						//strcpy_s(playerInfoStructure.playerName, query.getColumn("Nickname").getString().c_str());
-						//strcpy_s(playerInfoStructure.clanName, query.getColumn("Clanname").getString().c_str());
-						strncpy(playerInfoStructure.playerName, query.getColumn("Nickname").getString().c_str(), 16);
-						strncpy(playerInfoStructure.clanName, query.getColumn("Clanname").getString().c_str(), 16);
+						strcpy_s(playerInfoStructure.playerName, query.getColumn("Nickname").getString().c_str());
+						strcpy_s(playerInfoStructure.clanName, query.getColumn("Clanname").getString().c_str());
 						playerInfo.setOption(static_cast<std::uint32_t>(query.getColumn("Grade").getInt()));
 						playerInfoStructure.level = static_cast<std::uint32_t>(query.getColumn("Level").getInt()) + 1;
 						playerInfoStructure.exp = static_cast<std::uint32_t>(query.getColumn("Experience").getInt());
@@ -81,7 +79,7 @@ namespace Auth
 						playerInfoStructure.clanIconFrontID = static_cast<std::uint16_t>(query.getColumn("ClanFrontIcon").getInt());
 						playerInfoStructure.clanIconBackID = static_cast<std::uint16_t>(query.getColumn("ClanBackIcon").getInt());
 						playerInfoStructure.hashKey = Common::Utils::generateHash(playerInfoStructure.accountId);
-						const bool isOnline = static_cast<bool>(query.getColumn("IsOnline").getInt());
+						const bool isOnline = static_cast<bool>(query.getColumn("IsOnline").getInt()); 
 						if (isOnline)
 						{
 							playerInfo.setExtra(Auth::Enums::Login::ACCOUNT_BUSY);
