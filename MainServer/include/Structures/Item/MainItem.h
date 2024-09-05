@@ -1,13 +1,9 @@
+
 #ifndef MAIN_ITEM_INFO_H
 #define MAIN_ITEM_INFO_H
 
-#include <cstdint>
-#ifdef WIN32
 #include <corecrt.h>
-#else
-#define __time32_t uint32_t
-#endif
-
+#include <cstdint>
 #include "ConstantDatabase/CdbSingleton.h"
 #include "ConstantDatabase/Structures/CdbItemInfo.h"
 #include "ConstantDatabase/Structures/CdbWeaponsInfo.h"
