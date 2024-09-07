@@ -17,7 +17,7 @@ namespace Main
 			Utils::Logger& logger = Utils::Logger::getInstance();
 
 			auto foundRoom = roomsManager.getRoomByNumber(session.getRoomNumber());
-			if (foundRoom == std::nullopt)
+			if (foundRoom == std::nullopt) 
 			{
 				logger.log("Room not found by number!, Utils::LogType::Error, Main::handleMatchLeave");
 				return;
@@ -43,7 +43,7 @@ namespace Main
 				logger.log("The player " + session.getPlayerInfoAsString() + " is attempting to leave the match. " + room.getRoomInfoAsString(),
 					Utils::LogType::Normal, "Main::handleMatchLeave");
 
-				// Send leave match packet to client
+				// Send leave match packet to client 
 				Common::Network::Packet response;
 				response.setTcpHeader(request.getSession(), Common::Enums::USER_LARGE_ENCRYPTION);
 				response.setOrder(request.getOrder());
