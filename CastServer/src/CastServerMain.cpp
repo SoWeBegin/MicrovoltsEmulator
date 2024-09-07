@@ -28,9 +28,7 @@ void printInitialInformation()
 
 int main()
 {
-#ifdef WIN32
 	SetConsoleTitleW(L"Microvolts Cast Server");
-#endif
 
 	asio::io_context io_context;
 	Cast::CastServer srv(io_context, 13006, 4);
