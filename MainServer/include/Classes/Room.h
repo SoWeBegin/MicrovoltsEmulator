@@ -59,6 +59,8 @@ namespace Main
 
 			Main::Network::Session* getPlayer(const Main::Structures::UniqueId& uniqueId);
 
+			void addObserverPlayer(Main::Network::Session* session);
+
 			void muteRoom();
 
 			void unmuteRoom();
@@ -72,8 +74,6 @@ namespace Main
 			void setTick(std::uint32_t tick);
 
 			std::uint32_t getPlayerIdx(std::uint64_t playerIndex) const;
-
-			std::uint32_t getTick() const;
 
 			void setPassword(const std::string& password);
 			
@@ -90,8 +90,6 @@ namespace Main
 			bool removeHostFromMatch();
 
 			bool removePlayer(Main::Network::Session* session, std::uint32_t extra);
-
-			void addObserverPlayer(Main::Network::Session* session);
 
 			std::vector<Main::Structures::RoomPlayerInfo> getAllPlayers() const;
 
@@ -113,13 +111,13 @@ namespace Main
 
 			void breakroom();
 
-			void broadcastToRoom(Common::Network::Packet& packet, bool broadcastToMatch = true);
+			void broadcastToRoom(Common::Network::Packet& packet);
 
 			void broadcastToRoomExceptSelf(Common::Network::Packet& packet, const Main::Structures::UniqueId& uniqueId);
 
 			// In-room chat messages
+			void broadcastToTeamExceptSelf(Common::Network::Packet& packet, const Main::Structures::UniqueId& uniqueId, bool inMatch);
 			void broadcastToMatchExceptSelf(Common::Network::Packet& packet, const Main::Structures::UniqueId& uniqueId, std::uint32_t extra);
-
 			void broadcastOutsideMatchExceptSelf(Common::Network::Packet& packet, const Main::Structures::UniqueId& selfUniqueId, std::uint32_t extra);
 
 			bool changeHost(std::size_t newHostIdx);
