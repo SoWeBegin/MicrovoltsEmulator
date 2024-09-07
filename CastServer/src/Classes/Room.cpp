@@ -20,7 +20,7 @@ namespace Cast
 			hostSession->setRoomNumber(m_roomNumber);
 
 			auto& logger = ::Utils::Logger::getInstance();
-			logger.log("Creating Room. Added Host (ID: " + std::to_string(hostSessionId)
+			logger.log("Creating Room. Added Host (ID: " + std::to_string(hostSessionId) 
 				+ ", RoomNumber: " + std::to_string(hostSession->getRoomNumber()) + ")", ::Utils::LogType::Info, "Room::Room");
 		}
 
@@ -91,7 +91,7 @@ namespace Cast
 		void Room::addPlayer(Cast::Network::Session* playerSession)
 		{
 			auto& logger = ::Utils::Logger::getInstance(true);
-			logger.log("Added playerID: " + std::to_string(playerSession->getId())
+			logger.log("Added playerID: " + std::to_string(playerSession->getId()) 
 			+ " to room number: " + std::to_string(m_roomNumber), ::Utils::LogType::Info, "Room::addPlayer");
 			
 			// Check whether m_players or m_observerPlayers is full?
