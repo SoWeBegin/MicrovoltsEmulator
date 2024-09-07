@@ -60,7 +60,7 @@ namespace Main
 {
 	MainServer::MainServer(ioContext& io_context, std::uint16_t port, std::uint16_t serverId)
 		: m_io_context{ io_context }
-		, m_acceptor{ io_context, tcp::endpoint(asio::ip::address::from_string("127.0.0.1"), port) }
+		, m_acceptor{ io_context, tcp::endpoint(tcp::v4(), port) }
 		, m_serverId{ serverId }
 		, m_database{ "../ExternalLibraries/Database/GameDatabase.db" }
 		, m_scheduler{ 10, m_database }
@@ -230,7 +230,7 @@ namespace Main
 		Common::Network::Session::addCallback<Main::Network::Session>(259, [&](const Common::Network::Packet& request,
 			Main::Network::Session& session) { Main::Handlers::handleEliminationNextRound(request, session, m_roomsManager); });
 
-		// CTB respawn
+		// CTB respawn 
 		Common::Network::Session::addCallback<Main::Network::Session>(160, [&](const Common::Network::Packet& request,
 			Main::Network::Session& session) { Main::Handlers::unknown(request, session, m_roomsManager); });
 
