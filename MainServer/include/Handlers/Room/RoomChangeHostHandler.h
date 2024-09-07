@@ -22,7 +22,7 @@ namespace Main
 		inline void handleHostChange(const Common::Network::Packet& request, Main::Network::Session& session, Main::Classes::RoomsManager& roomsManager)
 		{
 			Utils::Logger& logger = Utils::Logger::getInstance();
-
+			
 			auto foundRoom = roomsManager.getRoomByNumber(session.getRoomNumber());
 			if (foundRoom == std::nullopt) return;
 			auto& room = foundRoom.value().get();
