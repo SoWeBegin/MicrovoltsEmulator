@@ -41,7 +41,7 @@ namespace Main
 			incomingPacket.processIncomingPacket(data.data(), static_cast<std::uint16_t>(data.size()), key);
 
 			const std::uint16_t callbackNum = incomingPacket.getOrder();
-			if (!Common::Network::Session::callbacks<Session>.contains(callbackNum))
+			if (!Common::Network::Session::callbacks<Session>.contains(callbackNum)) 
 			{
 				std::cout << "[MainSession] No callback for order: " << callbackNum << "\n";
 				return;
