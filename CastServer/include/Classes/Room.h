@@ -78,7 +78,7 @@ namespace Cast
 			void playerForwardToHost(std::uint64_t hostSessionId, std::uint64_t senderSessionId, Common::Network::Packet& packet);
 
 			void hostForwardToPlayer(std::uint64_t, std::uint64_t playerId, Common::Network::Packet& packet, bool useHostIdInTcpHeader = true);
-
+			
 			void setMap(std::uint32_t mapId);
 
 			void setMode(std::uint32_t modeId);
