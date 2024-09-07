@@ -57,7 +57,7 @@ namespace Main
 			for (std::size_t i = 0; i < request.getOption(); ++i)
 			{
 				Main::Structures::ClientEndingMatchNotification finalScoreGivenByClient;
-				std::memcpy(&finalScoreGivenByClient, request.getData()
+				std::memcpy(&finalScoreGivenByClient, request.getData() 
 					+ sizeof(finalScoreGivenByClient) * i + sizeof(ClientEndingMatchNotificationHeader), sizeof(finalScoreGivenByClient));
 				finalScoreGivenByClient.uniqueId.server = 4;
 				Main::Structures::ScoreboardResponse responseStruct(finalScoreGivenByClient);
@@ -84,12 +84,12 @@ namespace Main
 				{
 					if (responseStruct.newTotalEXP >= gradeInfo->gi_exp)
 					{
-						responseStruct.newTotalMP += gradeInfo->gi_reward_point;
+						responseStruct.newTotalMP += gradeInfo->gi_reward_point; 
 						room.storeEndMatchStatsFor(finalScoreGivenByClient.uniqueId, responseStruct,
 							clientEndMatchNotificationHeader.blueScore, clientEndMatchNotificationHeader.redScore, true);
 
 						// Level up packet
-						response.setOrder(311);
+						response.setOrder(311); 
 						response.setExtra(1);
 						response.setOption(targetAccountInfo.playerLevel + 1); // 1 to account for new level
 						response.setData(reinterpret_cast<std::uint8_t*>(&finalScoreGivenByClient.uniqueId), sizeof(finalScoreGivenByClient.uniqueId));
@@ -113,12 +113,12 @@ namespace Main
 					room.storeEndMatchStatsFor(finalScoreGivenByClient.uniqueId, responseStruct,
 						clientEndMatchNotificationHeader.blueScore, clientEndMatchNotificationHeader.redScore, false);
 				}
-
+				
 				// TODO: THE SIZE OF THIS PACKET CAN BE >= 1440 BYTES IF THERE ARE MAX NUM OF PLAYERS + MAX NUM OF OBS PLAYERS!!!!!
 				// BUT ARE OBS PLAYERS EVEN COUNTED???
 				response.setOrder(request.getOrder());
 				response.setExtra(1);
-				response.setMission(0);
+				response.setMission(0); 
 				response.setData(reinterpret_cast<std::uint8_t*>(&responseStruct), sizeof(responseStruct));
 				room.sendTo(finalScoreGivenByClient.uniqueId, response);
 			}
