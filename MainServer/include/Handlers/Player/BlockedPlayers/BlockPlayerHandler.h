@@ -32,7 +32,6 @@ namespace Main
 				else
 				{
 					// Player is offline, check if the nickname is found in the database, otherwise return extra 6?
-
 				}
 			}
 		}
