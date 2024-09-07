@@ -22,7 +22,7 @@ namespace Cast
 		{
 			// If the player is inside the room, they must leave.
 			// Otherwise, they join it.
-			if (m_playerSessionIdToRoom.contains(session.getId()))
+			if (m_playerSessionIdToRoom.contains(session.getId())) 
 			{
 				std::cout << "SwitchRoomJoinOrExit: Found player inside a room. Removing it.\n";
 				// The player identified by "session" is inside the room where the host's sessionId equals "roomId", thus the room exists
@@ -86,7 +86,7 @@ namespace Cast
 			room.setMode(mode);
 			std::cout << "MODE HAS BEEN SET TO: " << mode << "\n";
 		}
-
+		
 		std::uint32_t RoomsManager::getMapOf(std::uint64_t hostId)
 		{
 			auto& room = m_roomsByHostSessionId[hostId];
