@@ -11,8 +11,6 @@ namespace Main
 {
 	namespace Handlers
 	{
-		// TODO: Test Errors
-
 		enum CapsuleCurrencyType : std::uint32_t
 		{
 			COINS = 0,
