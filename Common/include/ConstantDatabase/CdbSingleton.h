@@ -91,7 +91,7 @@ namespace Common
             }
 
             static void initialize(const std::string& filePath, const std::string& fileName)
-                requires (not std::same_as<T, Common::ConstantDatabase::CdbItemInfo> and not std::same_as<T, Common::ConstantDatabase::CdbWeaponInfo>)
+                requires not std::same_as<T, Common::ConstantDatabase::CdbItemInfo> and not std::same_as<T, Common::ConstantDatabase::CdbWeaponInfo>
             {
                 m_cdb.parse(filePath, fileName);
             }
