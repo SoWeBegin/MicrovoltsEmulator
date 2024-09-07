@@ -18,11 +18,10 @@ namespace Main
 			Common::Network::Packet response;
 			response.setTcpHeader(request.getSession(), Common::Enums::USER_LARGE_ENCRYPTION);
 			response.setOrder(request.getOrder());
-			response.setOption(0); // which server, hardcoded for now
+			response.setOption(4); // which server, hardcoded for now
 
 			Main::Structures::UniqueId uniqueId;
 			std::memcpy(&uniqueId, request.getData(), sizeof(Main::Structures::UniqueId));
-			uniqueId.server = 4;
 			auto* targetSession = sessionsManager.getSessionBySessionId(uniqueId.session);
 			if (!targetSession) return;
 			response.setExtra(targetSession->getAccountInfo().clanId >= 8 ? 1 : 0);  // 0 = no clan, 1 = has clan
@@ -42,10 +41,7 @@ namespace Main
 						}
 					}
 				}
-				else
-				{
-					lobbyAccountInfo.items[type] = (item.id >> 1);
-				}
+				else lobbyAccountInfo.items[type] = (item.id >> 1);
 			}
 		
 			response.setData(reinterpret_cast<std::uint8_t*>(&lobbyAccountInfo), sizeof(Main::Structures::LobbyAccountInfo));
