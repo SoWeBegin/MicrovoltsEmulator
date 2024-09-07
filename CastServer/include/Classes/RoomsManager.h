@@ -16,18 +16,10 @@ namespace Cast
 
 		public:
 			void addRoom(std::shared_ptr<Cast::Classes::Room> room, std::uint64_t playerId);
-
+		
 			// Debug
 			void printRoomInfo(std::uint64_t sessionId, const std::string& furtherInfo)
 			{
-				/*if (m_roomsByHostSessionId.contains(sessionId))
-				{
-					m_roomsByHostSessionId[sessionId].printRoomState(furtherInfo);
-				}
-				else
-				{
-					std::cout << "Print Room Info: Not found sessionID: " << sessionId << " (" << furtherInfo << ")\n\n";
-				}*/
 			}
 
 			void switchRoomJoinOrExit(Cast::Network::Session& session, std::uint64_t hostSessionId = -1);
