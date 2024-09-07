@@ -32,7 +32,7 @@ namespace Main
 				return;
 			}
 
-			accountInfo.uniqueId.session = session.getId(); // session.getId(); 
+			accountInfo.uniqueId.session = session.getId();
 			accountInfo.uniqueId.server = 4; // currently hardcoded
 		    accountInfo.setServerTime();
 
@@ -60,15 +60,12 @@ namespace Main
 			}
 
 			session.setBlockedPlayers(database.loadBlockedPlayers(accountInfo.accountID));
-
 			session.setMute(database.isMuted(accountInfo.accountID));
-
 			session.setMailbox(database.loadMailboxes(accountInfo.accountID, true), true);
 			session.setMailbox(database.loadMailboxes(accountInfo.accountID, false), false);
-
-			auto newMailboxes = database.getNewMailboxes(accountInfo.accountID);
 			session.setOnlineDatabaseStatus();
 
+			auto newMailboxes = database.getNewMailboxes(accountInfo.accountID);
 			if (newMailboxes.empty()) return;
 			// Send online messages (mailbox) if there are new ones
 			response.setOrder(104);
