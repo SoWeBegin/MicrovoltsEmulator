@@ -26,7 +26,7 @@ namespace Main
 			response.setTcpHeader(request.getSession(), Common::Enums::USER_LARGE_ENCRYPTION);
 			response.setOrder(request.getOrder());
 
-			if (request.getOption() == 2) // option seems to always be 2 when a friend request is sent
+			if (request.getOption() == 2) // option seems to always be 2
 			{
 				if (session.getMailboxSent().size() > maxMailboxes)
 				{
