@@ -8,9 +8,6 @@
 #include "MainAccountUniqueId.h"
 #include "MainAccountAchievements.h"
 
-#ifndef WIN32
-#define __time32_t uint32_t
-#endif
 
 namespace Main
 {
@@ -105,4 +102,4 @@ namespace Main
 	}
 }
 
-#endif
+#endif	
