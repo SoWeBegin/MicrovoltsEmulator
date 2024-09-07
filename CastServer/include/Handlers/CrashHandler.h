@@ -30,10 +30,10 @@ namespace Cast
             auto response = request;
             response.setData(reinterpret_cast<std::uint8_t*>(&uniqueId), sizeof(uniqueId));
             roomsManager.playerForwardToHost(roomHostId, selfSessionId, response);
-
+            
             // This sets is in match to false, roomNum to -1, removes player from room, removes player from roomsManager's unordered_map
             roomsManager.removePlayerFromRoom(session.getId());
-
+              
             //roomsManager.printRoomInfo(session.getRoomId(), "After CrashHandler");
         }
     }
