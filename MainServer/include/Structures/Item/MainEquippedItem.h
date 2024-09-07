@@ -1,6 +1,8 @@
+
 #ifndef MAIN_EQUIPPED_ITEM_INFO_H
 #define MAIN_EQUIPPED_ITEM_INFO_H
 
+#include <corecrt.h>
 #include <cstdint>
 #include "MainItemSerialInfo.h"
 #include <array>
