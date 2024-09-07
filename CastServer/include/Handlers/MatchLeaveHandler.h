@@ -22,7 +22,7 @@ namespace Cast
             response.setData(reinterpret_cast<std::uint8_t*>(&uniqueId), sizeof(uniqueId));
 
             session.setIsInMatch(false);
-
+      
 
             //roomsManager.printRoomInfo(session.getRoomId(), "after PlayerLeaveMatch");
         }
