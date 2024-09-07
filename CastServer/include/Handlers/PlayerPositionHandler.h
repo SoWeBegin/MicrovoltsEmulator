@@ -23,7 +23,7 @@ namespace Cast
             Common::Network::Packet response;
             response.setTcpHeader(session.getId(), Common::Enums::NO_ENCRYPTION);
             response.setOrder(322);
-            response.setOption(1);
+            response.setOption(1); 
             const auto fullSize = request.getFullSize();
 
             if (fullSize == 36)
@@ -119,7 +119,7 @@ namespace Cast
                     response.setData(reinterpret_cast<std::uint8_t*>(&playerInfoResponseWithJump), sizeof(playerInfoResponseWithJump));
                 }
             }
-
+            
             roomsManager.broadcastToRoomExceptSelf(session.getId(), response);
         }
     }
