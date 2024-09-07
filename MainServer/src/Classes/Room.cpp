@@ -13,13 +13,14 @@
 #include "../../include/Network/MainSession.h"
 #include "../../include/Structures/Room/RoomPlayerInfo.h"
 #include "../../include/Classes/Room.h"
+#include "../../include/Handlers/Room/RoomLeaveHandler.h"
 #include <boost/interprocess/mapped_region.hpp>
 #include <boost/interprocess/shared_memory_object.hpp>
 #include <boost/interprocess/sync/interprocess_upgradable_mutex.hpp>
-#include "../../include/Handlers/Room/RoomLeaveHandler.h"
 #include <Utils/IPC_Structs.h>
 #include <Enums/PlayerEnums.h>
 #include <Utils/Logger.h>
+#include <range/v3/all.hpp>
 
 namespace Main
 {
@@ -43,20 +44,11 @@ namespace Main
 
 		std::uint32_t Room::getPlayerIdx(std::uint64_t playerId) const
 		{
-			std::uint32_t idx = 0;
-			for (const auto& player : m_players)
+			for (std::uint32_t idx = 0; const auto& [roomInfo, session] : m_players)
 			{
-				if (player.second->getId() == playerId)
-				{
-					return idx;
-				}
+				if (session->getId() == playerId) return idx;
 				++idx;
 			}
-		}
-
-		std::uint32_t Room::getTick() const
-		{
-			return m_tick;
 		}
 
 		void Room::setPassword(const std::string& password)
@@ -91,35 +83,6 @@ namespace Main
 			session->setIsInLobby(false);
 		}
 
-		void Room::updatePlayerInfo(Main::Network::Session* session)
-		{
-			for (auto& currentPlayer : m_players)
-			{
-				if (currentPlayer.second->getId() == session->getId())
-				{
-					const auto& accountInfo = session->getAccountInfo();
-					currentPlayer.first.character = accountInfo.latestSelectedCharacter;
-					currentPlayer.first.level = accountInfo.playerLevel;
-					return;
-				}
-			}
-			for (auto& currentPlayer : m_observerPlayers)
-			{
-				if (currentPlayer.second->getId() == session->getId())
-				{
-					const auto& accountInfo = session->getAccountInfo();
-					currentPlayer.first.character = accountInfo.latestSelectedCharacter;
-					currentPlayer.first.level = accountInfo.playerLevel;
-					return;
-				}
-			}
-		}
-
-		std::size_t Room::getPlayersCount() const
-		{
-			return m_players.size();
-		}
-
 		void Room::addObserverPlayer(Main::Network::Session* session)
 		{
 			const auto& accountInfo = session->getAccountInfo();
@@ -130,11 +93,30 @@ namespace Main
 			std::memcpy(roomPlayerInfo.playerName, accountInfo.nickname, 16);
 			roomPlayerInfo.uniqueId = accountInfo.uniqueId;
 			roomPlayerInfo.team = Common::Enums::Team::TEAM_OBSERVER;
+			roomPlayerInfo.state = Common::Enums::STATE_WAITING;
+
 			m_observerPlayers.push_back(std::pair{ roomPlayerInfo, session });
 			session->setRoomNumber(m_number);
 			session->setIsInLobby(false);
 		}
 
+		void Room::updatePlayerInfo(Main::Network::Session* session) 
+		{
+			for (auto& [roomInfo, playerSession] : ranges::views::concat(m_players, m_observerPlayers))
+			{
+				if (playerSession->getId() == session->getId())
+				{
+					const auto& accountInfo = session->getAccountInfo();
+					roomInfo.character = accountInfo.latestSelectedCharacter;
+					roomInfo.level = accountInfo.playerLevel;
+				}
+			}
+		}
+
+		std::size_t Room::getPlayersCount() const
+		{
+			return m_players.size();
+		}
 
 		void Room::addKickedPlayer(std::uint32_t accountId)
 		{
@@ -162,47 +144,42 @@ namespace Main
 			removePlayerFromRoomServerRequest.setOrder(141);
 			removePlayerFromRoomServerRequest.setExtra(1);
 
-			for (auto& player : m_players)
-			{
-				removePlayerFromRoomServerRequest.setTcpHeader(player.second->getId(), Common::Enums::USER_LARGE_ENCRYPTION);
-				player.second->asyncWrite(removePlayerFromRoomServerRequest);
-				player.second->leaveRoom();
-			}
-			for (auto& player : m_observerPlayers)
-			{
-				removePlayerFromRoomServerRequest.setTcpHeader(player.second->getId(), Common::Enums::USER_LARGE_ENCRYPTION);
-				player.second->asyncWrite(removePlayerFromRoomServerRequest);
-				player.second->leaveRoom();
-			}
-			m_players.resize(0);
-			m_observerPlayers.resize(0);
+			auto removePlayer = [&](auto& players) {
+				for (auto& player : players)
+				{
+					removePlayerFromRoomServerRequest.setTcpHeader(player.second->getId(), Common::Enums::USER_LARGE_ENCRYPTION);
+					player.second->asyncWrite(removePlayerFromRoomServerRequest);
+					player.second->leaveRoom();
+				}
+				players.clear();
+				};
+
+			removePlayer(m_players);
+			removePlayer(m_observerPlayers);
 		}
+
 
 		// Returns the index of the player with the best ms, and if no player is found that meets the requirements, -1 is returned to signal that.
 		std::uint32_t Room::getBestMsIndexExceptSelf(bool checkIsInMatch, std::uint64_t selfId)
 		{
-			std::uint32_t bestMs = -1;
+			std::uint32_t bestMs = std::numeric_limits<std::uint32_t>::max();
 			std::uint32_t bestMsPlayerIdx = 0;
-			bool foundBestMs = false;
 			std::uint32_t currentIdx = 0;
-			for (const auto& currentPlayer : m_players)
+			bool foundBestMs = false;
+
+			for (const auto& [roomInfo, session] : m_players)
 			{
-				std::cout << "getBestMsIndexExceptSelf.\n";
-				std::cout << currentPlayer.second->getPlayerInfoAsString();
-				std::cout << "SelfID = " << selfId << ", currentPlayerID: " << currentPlayer.second->getId() << '\n';
-				std::cout << "Player Ping: " << currentPlayer.second->getPing() << '\n';
-				std::cout << "bestMs so far: " << bestMs << '\n';
-				if (selfId != currentPlayer.second->getId() && currentPlayer.second->getPing() < bestMs)
+				if (selfId != session->getId() && session->getPing() < bestMs)
 				{
-					if (checkIsInMatch && currentPlayer.second->isInMatch())
+					if (checkIsInMatch && session->isInMatch())
 					{
-						bestMs = currentPlayer.second->getPing();
+						bestMs = session->getPing();
 						bestMsPlayerIdx = currentIdx;
 						foundBestMs = true;
 					}
 					else if (!checkIsInMatch)
 					{
-						bestMs = currentPlayer.second->getPing();
+						bestMs = session->getPing();
 						bestMsPlayerIdx = currentIdx;
 						foundBestMs = true;
 					}
@@ -213,12 +190,11 @@ namespace Main
 		}
 
 		// Returns true if the room has to also be closed, false otherwise
-		// Checked
 		bool Room::removeHostFromMatch()
 		{
 			Utils::Logger& logger = Utils::Logger::getInstance();
 
-			auto originalHostUniqueId = m_players[0].second->getAccountInfo().uniqueId;
+			Main::Structures::UniqueId originalHostUniqueId = m_players[0].second->getAccountInfo().uniqueId;
 			const std::uint64_t originalHostSessionId = m_players[0].second->getId();
 
 			Common::Network::Packet removePlayerFromRoomServerRequest;
@@ -229,43 +205,29 @@ namespace Main
 			Common::Network::Packet removePlayerFromMatchServerRequest;
 			removePlayerFromMatchServerRequest.setTcpHeader(originalHostSessionId, Common::Enums::USER_LARGE_ENCRYPTION);
 			removePlayerFromMatchServerRequest.setOrder(256);
-			removePlayerFromMatchServerRequest.setExtra(0);
 			removePlayerFromMatchServerRequest.setData(reinterpret_cast<std::uint8_t*>(&originalHostUniqueId), sizeof(originalHostUniqueId));
 
 			Common::Network::Packet hostChange;
 			hostChange.setTcpHeader(originalHostSessionId, Common::Enums::USER_LARGE_ENCRYPTION);
 			hostChange.setOrder(128);
 
-
 			// Signal that the host has been removed from the match
 			m_players[0].second->setIsInMatch(false);
 
 			// Count total players inside the match and total players inside the room
-			std::uint32_t totalPlayersInMatch = 0;
-			std::uint32_t totalPlayersInRoom = m_players.size();
-			for (const auto& currentPlayer : m_players)
-			{
-				if (currentPlayer.second->isInMatch())
-				{
-					++totalPlayersInMatch;
-				}
-			}
+			const std::size_t totalPlayersInMatch = std::count_if(m_players.begin(), m_players.end(), [](const auto& currentPlayer) { return currentPlayer.second->isInMatch(); });
+			const std::uint32_t totalPlayersInRoom = m_players.size();
 
 			// Check if there are players inside the match that can be changed to the (match) host. 
-			// We use >= 1 because the host has been removed from the match server side: there might be only one single player in the match, e.g. if this is square mode!
+			// We use >= 1 because the host has been removed from the match above: there might be only one single player in the match, e.g. if this is square mode!
 			if (totalPlayersInMatch >= 1)
 			{
 				logger.log("There are still some players in the match left, after the host left the match. Attempting to pick up new host...",
 					Utils::LogType::Normal, "Room::removeHostFromMatch");
 
-				bool hostChanged = false;
-
 				// Find the player with best ms inside the match
-				std::uint32_t bestMsPlayerIdxInMatch = getBestMsIndexExceptSelf(true, originalHostSessionId);
-
-				// Switch the host to the player with the best ms inside the match.
-				hostChanged = changeHost(bestMsPlayerIdxInMatch);
-				if (hostChanged)
+				const std::uint32_t bestMsPlayerIdxInMatch = getBestMsIndexExceptSelf(true, originalHostSessionId);
+				if (changeHost(bestMsPlayerIdxInMatch))
 				{
 					logger.log("The host has been changed from player " + std::string(m_players[bestMsPlayerIdxInMatch].second->getPlayerName())
 						+ " to player: " + std::string(m_players[0].second->getPlayerName())
@@ -278,34 +240,30 @@ namespace Main
 
 					// Leave match + room packets.
 					m_players[bestMsPlayerIdxInMatch].second->asyncWrite(removePlayerFromRoomServerRequest);
-					broadcastToRoomExceptSelf(removePlayerFromMatchServerRequest, originalHostUniqueId);
 					m_players[bestMsPlayerIdxInMatch].second->leaveRoom();
+					broadcastToRoomExceptSelf(removePlayerFromMatchServerRequest, originalHostUniqueId);
+					// NOTE: This decrements all player indexes inside the client! Call it ONLY AFTER sending the packet to change the host!
 					Main::Handlers::notifyRoomPlayerLeaves(originalHostUniqueId, *this);
 
 					logger.log("Removed previous host from room. " + m_players[bestMsPlayerIdxInMatch].second->getPlayerInfoAsString(),
 						Utils::LogType::Normal, "Room::removeHostFromMatch");
 
 					m_players.erase(m_players.begin() + bestMsPlayerIdxInMatch);
-					// NOTE: This decrements all player indexes inside the client! Call it ONLY AFTER sending the packet to change the host!
-
 					return false;
 				}
 				else
 				{
 					// Something went wrong: There were still some players in the match, but none of them could be picked up as the new host.
 					// This can be caused b the "IsInMatch" flag being set incorrectly for some players. The server may think no players are in the match
-					// even if they are.
-					// In this case we cannot safely proceed further: Just notify the players about the error and close the room.
-					hostChange.setExtra(Common::Enums::CHANGE_HOST_FAIL);
-					broadcastToRoom(hostChange); // "Unknown error. Please restart the client" 
+					// even if they are. In this case we cannot safely proceed further: Just notify the players about the error and close the room.
+					hostChange.setExtra(Common::Enums::CHANGE_HOST_FAIL); // "Unknown error. Please restart the client" 
+					broadcastToRoom(hostChange); 
 
 					logger.log("The host could not be switched to a new one! Closing the room to avoid further issues.",
 						Utils::LogType::Error, "Room::removeHostFromMatch");
 
-					return true;
+					return true; // Close the room as we cannot proceed further
 				}
-
-				logger.log(getRoomInfoAsString(), Utils::LogType::Normal, "Room::removeHostFromMatch");
 			}
 
 			// Otherwise, check if there are players inside the room that can be changed to the actual room host.
@@ -315,10 +273,8 @@ namespace Main
 				logger.log("The host is leaving and there are no players in the match. However, there are players in the room. Attempting to pick up new host...",
 					Utils::LogType::Normal, "Room::removeHostFromMatch");
 
-				std::uint32_t bestMsIndexPlayerOutsideMatch = getBestMsIndexExceptSelf(false, originalHostSessionId);
-
-				bool hostChanged = changeHost(bestMsIndexPlayerOutsideMatch);
-				if (hostChanged)
+				const std::uint32_t bestMsIndexPlayerOutsideMatch = getBestMsIndexExceptSelf(false, originalHostSessionId);
+				if (changeHost(bestMsIndexPlayerOutsideMatch))
 				{
 					logger.log("The host has been changed from player " + std::string(m_players[bestMsIndexPlayerOutsideMatch].second->getPlayerName())
 						+ " to player: " + std::string(m_players[0].second->getPlayerName())
@@ -331,16 +287,19 @@ namespace Main
 					broadcastToRoom(hostChange);
 
 					// The previous host leaves the match, host->setIsInMatch(false) already set at this point
-					broadcastToRoomExceptSelf(removePlayerFromMatchServerRequest, originalHostUniqueId);
 					m_players[bestMsIndexPlayerOutsideMatch].second->asyncWrite(removePlayerFromRoomServerRequest);
 					m_players[bestMsIndexPlayerOutsideMatch].second->leaveRoom();
+					broadcastToRoomExceptSelf(removePlayerFromMatchServerRequest, originalHostUniqueId);
+					// NOTE: This decrements all player indexes inside the client! Call it ONLY AFTER sending the packet to change the host!
 					Main::Handlers::notifyRoomPlayerLeaves(originalHostUniqueId, *this);
 
 					logger.log("Removed previous host from room. " + m_players[bestMsIndexPlayerOutsideMatch].second->getPlayerInfoAsString(),
 						Utils::LogType::Normal, "Room::removeHostFromMatch");
 
 					m_players.erase(m_players.begin() + bestMsIndexPlayerOutsideMatch);
-					// NOTE: This decrements all player indexes inside the client! Call it ONLY AFTER sending the packet to change the host!
+
+					m_hasMatchStarted = false; // The host was the only one inside the match, so we end it
+					return false; // Another player got the host in the room, no need to close it
 				}
 				else
 				{
@@ -355,37 +314,30 @@ namespace Main
 
 					return true;
 				}
-
-				logger.log(getRoomInfoAsString(), Utils::LogType::Normal, "Room::removeHostFromMatch");
-				m_hasMatchStarted = false;
-				return false; // Since in a correct implementation there was a player in the match that got the host, we shall not close the room.
 			}
-
-			// If the host was alone in the whole room (e.g. SquareMode, AI, BossBattle, and none outside the match), remove it from the room and close it.
-			else
+			else // If the host was alone in the whole room (e.g. SquareMode, AI, BossBattle, and none outside the match), remove it from the room and close it.
 			{
 				logger.log("The host is leaving and no other host can be picked up. Leaving the room and closing it...",
 					Utils::LogType::Normal, "Room::removeHostFromMatch");
 
 				m_players[0].second->asyncWrite(removePlayerFromRoomServerRequest);
 				m_players[0].second->leaveRoom();
-				m_players.resize(0);
+				m_players.clear();
 
-				for (auto& obsPlayer : m_observerPlayers)
+				for (auto& [unused, obsSession] : m_observerPlayers)
 				{
-					obsPlayer.second->asyncWrite(removePlayerFromRoomServerRequest);
-					obsPlayer.second->leaveRoom();
+					obsSession->asyncWrite(removePlayerFromRoomServerRequest);
+					obsSession->leaveRoom();
 				}
-				m_observerPlayers.resize(0);
+				m_observerPlayers.clear();
 				m_hasMatchStarted = false;
 
 				logger.log(getRoomInfoAsString(), Utils::LogType::Normal, "Room::removeHostFromMatch");
-				return true; // The room should now be closed by the caller
+				return true;
 			}
 		}
 
 		// Returns true if the room must be also be closed (e.g. due to host-switch errors, or because no other player is inside the room), false otherwise.
-		// Checked
 		bool Room::removePlayer(Main::Network::Session* session, std::uint32_t extra)
 		{
 			Utils::Logger& logger = Utils::Logger::getInstance();
@@ -395,13 +347,9 @@ namespace Main
 			removePlayerFromRoomServerRequest.setOrder(141);
 			removePlayerFromRoomServerRequest.setExtra(extra);
 
-			// For safety: check whether the given session exists inside "m_players"
-			auto playerIter = std::find_if(m_players.begin(), m_players.end(),
-				[session](const auto& currentSession) {
-					return currentSession.second == session;
-				});
+			auto playerIter = std::find_if(m_players.begin(), m_players.end(), [session](const auto& currentSession) { return currentSession.second == session; });
 
-			// If it does, we're taking care of a normal player (not an observer one)
+			// we're taking care of a non-observer player
 			if (playerIter != m_players.end())
 			{
 				const std::uint32_t bestMsIndexPlayerOutsideMatch = getBestMsIndexExceptSelf(false, session->getId());
@@ -409,12 +357,11 @@ namespace Main
 				// The player to be removed is the host. Find a new host.
 				if (playerIter->second->getId() == m_players[0].second->getId())
 				{
-					auto uniqueId = playerIter->second->getAccountInfo().uniqueId;
+					Main::Structures::UniqueId uniqueId = playerIter->second->getAccountInfo().uniqueId;
 					logger.log("The player " + session->getPlayerInfoAsString() + " is host and is attempting to leave their room", Utils::LogType::Normal, "Room::removePlayer");
 
 					// if host is alone in room, getBestMsIndexExceptSelf returns -1, and changeHost will return false.
-					bool hostChanged = changeHost(bestMsIndexPlayerOutsideMatch);
-					if (hostChanged)
+					if (changeHost(bestMsIndexPlayerOutsideMatch))
 					{
 						logger.log("The host has been changed from player " + std::string(m_players[bestMsIndexPlayerOutsideMatch].second->getPlayerName())
 							+ " to player: " + std::string(m_players[0].second->getPlayerName())
@@ -428,6 +375,9 @@ namespace Main
 						hostChange.setOption(bestMsIndexPlayerOutsideMatch);
 						hostChange.setExtra(Common::Enums::CHANGE_HOST_SUCCESS);
 						broadcastToRoom(hostChange);
+
+						// At this point playerIter is invalidated, update it
+						playerIter = std::find_if(m_players.begin(), m_players.end(), [session](const auto& currentSession) { return currentSession.second == session; });
 					}
 					else if (m_players.size() > 1) // Host not changed, even if it should have (because there were other players apart from the host inside the room)
 					{
@@ -446,16 +396,10 @@ namespace Main
 					}
 				}
 
-				// At this point, playerIter is invalidated. Refind it.
-				playerIter = std::find_if(m_players.begin(), m_players.end(),
-					[session](const auto& currentSession) {
-						return currentSession.second == session;
-					});
-
-				// If we're here, that means that the host was successfully changed and we can now remove the previous host from the room.
-				// NOTE: This decrements all player indexes in the client!!! Do it always AFTER sending the change host packet!
+				// Remove the player from the room
 				playerIter->second->asyncWrite(removePlayerFromRoomServerRequest);
-				playerIter->second->leaveRoom();
+				playerIter->second->leaveRoom();		
+				// NOTE: This decrements all player indexes in the client! Do it always after sending the change host packet!
 				Main::Handlers::notifyRoomPlayerLeaves(playerIter->second->getAccountInfo().uniqueId, *this);
 				m_players.erase(playerIter);
 
@@ -466,25 +410,19 @@ namespace Main
 				return m_players.empty(); // If empty, the room must be also closed.
 			}
 
-			// Otherwise, we're taking care of a player that is in observer mode. Check if that's the case and whether it actually exists in m_observerPlayers.
-			auto observerIter = std::find_if(m_observerPlayers.begin(), m_observerPlayers.end(),
-				[session](const auto& currentSession) {
-					return currentSession.second == session;
-				});
+			// otherwise, we're taking care of a player that is in observer mode. Check if that's the case and whether it actually exists in m_observerPlayers.
+			auto observerIter = std::find_if(m_observerPlayers.begin(), m_observerPlayers.end(), [session](const auto& currentSession) { return currentSession.second == session; });
 			if (observerIter != m_observerPlayers.end())
 			{
 				logger.log("Removed observer player from room. " + observerIter->second->getPlayerInfoAsString(),
 					Utils::LogType::Normal, "Room::removePlayer");
 
-				Main::Handlers::notifyRoomPlayerLeaves(observerIter->second->getAccountInfo().uniqueId, *this);
 				observerIter->second->asyncWrite(removePlayerFromRoomServerRequest);
 				observerIter->second->leaveRoom();
+				Main::Handlers::notifyRoomPlayerLeaves(observerIter->second->getAccountInfo().uniqueId, *this);
 				m_observerPlayers.erase(observerIter);
-				// NOTE: This decrements all player indexes in the client!!! Do it always AFTER sending the change host packet!
 			}
-
-			logger.log(getRoomInfoAsString(), Utils::LogType::Normal, "Room::removePlayer");
-			return m_players.empty();
+			return false;
 		}
 
 		std::vector<Main::Structures::RoomPlayerInfo> Room::getAllPlayers() const
@@ -505,48 +443,14 @@ namespace Main
 			return allPlayers;
 		}
 
-		void Room::removeHostIfAloneAndModeDoesntAllowIt()
-		{
-			std::uint32_t totalInMatch = 0;
-			for (const auto& currentPlayer : m_players)
-			{
-				if (currentPlayer.second->isInMatch())
-				{
-					++totalInMatch;
-				}
-			}
-
-			if (totalInMatch == 1)
-			{
-				if (m_settings.mode == Common::Enums::AiBattle || m_settings.mode == Common::Enums::SquareMode || m_settings.mode == Common::Enums::BossBattle)
-				{
-					return; // These modes allow the player to play alone in the match.
-				}
-				std::cout << "Only host left in match. Leaving it...\n";
-				m_players[0].second->setIsInMatch(false);
-				setStateFor(m_players[0].second->getAccountInfo().uniqueId, Common::Enums::STATE_NORMAL);
-
-				// Also update for observer players!
-				for (auto& observerPlayer : m_observerPlayers)
-				{
-					if (observerPlayer.second->isInMatch())
-					{
-						observerPlayer.second->setIsInMatch(false);
-						setStateFor(observerPlayer.second->getAccountInfo().uniqueId, Common::Enums::STATE_NORMAL);
-					}
-				}
-			}
-		}
-
-
 		Main::Structures::SingleRoom Room::getRoomInfo() const
 		{
 			Main::Structures::SingleRoom roomInfo;
-			roomInfo.hasPassword = m_password.empty() ? 0 : 1;
+			roomInfo.hasPassword = !m_password.empty();
 			roomInfo.isObserverOff = m_settings.isObserverModeOn ? 0 : 1;
 			roomInfo.map = m_settings.map;
 			roomInfo.matchStarted = m_hasMatchStarted;
-			roomInfo.maxPlayers = m_settings.playersPerTeam == 0 ? 1 : m_settings.playersPerTeam * 2;
+			roomInfo.maxPlayers = m_settings.playersPerTeam ? m_settings.playersPerTeam * 2 : 1;
 			roomInfo.mode = m_settings.mode;
 			roomInfo.numPlayers = m_players.size();
 			roomInfo.roomNumber = m_number - 1;
@@ -562,43 +466,34 @@ namespace Main
 			return m_settings;
 		}
 
-		// Specific setting is missing here!!!!!
+		// Specific setting is missing here!
 		Main::Structures::RoomJoin Room::getRoomJoinInfo() const
 		{
 			Main::Structures::RoomJoin roomJoinInfo;
-			roomJoinInfo.hasPassword = m_password.empty() ? 0 : 1;
+			roomJoinInfo.hasPassword = !m_password.empty();
 			roomJoinInfo.isObserverOn = m_settings.isObserverModeOn;
 			roomJoinInfo.isOpen = m_settings.isOpen;
 			roomJoinInfo.map = m_settings.map;
 			roomJoinInfo.mode = m_settings.mode;
-			roomJoinInfo.hidePassword = false; //m_password.empty() ? 0 : 1;
+			roomJoinInfo.hidePassword = false; 
 			roomJoinInfo.maxPlayers = m_settings.playersPerTeam == 0 ? 1 : m_settings.playersPerTeam * 2;
 			roomJoinInfo.weaponRestriction = m_settings.weaponRestriction;
 			roomJoinInfo.isTeamBalanceOn = m_isTeamBalanceOn;
 			roomJoinInfo.hasMatchStarted = m_hasMatchStarted;
-			std::memcpy(roomJoinInfo.password, m_password.data(), 9); // password max according to client = 8 characters
+			std::memcpy(roomJoinInfo.password, m_password.data(), 9);
 			return roomJoinInfo;
 		}
 
 		std::vector<Main::Structures::RoomPlayerItems> Room::getPlayersItems() const
 		{
 			std::vector<Main::Structures::RoomPlayerItems> ret;
-			for (const auto& currentPlayer : m_players)
+			for (const auto& [roomInfo, session] : ranges::views::concat(m_players, m_observerPlayers))
 			{
 				Main::Structures::RoomPlayerItems roomPlayerItems;
-				auto separatedItems = currentPlayer.second->getEquippedItemsSeparated(); // first=items, second=weapons
+				const auto separatedItems = session->getEquippedItemsSeparated(); 
 				roomPlayerItems.equippedItems = separatedItems.first;
 				roomPlayerItems.equippedWeapons = separatedItems.second;
-				roomPlayerItems.uniqueId = currentPlayer.first.uniqueId;
-				ret.push_back(roomPlayerItems);
-			}
-			for (const auto& currentPlayer : m_observerPlayers)
-			{
-				Main::Structures::RoomPlayerItems roomPlayerItems;
-				auto separatedItems = currentPlayer.second->getEquippedItemsSeparated(); // first=items, second=weapons
-				roomPlayerItems.equippedItems = separatedItems.first;
-				roomPlayerItems.equippedWeapons = separatedItems.second;
-				roomPlayerItems.uniqueId = currentPlayer.first.uniqueId;
+				roomPlayerItems.uniqueId = roomInfo.uniqueId;
 				ret.push_back(roomPlayerItems);
 			}
 			return ret;
@@ -607,88 +502,74 @@ namespace Main
 		std::vector<Main::Structures::PlayerClan> Room::getPlayersClans() const
 		{
 			std::vector<Main::Structures::PlayerClan> ret;
-			for (const auto& currentPlayer : m_players)
+			for (const auto& [roomInfo, session] : ranges::views::concat(m_players, m_observerPlayers))
 			{
-				const auto& accountInfo = currentPlayer.second->getAccountInfo();
+				const auto& accountInfo = session->getAccountInfo();
 				Main::Structures::PlayerClan playerClan;
-				const bool hasClan = accountInfo.clanId >= 8;
-				if (hasClan) // player has clan
+				if (accountInfo.clanId > 8)
 				{
 					playerClan.clanLogoBackId = accountInfo.clanLogoBackId;
 					playerClan.clanLogoFrontId = accountInfo.clanLogoFrontId;
 					std::memcpy(playerClan.clanName, accountInfo.clanName, 16);
-					playerClan.unknown2 = accountInfo.clanId; // unsure whether this is correct!
-					ret.push_back(playerClan);
+					playerClan.unknown2 = accountInfo.clanId;
 				}
 				else
 				{
 					playerClan.unknown = 1;
-					ret.push_back(playerClan);
 				}
-			}
-			for (const auto& currentPlayer : m_observerPlayers)
-			{
-				const auto& accountInfo = currentPlayer.second->getAccountInfo();
-				Main::Structures::PlayerClan playerClan;
-				const bool hasClan = accountInfo.clanId >= 8;
-				if (hasClan) // player has clan
-				{
-					playerClan.clanLogoBackId = accountInfo.clanLogoBackId;
-					playerClan.clanLogoFrontId = accountInfo.clanLogoFrontId;
-					std::memcpy(playerClan.clanName, accountInfo.clanName, 16);
-					playerClan.unknown2 = accountInfo.clanId; // unsure whether this is correct!
-					ret.push_back(playerClan);
-				}
-				else
-				{
-					playerClan.unknown = 1;
-					ret.push_back(playerClan);
-				}
+				ret.push_back(playerClan);
 			}
 			return ret;
 		}
 
 		void Room::breakroom()
 		{
-			for (const auto& currentPlayer : m_players)
+			for (auto& [unused, session] : ranges::views::concat(m_players, m_observerPlayers))
 			{
-				currentPlayer.second->leaveRoom();
+				session->leaveRoom();
 			}
-			for (const auto& currentObserverPlayer : m_observerPlayers)
-			{
-				currentObserverPlayer.second->leaveRoom();
-			}
-			m_players.resize(0);
-			m_observerPlayers.resize(0);
+			m_players.clear();
+			m_observerPlayers.clear();
 		}
 
-		void Room::broadcastToRoom(Common::Network::Packet& packet, bool broadcastToMatch)
+		// Broadcasts to whole room (room + match)
+		void Room::broadcastToRoom(Common::Network::Packet& packet)
 		{
-			for (const auto& currentPlayer : m_players)
+			for (auto& [roomInfo, session] : ranges::views::concat(m_players, m_observerPlayers))
 			{
-				packet.setTcpHeader(currentPlayer.second->getSessionId(), Common::Enums::USER_LARGE_ENCRYPTION);
-				currentPlayer.second->asyncWrite(packet);
-			}
-			for (const auto& currentObserverPlayer : m_observerPlayers)
-			{
-				packet.setTcpHeader(currentObserverPlayer.second->getSessionId(), Common::Enums::USER_LARGE_ENCRYPTION);
-				currentObserverPlayer.second->asyncWrite(packet);
+				packet.setTcpHeader(session->getSessionId(), Common::Enums::USER_LARGE_ENCRYPTION);
+				session->asyncWrite(packet);
 			}
 		}
 
 		void Room::broadcastToRoomExceptSelf(Common::Network::Packet& packet, const Main::Structures::UniqueId& uniqueId)
 		{
-			for (const auto& currentPlayer : m_players)
+			for (auto& currentPlayer : ranges::views::concat(m_players, m_observerPlayers))
 			{
 				if (currentPlayer.first.uniqueId == uniqueId) continue;
 				packet.setTcpHeader(currentPlayer.second->getSessionId(), Common::Enums::USER_LARGE_ENCRYPTION);
 				currentPlayer.second->asyncWrite(packet);
 			}
-			for (const auto& currentObserverPlayer : m_observerPlayers)
+		}
+
+		void Room::broadcastToTeamExceptSelf(Common::Network::Packet& packet, const Main::Structures::UniqueId& uniqueId, bool checkInsideMatch)
+		{
+			Common::Enums::Team targetTeam = Common::Enums::Team::TEAM_ALL;
+			for (const auto& [roomInfo, session] : m_players)
 			{
-				if (currentObserverPlayer.first.uniqueId == uniqueId) continue;
-				packet.setTcpHeader(currentObserverPlayer.second->getSessionId(), Common::Enums::USER_LARGE_ENCRYPTION);
-				currentObserverPlayer.second->asyncWrite(packet);
+				if (roomInfo.uniqueId == uniqueId)
+				{
+					targetTeam = static_cast<Common::Enums::Team>(roomInfo.team);
+					break;
+				}
+			}
+			for (auto& [roomInfo, session] : m_players)
+			{
+				if (roomInfo.uniqueId != uniqueId && roomInfo.team == targetTeam && ((checkInsideMatch && session->isInMatch()) || (!checkInsideMatch && !session->isInMatch())))
+				{
+					packet.setTcpHeader(session->getSessionId(), Common::Enums::USER_LARGE_ENCRYPTION);
+					session->asyncWrite(packet);
+				}
 			}
 		}
 
@@ -696,54 +577,35 @@ namespace Main
 		{
 			if (extra == Main::Enums::ChatExtra::TEAM)
 			{
-				Common::Enums::Team targetTeam = Common::Enums::Team::TEAM_ALL;
-				// Find target team
-				for (const auto& currentPlayer : m_players)
-				{
-					if (currentPlayer.first.uniqueId == uniqueId)
-					{
-						targetTeam = static_cast<Common::Enums::Team>(currentPlayer.first.team);
-						break;
-					}
-				}
-				// Broadcast to target team
-				for (const auto& currentPlayer : m_players)
-				{
-					if (currentPlayer.first.uniqueId == uniqueId || currentPlayer.first.team != targetTeam || !currentPlayer.second->isInMatch()) continue;
-					packet.setTcpHeader(currentPlayer.second->getSessionId(), Common::Enums::USER_LARGE_ENCRYPTION);
-					currentPlayer.second->asyncWrite(packet);
-				}
+				broadcastToTeamExceptSelf(packet, uniqueId, true);
 			}
-
 			else
 			{
 				bool broadcastOnlyToObs = false;
-				for (const auto& currentObserverPlayer : m_observerPlayers)
+				for (auto& [roomInfo, session] : m_observerPlayers)
 				{
-					if (currentObserverPlayer.first.uniqueId == uniqueId)
+					if (roomInfo.uniqueId == uniqueId)
 					{
-						if (currentObserverPlayer.second->getAccountInfo().playerGrade < Common::Enums::GRADE_MOD) // >= MOD grade messages are broadcast to whole match anyway.
+						if (session->getAccountInfo().playerGrade < Common::Enums::GRADE_MOD) // >= MOD grade messages are broadcast to whole room, even outside observer
 						{
 							broadcastOnlyToObs = true;
 						}
 						continue;
 					}
-					if (currentObserverPlayer.second->isInMatch())
+					if (session->isInMatch())
 					{
-						packet.setTcpHeader(currentObserverPlayer.second->getSessionId(), Common::Enums::USER_LARGE_ENCRYPTION);
-						currentObserverPlayer.second->asyncWrite(packet);
+						packet.setTcpHeader(session->getSessionId(), Common::Enums::USER_LARGE_ENCRYPTION);
+						session->asyncWrite(packet);
 					}
 				}
-
 				if (!broadcastOnlyToObs)
 				{
-					for (const auto& currentPlayer : m_players)
+					for (auto& [roomInfo, session]: m_players)
 					{
-						if (currentPlayer.first.uniqueId == uniqueId) continue;
-						if (currentPlayer.second->isInMatch())
+						if (roomInfo.uniqueId != uniqueId && session->isInMatch())
 						{
-							packet.setTcpHeader(currentPlayer.second->getSessionId(), Common::Enums::USER_LARGE_ENCRYPTION);
-							currentPlayer.second->asyncWrite(packet);
+							packet.setTcpHeader(session->getSessionId(), Common::Enums::USER_LARGE_ENCRYPTION);
+							session->asyncWrite(packet);
 						}
 					}
 				}
@@ -754,70 +616,41 @@ namespace Main
 		{
 			if (extra == Main::Enums::ChatExtra::TEAM)
 			{
-				Common::Enums::Team targetTeam = Common::Enums::Team::TEAM_ALL;
-				// Find target team
-				for (const auto& currentPlayer : m_players)
-				{
-					if (currentPlayer.first.uniqueId == uniqueId)
-					{
-						targetTeam = static_cast<Common::Enums::Team>(currentPlayer.first.team);
-						break;
-					}
-				}
-				// Broadcast to target team
-				for (const auto& currentPlayer : m_players)
-				{
-					if (currentPlayer.first.uniqueId == uniqueId || currentPlayer.second->isInMatch() || currentPlayer.first.team != targetTeam) continue;
-					packet.setTcpHeader(currentPlayer.second->getSessionId(), Common::Enums::USER_LARGE_ENCRYPTION);
-					currentPlayer.second->asyncWrite(packet);
-				}
+				broadcastToTeamExceptSelf(packet, uniqueId, false);
 			}
-
 			else
 			{
-				for (const auto& currentPlayer : m_players)
+				for (auto& [roomInfo, session] : m_players)
 				{
-					if (currentPlayer.first.uniqueId == uniqueId || currentPlayer.second->isInMatch()) continue;
-					packet.setTcpHeader(currentPlayer.second->getSessionId(), Common::Enums::USER_LARGE_ENCRYPTION);
-					currentPlayer.second->asyncWrite(packet);
+					if (roomInfo.uniqueId == uniqueId || session->isInMatch()) continue;
+					packet.setTcpHeader(session->getSessionId(), Common::Enums::USER_LARGE_ENCRYPTION);
+					session->asyncWrite(packet);
 				}
-				for (const auto& currentObserverPlayer : m_observerPlayers)
+				for (auto& [roomInfo, session] : m_observerPlayers)
 				{
-					if (currentObserverPlayer.first.uniqueId == uniqueId || currentObserverPlayer.second->isInMatch()) continue;
-					packet.setTcpHeader(currentObserverPlayer.second->getSessionId(), Common::Enums::USER_LARGE_ENCRYPTION);
-					currentObserverPlayer.second->asyncWrite(packet);
+					if (roomInfo.uniqueId == uniqueId || session->isInMatch()) continue;
+					packet.setTcpHeader(session->getSessionId(), Common::Enums::USER_LARGE_ENCRYPTION);
+					session->asyncWrite(packet);
 				}
 			}
 		}
 
 		void Room::endMatch()
 		{
-			Common::Network::Packet response;
-			response.setTcpHeader(m_players[0].second->getId(), Common::Enums::USER_LARGE_ENCRYPTION);
-			response.setOrder(312);
-			m_hasMatchStarted = false;
-
-			for (auto& currentPlayer : m_players)
+			for (auto& [roomInfo, session] : ranges::views::concat(m_players, m_observerPlayers))
 			{
-				currentPlayer.first.state = Common::Enums::STATE_WAITING;
-				currentPlayer.second->setIsInMatch(false);
-			}
-			for (auto& currentPlayer : m_observerPlayers)
-			{
-				if (currentPlayer.second->isInMatch()) 
+				if (session->isInMatch())
 				{
-					currentPlayer.first.state = Common::Enums::STATE_WAITING;
-					currentPlayer.second->setIsInMatch(false);
+					roomInfo.state = Common::Enums::STATE_WAITING;
+					session->setIsInMatch(false);
 				}
 			}
+			m_hasMatchStarted = false;
 		}
 
-		// Checked
 		bool Room::changeHost(std::size_t newHostIdx)
 		{
 			Utils::Logger& logger = Utils::Logger::getInstance();
-
-			auto previousHostUniqueId = m_players[0].second->getAccountInfo().uniqueId;
 
 			if (newHostIdx >= m_players.size())
 			{
@@ -825,31 +658,18 @@ namespace Main
 					Utils::LogType::Normal, "Room::changeHost");
 				return false;
 			}
-
 			std::swap(m_players[0], m_players[newHostIdx]); 
 			return true;
 		}
 
-		Main::Structures::UniqueId Room::getHostUniqueId() const
-		{
-			return m_players[0].first.uniqueId;
-		}
-
 		Main::Network::Session* Room::getPlayer(const Main::Structures::UniqueId& uniqueId)
 		{
-			for (const auto& [roomInfo, session] : m_players)
+			for (auto& [roomInfo, session] : m_players)
 			{
-				if (roomInfo.uniqueId == uniqueId)
-				{
-					return session;
-				}
+				if (roomInfo.uniqueId == uniqueId) return session;
 			}
-			std::cout << "Player Not Found inside Room::getPlayer\n";
 			return nullptr;
 		}
-
-
-		// At this point, the host has already left the room, that is: host->isInMatch() == false.
 
 		bool Room::isHost(const Main::Structures::UniqueId& uniqueId) const
 		{
@@ -866,6 +686,7 @@ namespace Main
 			m_settings.time = time;
 		}
 
+		// CHECKED UNTIL HERE (THIS ONE NOT CHECKED)
 		// Returns new team for this player, to notify the client. Nullopt for failure.
 		std::optional<std::uint32_t> Room::changePlayerTeam(const Main::Structures::UniqueId& uniqueId, std::uint32_t newTeam)
 		{
@@ -875,8 +696,9 @@ namespace Main
 			{
 				if (it->first.uniqueId == uniqueId)
 				{
-					if (newTeam == Common::Enums::TEAM_OBSERVER && m_observerPlayers.size() < 10)
+					if (newTeam == Common::Enums::TEAM_OBSERVER)
 					{
+						if (m_observerPlayers.size() >= 10) return std::nullopt;
 						auto playerInfo = std::move(*it);
 						playerInfo.first.team = Common::Enums::TEAM_OBSERVER;
 						m_observerPlayers.push_back(std::move(playerInfo));
@@ -885,24 +707,17 @@ namespace Main
 						logger.log("The player " + playerInfo.second->getPlayerInfoAsString() + " changed team from Player to Observer",
 							Utils::LogType::Normal, "Room::switchPlayerTeam");
 					}
+					else if (newTeam == Common::Enums::TEAM_ZOMBIE)
+					{
+						it->first.team = newTeam;
+					}
 					else
 					{
-						// Do NOT update if team is not BLUE or RED. That's just for the client to know (e.g. Zombie team)
-						//if (newTeam != Common::Enums::TEAM_BLUE && newTeam != Common::Enums::TEAM_RED && newTeam != Common::Enums::TEAM_ALL) return newTeam;
-						//it->first.team = it->first.team == Common::Enums::TEAM_BLUE ? Common::Enums::TEAM_RED : Common::Enums::TEAM_BLUE;
-
-						if (newTeam == Common::Enums::TEAM_ZOMBIE)
-						{
-							it->first.team = newTeam;
-						}
-						else
-						{
-							it->first.team = it->first.team == Common::Enums::TEAM_BLUE ? Common::Enums::TEAM_RED : Common::Enums::TEAM_BLUE;
-						}
-
-						logger.log("The player " + it->second->getPlayerInfoAsString() + " changed team to: " + std::to_string(it->first.team),
-							Utils::LogType::Normal, "Room::switchPlayerTeam");
+						it->first.team = it->first.team == Common::Enums::TEAM_BLUE ? Common::Enums::TEAM_RED : Common::Enums::TEAM_BLUE;
 					}
+					logger.log("The player " + it->second->getPlayerInfoAsString() + " changed team to: " + std::to_string(it->first.team),
+						Utils::LogType::Normal, "Room::switchPlayerTeam");
+
 					return newTeam;
 				}
 			}
@@ -918,8 +733,7 @@ namespace Main
 								Utils::LogType::Warning, "Room::switchPlayerTeam");
 							return std::nullopt;
 						}
-
-						if (isModeTeamBased())
+						else if (isModeTeamBased())
 						{
 							it->first.team = calculateNewPlayerTeam();
 						}
@@ -932,21 +746,9 @@ namespace Main
 						m_players.push_back(std::move(playerInfo));
 						m_observerPlayers.erase(it);
 
-						logger.log("The Observer Player " + playerInfo.second->getPlayerInfoAsString() + " changed team from Observer to: " 
-							+ std::to_string(playerInfo.first.team),
-							Utils::LogType::Normal, "Room::switchPlayerTeam");
-
 						return newTeam;
 					}
-					else
-					{
-						// Makes no sense: observer player cannot change to another team other than the first if... 
-						return std::nullopt;
-
-						logger.log("The Observer Player " + it->second->getPlayerInfoAsString() + " tried to change the team from Observer to UnknownTeam: "
-							+ std::to_string(newTeam), Utils::LogType::Warning, "Room::switchPlayerTeam");
-					}
-					return std::nullopt;
+					return std::nullopt; // Makes no sense: observer player cannot change to another team other than the first if... 
 				}
 			}
 		}
@@ -1013,28 +815,19 @@ namespace Main
 
 		bool Room::isRoomFullObserverExcluded() const
 		{
-			// The check playersPerTeam == 0 is done because on square mode, with only 1 player as total players, apparently it results in 1.
+			// The check playersPerTeam == 0 is done because on square mode, with only 1 player as total players, it results in 1.
 			const std::uint32_t maxPossiblePlayers = m_settings.playersPerTeam == 0 ? 1 : m_settings.playersPerTeam * 2;
 			return static_cast<std::uint32_t>(m_players.size()) >= maxPossiblePlayers;
 		}
 
 		void Room::setStateFor(const Main::Structures::UniqueId& uniqueId, const Common::Enums::PlayerState& playerState)
 		{
-			for (auto& currentPlayer : m_players)
+			for (auto& [roomInfo, session] : ranges::views::concat(m_players, m_observerPlayers))
 			{
-				if (currentPlayer.first.uniqueId == uniqueId)
+				if (roomInfo.uniqueId == uniqueId)
 				{
-					currentPlayer.first.state = playerState;
-					currentPlayer.second->setPlayerState(playerState);
-					return;
-				}
-			}
-			for (auto& currentPlayer : m_observerPlayers)
-			{
-				if (currentPlayer.first.uniqueId == uniqueId)
-				{
-					currentPlayer.first.state = playerState;
-					currentPlayer.second->setPlayerState(playerState);
+					roomInfo.state = playerState;
+					session->setPlayerState(playerState);
 					return;
 				}
 			}
@@ -1042,46 +835,31 @@ namespace Main
 
 		void Room::startMatch(const Main::Structures::UniqueId& uniqueId)
 		{
+			auto allPlayers = ranges::views::concat(m_players, m_observerPlayers);
+
 			if (m_hasMatchStarted)
 			{
-				for (auto& currentPlayer : m_players)
+				for (auto& [roomInfo, session] : allPlayers)
 				{
-					if (currentPlayer.first.uniqueId == uniqueId)
+					if (roomInfo.uniqueId == uniqueId)
 					{
-						currentPlayer.first.state = Common::Enums::STATE_NORMAL;
-						currentPlayer.second->setIsInMatch(true);
-						return;
-					}
-				}
-				for (auto& currentPlayer : m_observerPlayers)
-				{
-					if (currentPlayer.first.uniqueId == uniqueId)
-					{
-						currentPlayer.first.state = Common::Enums::STATE_NORMAL;
-						currentPlayer.second->setIsInMatch(true);
+						roomInfo.state = Common::Enums::STATE_NORMAL;
+						session->setIsInMatch(true);
 						return;
 					}
 				}
 			}
 			else
 			{
+				for (auto& [roomInfo, session] : allPlayers)
+				{
+					if (roomInfo.state == Common::Enums::STATE_READY)
+					{
+						roomInfo.state = Common::Enums::STATE_NORMAL;
+						session->setIsInMatch(true);
+					}
+				}
 				m_hasMatchStarted = true;
-				for (auto& currentPlayer : m_players)
-				{
-					if (currentPlayer.first.state == Common::Enums::STATE_READY)
-					{
-						currentPlayer.first.state = Common::Enums::STATE_NORMAL;
-						currentPlayer.second->setIsInMatch(true);
-					}
-				}
-				for (auto& currentPlayer : m_observerPlayers)
-				{
-					if (currentPlayer.first.state == Common::Enums::STATE_READY)
-					{
-						currentPlayer.first.state = Common::Enums::STATE_NORMAL;
-						currentPlayer.second->setIsInMatch(true);
-					}
-				}
 			}
 		}
 
@@ -1092,35 +870,19 @@ namespace Main
 
 		bool Room::kickPlayer(const std::string& name)
 		{
-			for (const auto& player : m_players)
+			for (auto& [roomInfo, session] : ranges::views::concat(m_players, m_observerPlayers))
 			{
-				if (std::string(player.second->getAccountInfo().nickname) == name)
+				if (std::string(session->getAccountInfo().nickname) == name)
 				{
-					if (player.second->getAccountInfo().playerGrade >= Common::Enums::PlayerGrade::GRADE_MOD) return false;
+					if (session->getAccountInfo().playerGrade >= Common::Enums::PlayerGrade::GRADE_MOD) return false;
 					Common::Network::Packet response;
-					response.setTcpHeader(player.second->getId(), Common::Enums::USER_LARGE_ENCRYPTION);
+					response.setTcpHeader(session->getId(), Common::Enums::USER_LARGE_ENCRYPTION);
 					response.setOrder(141);
 					response.setExtra(0x23);
-					player.second->asyncWrite(response);
-					removePlayer(player.second, 0x23);
-					addKickedPlayer(player.second->getAccountInfo().accountID);
-					player.second->setIsInLobby(true);
-					return true;
-				}
-			}
-			for (const auto& player : m_observerPlayers)
-			{
-				if (std::string(player.second->getAccountInfo().nickname) == name)
-				{
-					if (player.second->getAccountInfo().playerGrade >= Common::Enums::PlayerGrade::GRADE_MOD) return false;
-					Common::Network::Packet response;
-					response.setTcpHeader(player.second->getId(), Common::Enums::USER_LARGE_ENCRYPTION);
-					response.setOrder(141);
-					response.setExtra(0x23);
-					player.second->asyncWrite(response);
-					removePlayer(player.second, 0x23);
-					addKickedPlayer(player.second->getAccountInfo().accountID);
-					player.second->setIsInLobby(true);
+					session->asyncWrite(response);
+					removePlayer(session, 0x23);
+					addKickedPlayer(session->getAccountInfo().accountID);
+					session->setIsInLobby(true);
 					return true;
 				}
 			}
@@ -1131,10 +893,7 @@ namespace Main
 		{
 			for (const auto& currentAccountId : m_kickedPlayerAccountIds)
 			{
-				if (accountId == currentAccountId)
-				{
-					return true;
-				}
+				if (accountId == currentAccountId) return true;
 			}
 			return false;
 		}
@@ -1181,16 +940,12 @@ namespace Main
 
 		void Room::updatePassword(const std::string& newPassword)
 		{
-			std::cout << "Update Password: " << newPassword << '\n';
-			m_password = "";
 			if (newPassword.empty())
 			{
-				std::cout << "HasPassword = false\n";
 				m_settings.hasPassword = false;
 			}
 			else
 			{
-				std::cout << "HasPassword = true\n";
 				m_password = newPassword;
 				m_settings.hasPassword = true;
 			}
@@ -1200,7 +955,7 @@ namespace Main
 		{
 			if (team == Common::Enums::TEAM_RED) ++m_redPoints;
 			else ++m_bluePoints;
-		}
+		}	
 
 		std::uint32_t Room::getHostLevel() const
 		{
@@ -1209,30 +964,22 @@ namespace Main
 
 		void Room::sendTo(const Main::Structures::UniqueId& uniqueId, const Common::Network::Packet& packet)
 		{
-			for (auto& currentPlayer : m_players)
+			for (auto& [roomInfo, session] : ranges::views::concat(m_players, m_observerPlayers))
 			{
-				if (currentPlayer.first.uniqueId == uniqueId)
+				if (roomInfo.uniqueId == uniqueId)
 				{
-					currentPlayer.second->asyncWrite(packet);
-					return;
-				}
-			}
-			for (auto& currentPlayer : m_observerPlayers)
-			{
-				if (currentPlayer.first.uniqueId == uniqueId)
-				{
-					currentPlayer.second->asyncWrite(packet);
+					session->asyncWrite(packet);
 					return;
 				}
 			}
 		}
 
-		void Room::storeEndMatchStatsFor(const Main::Structures::UniqueId& uniqueId, const Main::Structures::ScoreboardResponse& stats,
+		void Room::storeEndMatchStatsFor(const Main::Structures::UniqueId& uniqueId, const Main::Structures::ScoreboardResponse& stats, 
 			std::uint32_t blueScore, std::uint32_t redScore, bool hasLeveledUp)
 		{
-			for (auto& currentPlayer : m_players)
+			for (auto& [roomInfo, session] : m_players)
 			{
-				if (currentPlayer.first.uniqueId == uniqueId)
+				if (roomInfo.uniqueId == uniqueId)
 				{
 					std::cout << "storeEndMatchStatsFor: UniqueID found\n";
 					Main::Enums::MatchEnd matchEnd;
@@ -1240,8 +987,8 @@ namespace Main
 					{
 						matchEnd = Main::Enums::MATCH_DRAW;
 					}
-					else if ((blueScore > redScore && currentPlayer.first.team == Common::Enums::TEAM_BLUE)
-						|| (redScore > blueScore && currentPlayer.first.team == Common::Enums::TEAM_RED))
+					else if ((blueScore > redScore && roomInfo.team == Common::Enums::TEAM_BLUE)
+						|| (redScore > blueScore && roomInfo.team == Common::Enums::TEAM_RED))
 					{
 						matchEnd = Main::Enums::MATCH_WON;
 					}
@@ -1249,7 +996,7 @@ namespace Main
 					{
 						matchEnd = Main::Enums::MATCH_LOST;
 					}
-					currentPlayer.second->storeEndMatchStats(stats, matchEnd, hasLeveledUp);
+					session->storeEndMatchStats(stats, matchEnd, hasLeveledUp);
 					return;
 				}
 			}
@@ -1257,11 +1004,11 @@ namespace Main
 
 		Main::Network::Session::AccountInfo Room::getAccountInfoFor(const Main::Structures::UniqueId& uniqueId) const
 		{
-			for (auto& currentPlayer : m_players)
+			for (auto& [roomInfo, session] : ranges::views::concat(m_players, m_observerPlayers))
 			{
-				if (currentPlayer.first.uniqueId == uniqueId)
+				if (roomInfo.uniqueId == uniqueId)
 				{
-					return currentPlayer.second->getAccountInfo();
+					return session->getAccountInfo();
 				}
 			}
 		}
