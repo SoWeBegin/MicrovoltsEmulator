@@ -21,7 +21,6 @@ namespace Main
 			{
 				m_roomByNumber[roomNum].removeAllPlayers();
 				m_roomByNumber.erase(roomNum);
-				std::cout << "Room closed\n";
 			}
 		}
 
