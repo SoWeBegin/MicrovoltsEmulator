@@ -38,7 +38,6 @@ namespace Main
 				response.setExtra(1);
 				response.setData(reinterpret_cast<std::uint8_t*>(m_confirmationMessage.data()), m_confirmationMessage.size());
 				response.setOption(m_confirmationMessage.size());
-				response.setMission(0);
 				session.asyncWrite(response);
 				return;
 			}
@@ -52,33 +51,32 @@ namespace Main
 
 			if (request.getExtra() == Enums::ChatExtra::COMMAND) 
 			{
-				std::string command{ reinterpret_cast<const char*>(request.getData() + 1), static_cast<std::size_t>(request.getOption() - 1)};
+				const std::string command{ reinterpret_cast<const char*>(request.getData() + 1), static_cast<std::size_t>(request.getOption() - 1)};
 				if (command == "?")
 				{
 					chatCommands.showUsages(session, response, static_cast<Common::Enums::PlayerGrade>(accountInfo.playerGrade));
+					return;
 				}
-				std::string commandName = command.substr(0, command.find(' '));
+				const std::string commandName = command.substr(0, command.find(' '));
 				if (!chatCommands.executeSimpleCommand(commandName, session, sessionsManager, response))
 				{
 					if (!chatCommands.executeComplexCommand(commandName, command, session, sessionsManager, response))
 					{
 						if (!chatCommands.executeDatabaseCommand(commandName, command, session, database, response))
 						{
-							auto roomNumber = session.getRoomNumber();
+							const std::uint16_t roomNumber = session.getRoomNumber();
 							if (!roomNumber) return;
 							if (!chatCommands.executeSimpleRoomCommand(commandName, session, roomsManager, roomNumber, response))
 							{
-								if (!chatCommands.executeComplexRoomCommand(commandName, command, session, roomsManager, response))
-								{
-									std::cout << "Inside if statement\n";
-								}
+								if (!chatCommands.executeComplexRoomCommand(commandName, command, session, roomsManager, response));
 							}
 						}
 					}
 				}
+				return;
 			}
 
-			constexpr std::size_t playerNameLength = 16;
+			constexpr std::uint16_t playerNameLength = 16;
 			const char* senderNickname = accountInfo.nickname;
 			if (request.getExtra() == Enums::ChatExtra::WHISPER) 
 			{
@@ -122,8 +120,6 @@ namespace Main
 				response.setData(nullptr, 0);
 				session.asyncWrite(response);
 			}
-
-			// Todo: Add team chat 
 			else if (request.getExtra() == Enums::ChatExtra::NORMAL || request.getExtra() == Enums::ChatExtra::CLAN
 				|| request.getExtra() == Enums::ChatExtra::TEAM)  // yes, these conditions ARE necessary
 			{
@@ -163,7 +159,7 @@ namespace Main
 						return;
 					}
 				}
-				if (request.getExtra() == Enums::ChatExtra::NORMAL) sessionsManager.broadcastToLobbyExceptSelf(session.getId(), response);
+				else if (request.getExtra() == Enums::ChatExtra::NORMAL) sessionsManager.broadcastToLobbyExceptSelf(session.getId(), response);
 				else sessionsManager.broadcastToClan(session.getId(), response);
 			}
 		}
