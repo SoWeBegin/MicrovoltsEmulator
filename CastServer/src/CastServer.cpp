@@ -29,7 +29,7 @@ namespace Cast
 {
 	CastServer::CastServer(ioContext& io_context, std::uint16_t port, std::uint16_t serverId)
 		: m_io_context{ io_context }
-		, m_acceptor{ io_context, tcp::endpoint(asio::ip::address::from_string("127.0.0.1"), port) }
+		, m_acceptor{ io_context, tcp::endpoint(tcp::v4(), port), }
 		, m_serverId{ serverId }
 	{
 		// WORKS:
