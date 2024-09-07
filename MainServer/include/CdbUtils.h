@@ -15,8 +15,8 @@
 #include "ConstantDatabase/Structures/CdbCapsulePackageInfo.h"
 #include "ConstantDatabase/Structures/CdbMapInfo.h"
 #include "Structures/Capsule/CapsuleList.h"
-#include "ConstantDatabase/Structures/CdbRewardInfo.h"
-#include "ConstantDatabase/Structures/CdbGradeInfo.h"
+#include <ConstantDatabase/Structures/CdbRewardInfo.h>
+#include <ConstantDatabase/Structures/CdbGradeInfo.h>
 
 namespace Main
 {
