@@ -17,7 +17,6 @@ namespace Main
 			response.setOrder(request.getOrder() + 1);
 			response.setMission(request.getMission());
 			response.setOption(request.getOption());
-			// maybe set extra?
 
 			if (request.getMission() == 1)
 			{
@@ -45,7 +44,7 @@ namespace Main
 
 					auto roomFound = roomsManager.getRoomByNumber(roomNumber);
 					if (roomFound == std::nullopt) return;
-					auto& room = roomFound.value().get();
+					auto& room = roomFound->get();
 					room.broadcastToRoomExceptSelf(response, resp.uniqueId);
 				}
 			}
