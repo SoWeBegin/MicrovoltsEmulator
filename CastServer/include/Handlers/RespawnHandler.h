@@ -37,7 +37,7 @@ namespace Cast
             } playerRespawnPosition;
 
             std::memcpy(&playerRespawnPosition, request.getData(), sizeof(playerRespawnPosition));
-            playerRespawnPosition.z += 70; // add some more height
+            playerRespawnPosition.z += 70; // add some more height 
             response.setData(reinterpret_cast<std::uint8_t*>(&playerRespawnPosition), sizeof(playerRespawnPosition));    
             
             const auto targetSessionId = playerRespawnPosition.targetUniqueId.session;
