@@ -27,7 +27,7 @@ namespace Main
 
 			const auto foundRoom = roomsManager.getRoomByNumber(session.getRoomNumber());
 			if (foundRoom == std::nullopt) return;
-			auto& room = foundRoom.value().get();
+			auto& room = foundRoom.value().get(); 
 
 			Common::Network::Packet response;
 			response.setTcpHeader(request.getSession(), Common::Enums::USER_LARGE_ENCRYPTION);
@@ -50,10 +50,10 @@ namespace Main
 				response.setData(reinterpret_cast<std::uint8_t*>(&selfUniqueId), sizeof(selfUniqueId));
 				room.broadcastToRoom(response); 
 
-				logger.log("The player " + session.getPlayerInfoAsString() + " is entering in the match. "
+				logger.log("The player " + session.getPlayerInfoAsString() + " is entering in the match. " 
 					+ room.getRoomInfoAsString(), Utils::LogType::Normal, "Room::handleRoomStart");
 
-				// NOTE: This is here only as a TEMPORARY fix to a bug where starting the first match (after relogging) with ready players in FFA modes causes issues
+				// NOTE: This is here only as a TEMPORARY fix to a bug where starting the first match (after relogging) with ready players in FFA modes causes issues 
 				response.setOrder(125);
 				response.setMission(0);
 				response.setExtra(0);
@@ -78,7 +78,7 @@ namespace Main
 				if (room.isHost(selfUniqueId))
 				{
 					response.setOrder(258);
-					response.setExtra(1 /* 5 == infinite loading for host ??*/);
+					response.setExtra(1 /* 5 == infinite loading for host ??*/); 
 					response.setOption(0);
 					struct Response
 					{
