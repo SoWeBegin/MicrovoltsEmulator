@@ -34,6 +34,7 @@ namespace Main
 			using Friend = Main::Structures::Friend;
 			using TradedItem = Main::Structures::TradeBasicItem;
 			using Mailbox = Main::Structures::Mailbox;
+			using Session = Main::Network::Session;
 
 			AccountInfo m_accountInfo{};
 			std::unordered_map<std::uint64_t, Item> m_itemsByItemNumber{};
