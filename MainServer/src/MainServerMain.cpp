@@ -61,9 +61,7 @@ void initializeCdbFiles()
 
 int main()
 {
-#ifdef WIN32
 	SetConsoleTitleW(L"Microvolts Main Server");
-#endif
 
 	asio::io_context io_context;
 	Main::MainServer srv(io_context, 13005, 1);
