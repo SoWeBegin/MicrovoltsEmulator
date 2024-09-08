@@ -1,3 +1,7 @@
+# Disclaimer
+If you use our emulator for your own server, please don't forget to mention this GitHub page. Also remember that we may add new updates, enhancements or bug fixes anytime, so make sure to stay updated!
+We do not take any responsability for public servers.
+
 # Introduction
 *If you appreciate our work and the public source code base, make sure to give us a star!*
 
