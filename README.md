@@ -6,6 +6,10 @@ Here's a quick video demonstration:
 
 https://github.com/user-attachments/assets/24b7a12a-517d-42a9-9554-fe90d8a9f5a9
 
+# Discord Server
+We have a discord server for discussing the development of the emulator and other general discussions.
+You can join us through this invite link: https://discord.gg/6pxcxEQNuE
+
 ## Contributions
 Contributors are always appreciated.
 - Feel free to open a new Issue if you find new bugs or missing features (i.e. possible enhancements).
