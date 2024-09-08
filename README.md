@@ -6,6 +6,11 @@ Here's a quick video demonstration:
 
 https://github.com/user-attachments/assets/24b7a12a-517d-42a9-9554-fe90d8a9f5a9
 
+## Contributions
+Contributors are always appreciated.
+- Feel free to open a new Issue if you find new bugs or missing features (i.e. possible enhancements).
+- If you are able to fix an existing bug, feel free to apply it and make a merge request. I will look into it ASAP.
+
 ## Reasons for open-sourceness
 - Give an idea on how the emulator is written, and possibly inspire new people to create their own better version.
 - Learning purposes.
