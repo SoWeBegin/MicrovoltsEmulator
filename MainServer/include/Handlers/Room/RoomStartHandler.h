@@ -82,11 +82,11 @@ namespace Main
 					response.setOption(0);
 					struct Response
 					{
-						std::uint64_t tick;
+						std::uint64_t tick = 0; // Before: tick taken from accountInfo's serverTime, After: 0 (experimental fix!)
 					};
 					Response respMessage;
 
-					respMessage.tick = session.getAccountInfo().serverTime;
+					// respMessage.tick = session.getAccountInfo().serverTime;
 					response.setData(reinterpret_cast<std::uint8_t*>(&respMessage), sizeof(respMessage));
 					room.broadcastToRoom(response);
 
