@@ -121,13 +121,18 @@ namespace Main
 			}
 			for (const auto& currentSimpleRoom : m_simpleRoomCommands)
 			{
-				if (playerGrade < currentSimpleRoom.second->getRequiredGrade()) continue;;
+				if (playerGrade < currentSimpleRoom.second->getRequiredGrade()) continue;
 				currentSimpleRoom.second->getCommandUsage(session, response);
 			}
 			for (const auto& currentDb : m_databaseCommands)
 			{
-				if (playerGrade < currentDb.second->getRequiredGrade()) continue;;
+				if (playerGrade < currentDb.second->getRequiredGrade()) continue;
 				currentDb.second->getCommandUsage(session, response);
+			}
+			for (const auto& currentComplexRoom : m_complexRoomCommands)
+			{
+				if (playerGrade < currentComplexRoom.second->getRequiredGrade()) continue;
+				currentComplexRoom.second->getCommandUsage(session, response);
 			}
 		}
 	};

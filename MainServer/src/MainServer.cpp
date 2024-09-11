@@ -278,6 +278,7 @@ namespace Main
 		m_chatCommands.addComplexCommand("getitem", std::make_unique<Main::Command::SpawnItem>(Common::Enums::GRADE_NORMAL));
 		m_chatCommands.addComplexRoomCommand("kick", std::make_unique<Main::Command::KickPlayer>(Common::Enums::GRADE_MOD));
 		m_chatCommands.addSimpleRoomCommand("breakroom", std::make_unique<Main::Command::Breakroom>(Common::Enums::GRADE_MOD));
+		m_chatCommands.addComplexRoomCommand("changehost", std::make_unique<Main::Command::ChangeHost>(Common::Enums::GRADE_TESTER));
 		m_chatCommands.addSimpleRoomCommand("muteroom", std::make_unique<Main::Command::Muteroom>(Common::Enums::GRADE_MOD));
 		m_chatCommands.addSimpleRoomCommand("unmuteroom", std::make_unique<Main::Command::UnmuteRoom>(Common::Enums::GRADE_MOD));
 		m_chatCommands.addDatabaseCommand("unban", std::make_unique<Main::Command::UnbanAccount>(Common::Enums::GRADE_TESTER));

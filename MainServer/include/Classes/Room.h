@@ -92,9 +92,12 @@ namespace Main
 
 			bool removePlayer(Main::Network::Session* session, std::uint32_t extra);
 
+			void changeHostTemporarilyToBestMs();
+
+			bool changeHostByNickname(const std::string&);
+
 			std::vector<Main::Structures::RoomPlayerInfo> getAllPlayers() const;
 
-			void removeHostIfAloneAndModeDoesntAllowIt();
 
 			Main::Structures::SingleRoom getRoomInfo() const;
 
@@ -103,10 +106,6 @@ namespace Main
 			Main::Structures::RoomJoin getRoomJoinInfo() const;
 
 			std::vector<Main::Structures::RoomPlayerItems> getPlayersItems() const;
-
-			void updatePlayerItems(Main::Network::Session* session);
-
-			Main::Structures::UniqueId getHostUniqueId() const;
 
 			std::vector<Main::Structures::PlayerClan> getPlayersClans() const;
 

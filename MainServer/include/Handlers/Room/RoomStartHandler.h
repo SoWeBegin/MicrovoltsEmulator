@@ -77,6 +77,8 @@ namespace Main
 			{
 				if (room.isHost(selfUniqueId))
 				{
+					room.setCurrentHostAsOriginalHost();
+
 					response.setOrder(258);
 					response.setExtra(1 /* 5 == infinite loading for host ??*/); 
 					response.setOption(0);

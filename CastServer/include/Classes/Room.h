@@ -14,6 +14,7 @@ namespace Cast
 		{
 		private:
 			std::unordered_map<std::uint64_t, Cast::Network::Session*> m_players{};
+			std::vector<Cast::Network::Session*> m_playersVec{};
 			std::uint32_t m_map{};
 			std::uint32_t m_mode{};
 			std::uint32_t m_tick{};

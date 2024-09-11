@@ -340,6 +340,44 @@ namespace Main
 			}
 		}
 
+		void Room::changeHostTemporarilyToBestMs()
+		{
+			// todo
+		}
+
+		bool Room::changeHostByNickname(const std::string& newHostNickname)
+		{
+			// find player index inside the room through to their nickname
+			std::uint32_t targetIndex = 0;
+			std::uint32_t currentIndex = 0;
+			std::uint32_t sessionId = 0;
+			for (const auto& [roomInfo, session] : m_players)
+			{
+				if (std::strncmp(roomInfo.playerName, newHostNickname.c_str(), sizeof(roomInfo.playerName)) == 0)
+				{
+					targetIndex = currentIndex;
+					sessionId = roomInfo.uniqueId.session;
+					break;
+				}
+				else
+				{
+					++currentIndex;
+				}
+			}
+			if (currentIndex >= m_players.size()) return false; // player with target nickname not found
+			if (changeHost(targetIndex))
+			{
+				Common::Network::Packet hostChange;
+				hostChange.setTcpHeader(sessionId, Common::Enums::USER_LARGE_ENCRYPTION);
+				hostChange.setOrder(128);
+				hostChange.setOption(targetIndex);
+				hostChange.setExtra(Common::Enums::CHANGE_HOST_SUCCESS);
+				broadcastToRoom(hostChange);
+				return true;
+			}
+			return false;
+		}
+
 		// Returns true if the room must be also be closed (e.g. due to host-switch errors, or because no other player is inside the room), false otherwise.
 		bool Room::removePlayer(Main::Network::Session* session, std::uint32_t extra)
 		{

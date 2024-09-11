@@ -35,6 +35,7 @@
     <ClCompile Include="src\ChatCommands\SimpleCommands\Shutdown.cpp" />
     <ClCompile Include="src\ChatCommands\SimpleRoomCommands\Muteroom.cpp" />
     <ClCompile Include="src\ChatCommands\SimpleRoomCommands\UnmuteRoom.cpp" />
+    <ClCompile Include="src\ChatCommands\ComplexCommands\OneArgumentCommands\ChangeHost.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\ChatCommands\AllCommandsIncludes.h" />
@@ -137,5 +138,6 @@
     <ClInclude Include="include\ChatCommands\SimpleCommands\Shutdown.h" />
     <ClInclude Include="include\ChatCommands\SimpleRoomCommands\Muteroom.h" />
     <ClInclude Include="include\ChatCommands\SimpleRoomCommands\UnmuteRoom.h" />
+    <ClInclude Include="include\ChatCommands\ComplexCommands\OneArgumentCommands\ChangeHost.h" />
   </ItemGroup>
 </Project>
