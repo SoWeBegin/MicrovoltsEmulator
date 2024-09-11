@@ -63,7 +63,7 @@ namespace Main
 		, m_acceptor{ io_context, tcp::endpoint(tcp::v4(), port) }
 		, m_serverId{ serverId }
 		, m_database{ "../ExternalLibraries/Database/GameDatabase.db" }
-		, m_scheduler{ 10, m_database }
+		, m_scheduler{ 120, m_database }
 	{
 		initializeAllCommands();
 

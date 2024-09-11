@@ -34,6 +34,7 @@ namespace Cast
 			// Debug
 			void printRoomState(const std::string& furtherInfo) const
 			{
+				/*
 				std::cout << "____________________________\n";
 				std::cout << furtherInfo << ":\n\n";
 				std::cout << "Room Information:\n";
@@ -47,6 +48,7 @@ namespace Cast
 						<< "\n    Is In Match: " << (currentPlayer.second->isInMatch() ? "Yes" : "No") << '\n';
 				}
 				std::cout << "____________________________\n";
+				*/
 			}
 
 

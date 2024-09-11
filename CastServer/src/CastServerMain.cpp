@@ -28,15 +28,24 @@ void printInitialInformation()
 
 int main()
 {
-	SetConsoleTitleW(L"Microvolts Cast Server");
+    SetConsoleTitleW(L"Microvolts Cast Server");
 
-	asio::io_context io_context;
-	Cast::CastServer srv(io_context, 13006, 4);
+    asio::io_context io_context;
 
-	printInitialInformation();
+    Cast::CastServer srv(io_context, 13006, 4);
 
-	srv.asyncAccept();
-	io_context.run();
+    printInitialInformation();
+    srv.asyncAccept();
 
+    auto workGuard = asio::make_work_guard(io_context);
+    const std::uint32_t numThreads = std::thread::hardware_concurrency();
+    std::vector<std::jthread> threads;
+    for (std::uint32_t i = 0; i < numThreads; ++i)
+    {
+        threads.emplace_back([&io_context] 
+            {
+            io_context.run(); 
+            });
+    }
 }
 

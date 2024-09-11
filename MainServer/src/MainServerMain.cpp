@@ -61,16 +61,25 @@ void initializeCdbFiles()
 
 int main()
 {
-	SetConsoleTitleW(L"Microvolts Main Server");
+    SetConsoleTitleW(L"Microvolts Main Server");
+    asio::io_context io_context;
+    auto work_guard = asio::make_work_guard(io_context);
+    Main::MainServer srv(io_context, 13005, 1);
 
-	asio::io_context io_context;
-	Main::MainServer srv(io_context, 13005, 1);
+    printInitialInformation();
+    initializeCdbFiles();
+    Utils::IPCManager::cleanupSharedMemory();
 
-	printInitialInformation();
-	initializeCdbFiles();
-	Utils::IPCManager::cleanupSharedMemory();
+    srv.asyncAccept();
+    std::vector<std::thread> threads;
+    const std::uint32_t num_threads = std::thread::hardware_concurrency();
+    for (std::uint32_t i = 0; i < num_threads; ++i)
+    {
+        threads.emplace_back([&io_context]()
+            {
+                io_context.run();  
+            });
+    }
 
-	srv.asyncAccept();
-	io_context.run();
+    io_context.run();
 }
-
