@@ -43,6 +43,7 @@ namespace Main
 
 			// Other
 			bool m_isMuted = false;
+			Main::Structures::RoomPlayerInfo m_originalHost{};
 
 		public:
 			Room() = default;
@@ -121,6 +122,8 @@ namespace Main
 			void broadcastOutsideMatchExceptSelf(Common::Network::Packet& packet, const Main::Structures::UniqueId& selfUniqueId, std::uint32_t extra);
 
 			bool changeHost(std::size_t newHostIdx);
+
+			void setCurrentHostAsOriginalHost();
 
 			bool isHost(const Main::Structures::UniqueId& uniqueId) const;
 

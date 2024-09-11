@@ -35,12 +35,15 @@ namespace Main
 
 			m_isTeamBalanceOn = false; // For now, team balance isn't supported as it causes issues e.g. team bug.
 			//m_isTeamBalanceOn = isModeTeamBased() ? true : false; // Team balance is by default on for team-based modes
+
+			m_originalHost = player;
 		}
 
 		void Room::setTick(std::uint32_t tick)
 		{
 			m_tick = tick;
 		}
+
 
 		std::uint32_t Room::getPlayerIdx(std::uint64_t playerId) const
 		{
@@ -648,6 +651,7 @@ namespace Main
 			m_hasMatchStarted = false;
 		}
 
+		// this is used by both (!) manual AND automatic host-changes
 		bool Room::changeHost(std::size_t newHostIdx)
 		{
 			Utils::Logger& logger = Utils::Logger::getInstance();
@@ -660,6 +664,11 @@ namespace Main
 			}
 			std::swap(m_players[0], m_players[newHostIdx]); 
 			return true;
+		}
+
+		void Room::setCurrentHostAsOriginalHost()
+		{
+			m_originalHost = m_players[0].first;
 		}
 
 		Main::Network::Session* Room::getPlayer(const Main::Structures::UniqueId& uniqueId)

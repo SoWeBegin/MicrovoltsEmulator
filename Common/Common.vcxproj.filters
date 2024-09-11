@@ -105,6 +105,9 @@
     <ClInclude Include="include\Utils\IPC_Structs.h">
       <Filter>File di intestazione</Filter>
     </ClInclude>
+    <ClInclude Include="include\Network\SessionIdManager.h">
+      <Filter>File di intestazione</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Cryptography\Crypt.cpp">

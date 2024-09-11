@@ -43,10 +43,10 @@ namespace Main
 			std::uint32_t deaths : 8;
 			std::uint32_t headshots : 8;
 			std::uint32_t assists : 8;
-			std::uint32_t u0 = 800;
-			std::uint32_t newTotalMP = 202923;
-			std::uint32_t newTotalEXP = 550; // Maybe has also something to do with the % shown
-			std::uint32_t u4 = 700;
+			std::uint32_t u0 = 0;
+			std::uint32_t newTotalMP = 0;
+			std::uint32_t newTotalEXP = 0; 
+			std::uint32_t u4 = 0;
 
 			ScoreboardResponse(const Main::Structures::ClientEndingMatchNotification& finalScoreGivenByClient)
 				: meleeKills{ finalScoreGivenByClient.meleeKills }, rifleKills{ finalScoreGivenByClient.rifleKills }, shotgunKills{ finalScoreGivenByClient.shotgunKills },
