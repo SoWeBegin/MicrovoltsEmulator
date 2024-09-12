@@ -92,7 +92,7 @@ namespace Main
 		Common::Network::Session::addCallback<Main::Network::Session>(67, Main::Handlers::handleMailboxGiftDisplay);
 
 		Common::Network::Session::addCallback<Main::Network::Session>(68, [&](const Common::Network::Packet& request, 
-			Main::Network::Session& session) { Main::Handlers::handleInitialPlayerInfos(request, session, m_sessionsManager, m_database); });
+			Main::Network::Session& session) { Main::Handlers::handleInitialPlayerInfos(request, session, m_sessionsManager, m_database, m_timeSinceLastRestart); });
 
 		Common::Network::Session::addCallback<Main::Network::Session>(71, [&](const Common::Network::Packet& request,
 			Main::Network::Session& session) { Main::Handlers::handlePing(request, session, m_roomsManager); });
@@ -133,7 +133,7 @@ namespace Main
 		Common::Network::Session::addCallback<Main::Network::Session>(106, Main::Handlers::handleMailboxDisplay);
 
 		Common::Network::Session::addCallback<Main::Network::Session>(107, [&](const Common::Network::Packet& request,
-			Main::Network::Session& session) { Main::Handlers::handleRoomStart(request, session, m_roomsManager); }); 
+			Main::Network::Session& session) { Main::Handlers::handleRoomStart(request, session, m_roomsManager, m_timeSinceLastRestart); }); 
 
 		Common::Network::Session::addCallback<Main::Network::Session>(124, [&](const Common::Network::Packet& request,
 			Main::Network::Session& session) { Main::Handlers::handleSimpleRoomSetting<Main::Enums::SETTING_ITEM>(request, session, m_roomsManager); }); // Item on/off
@@ -251,6 +251,9 @@ namespace Main
 		m_socket.emplace(m_io_context);
 		m_acceptor.async_accept(*m_socket, [&](asio::error_code error)
 			{
+				const auto durationSinceEpoch = std::chrono::system_clock::now().time_since_epoch();
+				m_timeSinceLastRestart = static_cast<std::uint64_t>(duration_cast<std::chrono::milliseconds>(durationSinceEpoch).count());
+
 				m_sessionsManager.setRoomsManager(&m_roomsManager);
 
 				auto client = std::make_shared<Main::Network::Session>(m_scheduler, std::move(*MainServer::m_socket),
