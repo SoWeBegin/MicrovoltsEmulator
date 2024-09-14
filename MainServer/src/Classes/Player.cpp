@@ -92,7 +92,7 @@ namespace Main
 
 		void Player::setAccountCoins(std::uint16_t coins)
 		{
-			m_accountInfo.coins = coins;
+			//m_accountInfo.coins = coins;
 		}
 
 		void Player::setAccountLatestCharacterSelected(std::uint16_t latestCharacterSelected)

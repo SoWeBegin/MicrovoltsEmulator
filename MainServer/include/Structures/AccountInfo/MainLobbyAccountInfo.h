@@ -59,12 +59,12 @@ namespace Main
 			std::uint32_t clanAssists{};
 
 			explicit LobbyAccountInfo(const Main::Structures::AccountInfo& accountInfo)
-				: dioramaInfo{ accountInfo.diorama }, totalKills{ accountInfo.totalKills }, totalDeaths{ accountInfo.deaths }, totalAssists{ accountInfo.assists }
+				: dioramaInfo{ accountInfo.diorama }, totalKills{ accountInfo.totalKills }, totalDeaths{ accountInfo.deaths } /*totalAssists { accountInfo.assists } */
 				, totalWins{ accountInfo.wins }, totalLosses{ accountInfo.losses }, totalDraws{ accountInfo.draws }, meleeKills{ accountInfo.meleeKills }
 				, rifleKills{ accountInfo.rifleKills }, shotgunKills{ accountInfo.shotgunKills }, sniperKills{ accountInfo.sniperKills }, mgKills{ accountInfo.microgunKills }
 				, bazookaKills{ accountInfo.bazookaKills }, grenadeKills{ accountInfo.grenadeKills }, headshots{ accountInfo.headshots }, killstreak{ accountInfo.killstreak }
 				, playtimeSeconds{ accountInfo.playtime }, zombieKills{ accountInfo.zombieKills }, level{ static_cast<std::uint32_t>(accountInfo.playerLevel) }
-				, latestCharacterSelected{ static_cast<std::uint32_t>(accountInfo.latestSelectedCharacter) }, infected{ accountInfo.infected }, vipExperience{ accountInfo.vipExperience + 1 }
+				, latestCharacterSelected{ static_cast<std::uint32_t>(accountInfo.latestSelectedCharacter) }, infected{ accountInfo.infected }/*, vipExperience{accountInfo.vipExperience + 1}*/
 				, clanLogoFrontId{ accountInfo.clanLogoFrontId }, clanLogoBackId{ accountInfo.clanLogoBackId }, clanContribution{ accountInfo.clanContribution }
 				, clanWins{ accountInfo.clanWins }, clanLosses{ accountInfo.clanLosses }, clanDraws{ accountInfo.clanDraws }, clanKills{ accountInfo.clanKills }
 				, clanDeaths{ accountInfo.clanDeaths }, clanAssists{ accountInfo.clanAssists }

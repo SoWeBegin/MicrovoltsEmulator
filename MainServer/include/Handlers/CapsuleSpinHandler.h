@@ -75,7 +75,7 @@ namespace Main
 		{
 			if (capsuleCurrencyType == CapsuleCurrencyType::COINS)
 			{
-				session.setAccountCoins(accountInfo.coins - toRemove);
+				//session.setAccountCoins(accountInfo.coins - toRemove);
 			}
 			else if (capsuleCurrencyType == CapsuleCurrencyType::ROCKTOTENS)
 			{
@@ -116,8 +116,8 @@ namespace Main
 		
 			const auto& accountInfo = session.getAccountInfo();
 
-			if (capsuleInfo->gi_type == CapsuleCurrencyType::COINS && accountInfo.coins < capsuleInfo->gi_price * request.getOption()
-				|| capsuleInfo->gi_type == CapsuleCurrencyType::ROCKTOTENS && accountInfo.rockTotens < capsuleInfo->gi_price * request.getOption()
+			if (capsuleInfo->gi_type == CapsuleCurrencyType::COINS && /*accountInfo.coins < capsuleInfo->gi_price * request.getOption()*/
+				capsuleInfo->gi_type == CapsuleCurrencyType::ROCKTOTENS && accountInfo.rockTotens < capsuleInfo->gi_price * request.getOption()
 				|| capsuleInfo->gi_type == CapsuleCurrencyType::MICROPOINTS && accountInfo.microPoints < capsuleInfo->gi_price * request.getOption())
 			{
 				response.setExtra(CapsuleSpinExtra::NOT_ENOUGH_CURRENCY);

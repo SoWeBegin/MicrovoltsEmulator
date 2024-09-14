@@ -25,6 +25,8 @@ namespace Main
 		// Checked
 		inline void handleRoomCreation(const Common::Network::Packet& request, Main::Network::Session& session, Main::Classes::RoomsManager& roomsManager)
 		{
+			if (request.getFullSize() == sizeof(Common::Protocol::TcpHeader) + sizeof(Common::Protocol::CommandHeader)) return;
+
 			const auto& selfAccountInfo = session.getAccountInfo();
 
 			Common::Network::Packet response;

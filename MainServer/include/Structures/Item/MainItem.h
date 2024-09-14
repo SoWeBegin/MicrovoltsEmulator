@@ -33,11 +33,14 @@ namespace Main
 			ItemSerialInfo serialInfo{};
 			std::uint16_t durability{}; 
 			std::uint16_t energy{};
+
+			/*
 			std::uint32_t isSealed{};
 			std::uint32_t sealLevel{}; // num seals needed for a given item
 			std::uint32_t experienceEnhancement{}; // No idea what this does - NEEDS TESTING WHEN CAST SERVER READY
 			std::uint32_t mpEnhancement{};  // No idea what this does - NEEDS TESTING WHEN CAST SERVER READY
 			std::uint32_t unknown{ 1 };
+			*/
 
 			Item() = default;
 
@@ -53,9 +56,8 @@ namespace Main
 
 			explicit Item(const Main::Structures::EquippedItem& equippedItem)
 				: id{ equippedItem.id >> 1}, serialInfo{ equippedItem.serialInfo }, expirationDate{ equippedItem.expirationDate }
-				, durability{ equippedItem.durability }, isSealed{ equippedItem.isSealed }, sealLevel{ equippedItem.sealLevel }
-				, experienceEnhancement{ equippedItem.experienceEnhancement }, mpEnhancement{ equippedItem.mpEnhancement }
-				, energy{ equippedItem.energy }
+				, durability{ equippedItem.durability }, energy{equippedItem.energy} /*isSealed { equippedItem.isSealed }, sealLevel{equippedItem.sealLevel}
+				, experienceEnhancement{ equippedItem.experienceEnhancement }, mpEnhancement{ equippedItem.mpEnhancement }*/
 			{
 			}
 

@@ -26,14 +26,13 @@ namespace Main
 			{
 				std::uint32_t rt{};
 				std::uint32_t mp{};
-				std::uint32_t unknown{};
 			};
 			session.setAccountMicroPoints(536870912);
 			session.setAccountRockTotens(536870912);
 			session.setAccountCoins(100);
 
 			const auto& accountInfo = session.getAccountInfo();
-			Message message{ accountInfo.rockTotens, accountInfo.microPoints, accountInfo.coins };
+			Message message{ accountInfo.rockTotens, accountInfo.microPoints };
 			response.setData(reinterpret_cast<std::uint8_t*>(&message), sizeof(message));
 			session.asyncWrite(response);
 

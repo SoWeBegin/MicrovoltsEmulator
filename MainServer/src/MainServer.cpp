@@ -68,48 +68,61 @@ namespace Main
 		initializeAllCommands();
 
 		
+		// OK
 		Common::Network::Session::addCallback<Main::Network::Session>(52, [&](const Common::Network::Packet& request,
 			Main::Network::Session& session) { Main::Handlers::handlePlayerBlock(request, session, m_sessionsManager); });
 
+		// OK
 		Common::Network::Session::addCallback<Main::Network::Session>(53, Main::Handlers::handlePlayerUnblock);
 
-		Common::Network::Session::addCallback<Main::Network::Session>(54, Main::Handlers::handleBlockedPlayerList);
+		// OK
+		Common::Network::Session::addCallback<Main::Network::Session>(54, Main::Handlers::handleBlockedPlayerList); // OK
 
+		// OK
 		Common::Network::Session::addCallback<Main::Network::Session>(57, [&](const Common::Network::Packet& request,
 			Main::Network::Session& session) { Main::Handlers::handleLobbyClanList(request, session, m_sessionsManager); });
 
+		// OK
 		Common::Network::Session::addCallback<Main::Network::Session>(61, [&](const Common::Network::Packet& request,
 			Main::Network::Session& session) { Main::Handlers::handleGeneralFriendRequests(request, session, m_sessionsManager, m_database); });
 
+		// OK
 		Common::Network::Session::addCallback<Main::Network::Session>(62, [&](const Common::Network::Packet& request,
 			Main::Network::Session& session) { Main::Handlers::handleFriendDeletion(request, session, m_sessionsManager); });
 
+		// OK
 		Common::Network::Session::addCallback<Main::Network::Session>(63, [&](const Common::Network::Packet& request,
 			Main::Network::Session& session) { Main::Handlers::handleFriendList(request, session, m_sessionsManager, m_database); });
 
-		Common::Network::Session::addCallback<Main::Network::Session>(66, Main::Handlers::handleMailboxGiftSend);
+		//Common::Network::Session::addCallback<Main::Network::Session>(66, Main::Handlers::handleMailboxGiftSend);
 
-		Common::Network::Session::addCallback<Main::Network::Session>(67, Main::Handlers::handleMailboxGiftDisplay);
+		//Common::Network::Session::addCallback<Main::Network::Session>(67, Main::Handlers::handleMailboxGiftDisplay);
 
+		// OK
 		Common::Network::Session::addCallback<Main::Network::Session>(68, [&](const Common::Network::Packet& request, 
 			Main::Network::Session& session) { Main::Handlers::handleInitialPlayerInfos(request, session, m_sessionsManager, m_database, m_timeSinceLastRestart); });
 
+		// OK
 		Common::Network::Session::addCallback<Main::Network::Session>(71, [&](const Common::Network::Packet& request,
 			Main::Network::Session& session) { Main::Handlers::handlePing(request, session, m_roomsManager); });
 
+		// OK
 		Common::Network::Session::addCallback<Main::Network::Session>(74, [&](const Common::Network::Packet& request,
 			Main::Network::Session& session) { Main::Handlers::handleCharacterSelection(request, session, m_roomsManager); });
 
+		// OK
 		Common::Network::Session::addCallback<Main::Network::Session>(84, [&](const Common::Network::Packet& request,
 			Main::Network::Session& session) { Main::Handlers::handleLobbyUserList(request, session, m_sessionsManager); });
 
+		// OK
 		Common::Network::Session::addCallback<Main::Network::Session>(85, [&](const Common::Network::Packet& request,
 			Main::Network::Session& session) { Main::Handlers::handleLobbyAccountInfo(request, session, m_sessionsManager); });
 
-		Common::Network::Session::addCallback<Main::Network::Session>(86, [&](const Common::Network::Packet& request,
-			Main::Network::Session& session) { Main::Handlers::handleBattery(request, session, m_roomsManager); });
+		//Common::Network::Session::addCallback<Main::Network::Session>(86, [&](const Common::Network::Packet& request,
+			//Main::Network::Session& session) { Main::Handlers::handleBattery(request, session, m_roomsManager); });
 
-		Common::Network::Session::addCallback<Main::Network::Session>(87, Main::Handlers::handleBoughtItem);
+		// CHECK - SHOULD BE 86, not 87
+		Common::Network::Session::addCallback<Main::Network::Session>(86, Main::Handlers::handleBoughtItem);
 
 		Common::Network::Session::addCallback<Main::Network::Session>(89, Main::Handlers::handleItemDelete);
 
@@ -122,13 +135,13 @@ namespace Main
 
 		Common::Network::Session::addCallback<Main::Network::Session>(101, Main::Handlers::handleItemUpgrade);
 
-		Common::Network::Session::addCallback<Main::Network::Session>(103, Main::Handlers::handleMailboxDelete);
+		//Common::Network::Session::addCallback<Main::Network::Session>(103, Main::Handlers::handleMailboxDelete);
 
-		Common::Network::Session::addCallback<Main::Network::Session>(104, [&](const Common::Network::Packet& request,
-			Main::Network::Session& session) { Main::Handlers::handleMailboxCommunication(request, session, m_sessionsManager, m_database); });
+		//Common::Network::Session::addCallback<Main::Network::Session>(104, [&](const Common::Network::Packet& request,
+			//Main::Network::Session& session) { Main::Handlers::handleMailboxCommunication(request, session, m_sessionsManager, m_database); });
 
-		Common::Network::Session::addCallback<Main::Network::Session>(105, [&](const Common::Network::Packet& request,
-			Main::Network::Session& session) { Main::Handlers::handleReadMailbox(request, session, m_database); });
+		//Common::Network::Session::addCallback<Main::Network::Session>(105, [&](const Common::Network::Packet& request,
+			//Main::Network::Session& session) { Main::Handlers::handleReadMailbox(request, session, m_database); });
 
 		Common::Network::Session::addCallback<Main::Network::Session>(106, Main::Handlers::handleMailboxDisplay);
 
@@ -165,31 +178,34 @@ namespace Main
 		Common::Network::Session::addCallback<Main::Network::Session>(133, [&](const Common::Network::Packet& request,
 			Main::Network::Session& session) { Main::Handlers::handleSimpleRoomSetting<Main::Enums::SETTING_OBSERVER>(request, session, m_roomsManager); }); // ObserverMode,
 
-		Common::Network::Session::addCallback<Main::Network::Session>(134, [&](const Common::Network::Packet& request,
+		/*Common::Network::Session::addCallback<Main::Network::Session>(134, [&](const Common::Network::Packet& request,
 			Main::Network::Session& session) { Main::Handlers::handleSimpleRoomSetting<Main::Enums::SETTING_SPECIFIC>(request, session, m_roomsManager); }); // total kills/rounds...
-
+*/
 		Common::Network::Session::addCallback<Main::Network::Session>(135, [&](const Common::Network::Packet& request,
 			Main::Network::Session& session) { Main::Handlers::handleSimpleRoomSetting<Main::Enums::SETTING_TIME>(request, session, m_roomsManager); });  // time
 			
-		Common::Network::Session::addCallback<Main::Network::Session>(138, [&](const Common::Network::Packet& request,
+		// OK
+		Common::Network::Session::addCallback<Main::Network::Session>(134, [&](const Common::Network::Packet& request,
 			Main::Network::Session& session) { Main::Handlers::handleRoomCreation(request, session, m_roomsManager); });
 
-		Common::Network::Session::addCallback<Main::Network::Session>(140, [&](const Common::Network::Packet& request,
+		// OK, NOT FULLY WORKING (CHECK THE HANDLER)
+		Common::Network::Session::addCallback<Main::Network::Session>(136, [&](const Common::Network::Packet& request,
 			Main::Network::Session& session) { Main::Handlers::handleRoomJoin(request, session, m_roomsManager); });
 
-		Common::Network::Session::addCallback<Main::Network::Session>(141, [&](const Common::Network::Packet& request,
+		Common::Network::Session::addCallback<Main::Network::Session>(137, [&](const Common::Network::Packet& request,
 			Main::Network::Session& session) { Main::Handlers::handleRoomLeave(request, session, m_sessionsManager, m_roomsManager); });
 
-		Common::Network::Session::addCallback<Main::Network::Session>(142, [&](const Common::Network::Packet& request,
+		Common::Network::Session::addCallback<Main::Network::Session>(138, [&](const Common::Network::Packet& request,
 			Main::Network::Session& session) { Main::Handlers::handleRoomsList(request, session, m_roomsManager); });
 
-		Common::Network::Session::addCallback<Main::Network::Session>(158, [&](const Common::Network::Packet& request,
-			Main::Network::Session& session) { Main::Handlers::handlePlayerState(request, session, m_roomsManager); });
+		//Common::Network::Session::addCallback<Main::Network::Session>(158, [&](const Common::Network::Packet& request,
+			//Main::Network::Session& session) { Main::Handlers::handlePlayerState(request, session, m_roomsManager); });
 
 		Common::Network::Session::addCallback<Main::Network::Session>(159, [&](const Common::Network::Packet& request,
 			Main::Network::Session& session) { Main::Handlers::handleRoomMiscellaneous(request, session, m_roomsManager); }); // Team switch
 
-		Common::Network::Session::addCallback<Main::Network::Session>(161, [&](const Common::Network::Packet& request,
+		// OK
+		Common::Network::Session::addCallback<Main::Network::Session>(158, [&](const Common::Network::Packet& request,
 			Main::Network::Session& session) { Main::Handlers::handleLobbyChatMessage(request, session, m_sessionsManager, m_chatCommands, m_roomsManager, m_database); });
 
 		Common::Network::Session::addCallback<Main::Network::Session>(162, [&](const Common::Network::Packet& request,

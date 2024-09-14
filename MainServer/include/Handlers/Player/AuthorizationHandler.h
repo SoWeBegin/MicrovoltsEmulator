@@ -40,7 +40,7 @@ namespace Main
 			{
 				response.setExtra(AuthorizationExtra::AUTHORIZATION_FAILED);
 			}
-			session.asyncWrite(response);
+			//session.asyncWrite(response);
 
 			return accountInfo;
 		}

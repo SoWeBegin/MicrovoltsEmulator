@@ -21,11 +21,13 @@ namespace Main
 			ItemSerialInfo serialInfo{};
 			std::uint16_t durability{}; 
 			std::uint16_t energy{};
+
+			/*
 			std::uint32_t isSealed{};
 			std::uint32_t sealLevel{};
 			std::uint32_t experienceEnhancement{};
 			std::uint32_t mpEnhancement{};
-
+			*/
 			EquippedItem() = default;
 
 			explicit EquippedItem(const Item& item);

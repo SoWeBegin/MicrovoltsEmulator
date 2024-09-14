@@ -103,8 +103,8 @@ namespace Common
 				const constexpr int headerSize = sizeof(Common::Protocol::TcpHeader);
 				m_reader.insert(m_reader.end(), m_buffer.begin(), m_buffer.begin() + bytes_transferred);
 
-				//if (!m_crypt.isUsed) Common::Parser::parse_cast(m_reader.data(), m_reader.size(), 13000, "client", "server");
-				//if (m_crypt.isUsed) Common::Parser::parse(m_reader.data(), m_reader.size(), 13000, "client", "server", m_crypt.UserKey);
+				if (!m_crypt.isUsed) Common::Parser::parse_cast(m_reader.data(), m_reader.size(), 13000, "client", "server");
+				if (m_crypt.isUsed) Common::Parser::parse(m_reader.data(), m_reader.size(), 13000, "client", "server", m_crypt.UserKey);
 
 				Common::Protocol::TcpHeader header;
 				Common::Cryptography::Crypt cryptography(0);

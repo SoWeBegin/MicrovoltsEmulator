@@ -82,43 +82,31 @@ namespace Main
 				if (!session.hasEnoughInventorySpace(request.getOption())) return;
 
 				std::uint64_t latestItemNumber = session.getLatestItemNumber();
-				std::vector<Main::Structures::BoughtItem> boughtItems;
-				std::unordered_map<Main::Enums::ItemCurrencyType, std::uint32_t> totalCurrencySpentByType;
-				for (std::uint32_t idx = 0; idx < request.getOption(); ++idx)
-				{
-					std::uint32_t itemId;
-					std::memcpy(&itemId, request.getData() + idx * 4, sizeof(std::uint32_t));
-
-					Main::Structures::BoughtItem boughtItem(itemId);
-					const Main::ConstantDatabase::CdbUtil cdb(boughtItem.itemId);
-					const auto amountByCurrencyType = cdb.getItemPrice();
-					totalCurrencySpentByType[amountByCurrencyType->first] += amountByCurrencyType->second;
-					boughtItem.serialInfo.itemNumber = ++latestItemNumber;
-					boughtItems.push_back(boughtItem);
-				}
-
+				std::pair<Main::Enums::ItemCurrencyType, std::uint32_t> totalCurrencySpentByType;
+				
+				std::uint32_t itemId;
+				std::memcpy(&itemId, request.getData(), sizeof(std::uint32_t));
+				Main::Structures::BoughtItem boughtItem(itemId);
+				const Main::ConstantDatabase::CdbUtil cdb(boughtItem.itemId);
+				const auto amountByCurrencyType = cdb.getItemPrice();
+				totalCurrencySpentByType = { amountByCurrencyType->first, amountByCurrencyType->second }; 
+				boughtItem.serialInfo.itemNumber = ++latestItemNumber;
+				
 				// Check if the player has enough money for all items
 				const auto& accountInfo = session.getAccountInfo();
 				const std::size_t sessionId = session.getId();
-				for (const auto& [currencyType, totalSpent] : totalCurrencySpentByType)
+				if (Main::Enums::ITEM_MP == amountByCurrencyType->first && amountByCurrencyType->second > accountInfo.microPoints 
+					|| Main::Enums::ITEM_RT == amountByCurrencyType->first && amountByCurrencyType->second > accountInfo.rockTotens)
 				{
-					if (Main::Enums::ITEM_MP == currencyType && totalSpent > accountInfo.microPoints || Main::Enums::ITEM_RT == currencyType && totalSpent > accountInfo.rockTotens)
-					{
-						return;
-					}
+					return;
 				}
 
-				response.setData(reinterpret_cast<std::uint8_t*>(boughtItems.data()), boughtItems.size() * sizeof(Main::Structures::BoughtItem));
+				response.setOption(1);
+				response.setData(reinterpret_cast<std::uint8_t*>(&boughtItem), sizeof(Main::Structures::BoughtItem));
 				session.asyncWrite(response);
-
 				session.setLatestItemNumber(latestItemNumber);
-
-				// TODO: add item and remove currency must be atomic!!!
-				session.addItems(boughtItems);
-				for (const auto& [currencyType, totalSpent] : totalCurrencySpentByType)
-				{
-					removeAmountByCurrencyType(currencyType, totalSpent, session, accountInfo);
-				}
+				session.addItem(boughtItem);
+				removeAmountByCurrencyType(amountByCurrencyType->first, amountByCurrencyType->second, session, accountInfo);
 			}
 		}
 	}

@@ -473,10 +473,9 @@ namespace Main
 			{
 				std::uint32_t rt{};
 				std::uint32_t mp{};
-				std::uint32_t unknown{};
 			};
 			const auto& accountInfo = m_player.getAccountInfo();
-			Message message{ accountInfo.rockTotens, accountInfo.microPoints, accountInfo.coins };
+			Message message{ accountInfo.rockTotens, accountInfo.microPoints };
 			response.setData(reinterpret_cast<std::uint8_t*>(&message), sizeof(message));
 			asyncWrite(response);
 		}
@@ -712,7 +711,7 @@ namespace Main
 			previousAccountInfo.totalKills += stats.totalKills;
 			previousAccountInfo.deaths += stats.deaths;
 			previousAccountInfo.headshots += stats.headshots;
-			previousAccountInfo.assists += stats.assists;
+			//previousAccountInfo.assists += stats.assists;
 			previousAccountInfo.experience = stats.newTotalEXP;
 			previousAccountInfo.microPoints = stats.newTotalMP;
 			if (matchEnd == Main::Enums::MATCH_WON) previousAccountInfo.wins += 1;

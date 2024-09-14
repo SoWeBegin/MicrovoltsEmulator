@@ -12,8 +12,8 @@ namespace Main
 	{
 		EquippedItem::EquippedItem(const Main::Structures::Item& item)
 			: id{ item.id << 1 }, expirationDate{ item.expirationDate }, serialInfo{ item.serialInfo }, durability{ item.durability }
-			, energy{ item.energy }, isSealed{ item.isSealed }, sealLevel{ item.sealLevel }, experienceEnhancement{ item.experienceEnhancement }
-			, mpEnhancement{ item.mpEnhancement }
+			, energy{ item.energy } /*isSealed { item.isSealed }, sealLevel{item.sealLevel}, experienceEnhancement{item.experienceEnhancement}
+			, mpEnhancement{ item.mpEnhancement }*/
 		{
 			type = Main::ConstantDatabase::CdbUtil::getItemType(item.id);
 			if (type >= 17)

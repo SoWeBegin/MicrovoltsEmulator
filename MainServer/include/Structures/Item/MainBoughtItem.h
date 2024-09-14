@@ -24,7 +24,7 @@ namespace Main
 		public:
 			explicit BoughtItem(std::uint32_t itemId)
 			{
-				this->itemId = itemId - 8388608; // magic value, no idea about the rationale...
+				this->itemId = itemId;// - 8388608; // magic value, no idea about the rationale...
 				serialInfo.itemCreationDate = static_cast<__time32_t>(std::time(0));
 				serialInfo.itemOrigin = Main::Enums::ItemFrom::SHOP;
 				serialInfo.m_serverId = 0; // hardcoded for now				

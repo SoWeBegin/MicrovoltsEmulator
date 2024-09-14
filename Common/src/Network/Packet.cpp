@@ -167,7 +167,7 @@ namespace Common
                 setData(nullptr, 0);
             }
 
-            /*
+            
             //do printing here so I can filter based on orders
             if (m_command.getOrder() == 71 || m_command.getOrder() == 72)// || m_command.getOrder() == 281)
                 return;
@@ -193,7 +193,7 @@ namespace Common
             {
                 printf("%02X ", static_cast<std::uint8_t>(decryptedBytes[i]));
             }
-            */
+            
         }
   
         std::vector<std::uint8_t> Packet::generateOutgoingPacket(std::optional<std::uint32_t> crypt_key) const

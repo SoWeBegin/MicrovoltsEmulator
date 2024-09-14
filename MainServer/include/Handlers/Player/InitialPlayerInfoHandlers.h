@@ -26,7 +26,7 @@ namespace Main
 
 			handleInventoryInformation(request, session, sessionsManager, database);
 
-			handleAccountInformation(request, session, sessionsManager, database, accountInfo, timeSinceLastServerRestart, 59);
+			//handleAccountInformation(request, session, sessionsManager, database, accountInfo, timeSinceLastServerRestart, 59);
 
 			// Initial game logo
 			Common::Network::Packet response;
