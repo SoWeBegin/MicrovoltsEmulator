@@ -87,11 +87,11 @@ namespace Main
 					room.setCurrentHostAsOriginalHost();
 
 					response.setOrder(258);
-					response.setExtra(1 /* 5 == infinite loading for host ??*/); 
+					response.setExtra(1 /* there's also 5, unknown */); 
 					response.setOption(0);
 					struct Response
 					{
-						std::uint64_t tick = 0; 
+						std::uint64_t tick{};
 					};
 					Response respMessage;
 					respMessage.tick = getUtcTimeMs() - timeSinceLastServerRestart;
