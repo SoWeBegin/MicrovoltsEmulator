@@ -8,9 +8,7 @@ set(CMAKE_CXX_STANDARD 20)
 
 include_directories(PUBLIC ${CMAKE_CURRENT_LIST_DIR}/include)
 include_directories(PUBLIC ${CMAKE_CURRENT_LIST_DIR})
-include_directories(PUBLIC ${CMAKE_SOURCE_DIR}/thirdparty/DirectXMath/Inc)
-
-#include_directories(PUBLIC ${CMAKE_SOURCE_DIR}/thirdparty/asio-1.30.2/include)
+include_directories(PUBLIC ${CMAKE_SOURCE_DIR}/ExternalLibraries/DirectXMath/Inc)
 
 file(GLOB_RECURSE CAST_SOURCES  ${CMAKE_CURRENT_LIST_DIR}/src/*.cpp)
 add_executable(Cast ${CAST_SOURCES})

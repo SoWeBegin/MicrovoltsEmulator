@@ -30,6 +30,9 @@ The instructions to build, compile and finally start the emulator will not be sh
 We don't want people to host their own servers without having the necessary knowledge on how to solve possible new issues.
 The goal here is to make the game better. Not to host multiple identical servers for no reason.
 
+To build on Linux, or on Windows with MinGW or Clang you have to install Cmake and boost first. The Cmake function `find_package`
+should work on linux most of the time, although on windows it might be better to point manually to the boost installation.
+
 ## Dependencies
 Most dependencies are already provided inside the `vcpkg.json` file. Instructions: </br>
 - Open your terminal and `cd <YourProjectPath>/ExternalLibraries`
