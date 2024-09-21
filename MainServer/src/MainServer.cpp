@@ -239,31 +239,6 @@ namespace Main
 		Common::Network::Session::addCallback<Main::Network::Session>(157, [&](const Common::Network::Packet& request,
 			Main::Network::Session& session) { Main::Handlers::handleRoomChatMessage(request, session, m_sessionsManager, m_chatCommands, m_roomsManager, m_database); });
 
-		/* The following were NON-existing on older versions (added after Surge update)
-		Common::Network::Session::addCallback<Main::Network::Session>(191, [&](const Common::Network::Packet& request,
-			Main::Network::Session& session) { Main::Handlers::handleTradeAck(request, session, m_sessionsManager); });
-
-		Common::Network::Session::addCallback<Main::Network::Session>(192, [&](const Common::Network::Packet& request,
-			Main::Network::Session& session) { Main::Handlers::handleTradeInitialization(request, session, m_sessionsManager); });
-
-		Common::Network::Session::addCallback<Main::Network::Session>(194, [&](const Common::Network::Packet& request,
-			Main::Network::Session& session) { Main::Handlers::handleAddTradeItem(request, session, m_sessionsManager); });
-
-		Common::Network::Session::addCallback<Main::Network::Session>(195, [&](const Common::Network::Packet& request,
-			Main::Network::Session& session) { Main::Handlers::handleTradeItemRemoval(request, session, m_sessionsManager); });
-
-		Common::Network::Session::addCallback<Main::Network::Session>(196, [&](const Common::Network::Packet& request,
-			Main::Network::Session& session) { Main::Handlers::handleTradeLock(request, session, m_sessionsManager); });
-
-		Common::Network::Session::addCallback<Main::Network::Session>(197, [&](const Common::Network::Packet& request,
-			Main::Network::Session& session) { Main::Handlers::handleTradeFinalization(request, session, m_sessionsManager); });
-
-		Common::Network::Session::addCallback<Main::Network::Session>(198, [&](const Common::Network::Packet& request,
-			Main::Network::Session& session) { Main::Handlers::handleTradeCancellation(request, session, m_sessionsManager); });
-
-		Common::Network::Session::addCallback<Main::Network::Session>(200, Main::Handlers::handleGambleItem);
-		*/
-
 		/*
 		Common::Network::Session::addCallback<Main::Network::Session>(202, [&](const Common::Network::Packet& request,
 			Main::Network::Session& session) { Main::Handlers::handleModeEvents(request, session, m_database); });

@@ -75,6 +75,7 @@ namespace Main
 					};
 					Response respMessage;
 					respMessage.tick = getUtcTimeMs() - timeSinceLastServerRestart;
+
 					response.setData(reinterpret_cast<std::uint8_t*>(&respMessage), sizeof(respMessage));
 					room.setTick(respMessage.tick);
 					room.broadcastToRoom(response);

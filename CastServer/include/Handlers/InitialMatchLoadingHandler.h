@@ -24,7 +24,7 @@ namespace Cast
             Main::Structures::UniqueId uniqueId{ session.getId(), 4, 0};
             response.setOption(request.getOption());
             response.setData(reinterpret_cast<std::uint8_t*>(&uniqueId), sizeof(uniqueId));
-            roomsManager.broadcastToRoomExceptSelf(session.getId(), response);
+            roomsManager.broadcastToRoom(session.getId(), response);
       
             session.setIsInMatch(true);
         }

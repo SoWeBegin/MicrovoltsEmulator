@@ -75,6 +75,7 @@ namespace Main
 
 				response.setExtra(RoomCreationExtra::CREATION_SUCCESS);
 				responseMessage.roomNumber = room.getRoomNumber() - 1;
+				responseMessage.unknown = 2;
 				response.setData(reinterpret_cast<std::uint8_t*>(&responseMessage), sizeof(responseMessage));
 				session.asyncWrite(response);
 				room.setStateFor(session.getAccountInfo().uniqueId, Common::Enums::STATE_WAITING);
@@ -82,6 +83,7 @@ namespace Main
 				session.setIsInLobby(false);
 
 
+				/*
 				// Disable Team balance for now: it causes issues such as team bugs.
 				if (room.isModeTeamBased())
 				{
@@ -93,7 +95,7 @@ namespace Main
 					response.setData(reinterpret_cast<std::uint8_t*>(&settings), sizeof(settings));
 					session.asyncWrite(response);
 				}
-
+				*/
 				logger.log("The player " + session.getPlayerInfoAsString() + " has created a new room. " + room.getRoomInfoAsString(),
 					Utils::LogType::Normal, "Main::handleRoomCreation");
 			}

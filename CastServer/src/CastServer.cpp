@@ -116,9 +116,11 @@ namespace Cast
 		Common::Network::Session::addCallback<Cast::Network::Session>(256, [&](const Common::Network::Packet& request,
 			Cast::Network::Session& session) { Cast::Handlers::handleMatchLeave(request, session, m_roomsManager); });
 
+		/*
 		Common::Network::Session::addCallback<Cast::Network::Session>(284, [&](const Common::Network::Packet& request,
 			Cast::Network::Session& session) { Cast::Handlers::handleAccountNames(request, session, m_roomsManager); });
-		
+		*/
+
 		Common::Network::Session::addCallback<Cast::Network::Session>(309, [&](const Common::Network::Packet& request,
 			Cast::Network::Session& session) { Cast::Handlers::handlePlayerSyncWithRoom(request, session, m_roomsManager); }); 
 
@@ -204,6 +206,7 @@ namespace Cast
 		m_socket.emplace(m_io_context);
 		m_acceptor.async_accept(*m_socket, [&](asio::error_code error)
 			{
+				std::cout << "CAST: ASYNC ACCEPTED\n";
 				m_sessionsManager.setRoomsManager(&m_roomsManager);
 
 				auto client = std::make_shared<Cast::Network::Session>(std::move(*CastServer::m_socket),
