@@ -22,7 +22,7 @@ namespace Main
 			{
 				struct Req
 				{
-					std::uint32_t unused : 10 = 0; // recheck whether this really is unused, apparently it IS used
+					std::uint32_t unused : 10 = 0; // recheck whether this really is unused
 					std::uint32_t ping : 10 = 0;
 					std::uint32_t rest : 12 = 0;
 				} clientReq;

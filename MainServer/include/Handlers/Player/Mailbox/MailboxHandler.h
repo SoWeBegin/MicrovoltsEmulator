@@ -56,7 +56,6 @@ namespace Main
 					else
 					{
 						mailbox.accountId = accountInfo.accountID;
-						mailbox.uniqueId = {};
 						std::memcpy(mailbox.nickname, nickname, nicknameSize);
 						session.addMailboxSent(mailbox);
 					}
@@ -91,7 +90,6 @@ namespace Main
 						targetSession->addMailboxReceived(mailbox);
 
 						mailbox.accountId = accountInfo.accountID;
-						mailbox.uniqueId = targetAccountInfo.uniqueId;
 						std::memcpy(mailbox.nickname, targetSession->getAccountInfo().nickname, nicknameSize);
 						session.addMailboxSent(mailbox);
 					}

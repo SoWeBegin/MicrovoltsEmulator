@@ -20,10 +20,6 @@ namespace Main
 			{
 				foundSession->deleteFriend(session.getAccountInfo().accountID, false);
 			}
-			else
-			{
-				// todo
-			}
 		}
 	}
 }

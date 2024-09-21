@@ -5,14 +5,7 @@
 #include "../Network/CastSession.h"
 #include "../Classes/RoomsManager.h"
 
-#include <boost/interprocess/interprocess_fwd.hpp>
-#include <boost/interprocess/mapped_region.hpp>
-#include <boost/interprocess/shared_memory_object.hpp>
-#include <boost/interprocess/sync/interprocess_upgradable_mutex.hpp>
-
-#include <iostream>
 #include <Utils/Logger.h>
-#include "Utils/IPC_Structs.h"
 
 namespace Cast
 {

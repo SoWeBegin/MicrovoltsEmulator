@@ -37,7 +37,7 @@ namespace Main
 			roomCreator.character = selfAccountInfo.latestSelectedCharacter;
 			roomCreator.level = selfAccountInfo.playerLevel;
 			std::memcpy(roomCreator.playerName, selfAccountInfo.nickname, 16);
-			roomCreator.state = Common::Enums::STATE_NORMAL;
+			roomCreator.state = Common::Enums::STATE_WAITING;
 			roomCreator.uniqueId = selfAccountInfo.uniqueId;
 			roomCreator.ping = session.getPing();
 			roomCreator.team = Common::Enums::TEAM_BLUE;
@@ -85,7 +85,7 @@ namespace Main
 				// Disable Team balance for now: it causes issues such as team bugs.
 				if (room.isModeTeamBased())
 				{
-					response.setOrder(125);
+					response.setOrder(121);
 					response.setMission(0);
 					response.setExtra(0);
 					response.setOption(room.getRoomSettings().mode);

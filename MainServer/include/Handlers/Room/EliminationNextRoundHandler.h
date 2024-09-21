@@ -5,7 +5,6 @@
 #include "../../../include/Structures/AccountInfo/MainAccountInfo.h"
 #include "Network/Packet.h"
 #include "../../Classes/RoomsManager.h"
-#include "Utils/IPC_Structs.h"
 #include "../../Structures/EndScoreboard.h"
 
 namespace Main
@@ -56,6 +55,8 @@ namespace Main
 			Common::Network::Packet response;
 			for (std::size_t i = 0; i < request.getOption(); ++i)
 			{
+				// IMPORTANT: EXP and MP will be given even if the match was played for 1 second!
+				// TODO: Add matchStartTime to Room class, and here check whether at least 60 seconds passed. Otherwise don't give anything to the players! (FARM prevention)
 				Main::Structures::ClientEndingMatchNotification finalScoreGivenByClient;
 				std::memcpy(&finalScoreGivenByClient, request.getData() 
 					+ sizeof(finalScoreGivenByClient) * i + sizeof(ClientEndingMatchNotificationHeader), sizeof(finalScoreGivenByClient));

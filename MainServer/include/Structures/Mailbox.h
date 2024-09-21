@@ -13,9 +13,9 @@ namespace Main
         {
             std::uint32_t accountId{};
             std::uint32_t timestamp{};
-            UniqueId uniqueId{}; // unsure
-            char nickname[16]{};
-            char message[256]{};
+            std::uint32_t hasBeenRead{};
+            char nickname[16]{"test2"};
+            char message[256]{"this is the message ahha aisdansrnajsd"};
         };
 #pragma pack(pop)
 

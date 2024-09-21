@@ -1,12 +1,7 @@
 #include "../../include/Classes/Room.h"
 #include "../../include/Classes/RoomsManager.h"
 
-#include <boost/interprocess/interprocess_fwd.hpp>
-#include <boost/interprocess/mapped_region.hpp>
-#include <boost/interprocess/shared_memory_object.hpp>
-#include <boost/interprocess/sync/interprocess_upgradable_mutex.hpp>
 #include <Utils/Logger.h>
-#include <Utils/IPC_Structs.h>
 
 namespace Cast
 {
@@ -71,27 +66,33 @@ namespace Cast
 			}
 		}
 
-/*
-		void RoomsManager::setMapFor(std::uint64_t hostId, std::uint32_t map)
+
+		void RoomsManager::setMapFor(std::uint64_t playerId, std::uint32_t map)
 		{
-			if (!m_roomsByHostSessionId.contains(hostId)) return;
-			auto& room = m_roomsByHostSessionId[hostId];
-			room.setMap(map);
+			if (!m_playerSessionIdToRoom.contains(playerId)) return;
+			auto& room = m_playerSessionIdToRoom[playerId];
+			room->setMap(map);
 		}
 
+		/*
 		void RoomsManager::setModeFor(std::uint64_t hostId, std::uint32_t mode)
 		{
 			if (!m_roomsByHostSessionId.contains(hostId)) return;
 			auto& room = m_roomsByHostSessionId[hostId];
 			room.setMode(mode);
 			std::cout << "MODE HAS BEEN SET TO: " << mode << "\n";
+		}*/
+
+		bool RoomsManager::exists(std::uint64_t playerId)
+		{
+			return m_playerSessionIdToRoom.contains(playerId);
 		}
 		
-		std::uint32_t RoomsManager::getMapOf(std::uint64_t hostId)
+		std::uint32_t RoomsManager::getMapOf(std::uint64_t playerId)
 		{
-			auto& room = m_roomsByHostSessionId[hostId];
-			return room.getMap();
-		}*/
+			auto& room = m_playerSessionIdToRoom[playerId];
+			return room->getMap();
+		}
 
 		void RoomsManager::removePlayerFromRoom(std::uint64_t sessionIdToRemoveFromRoom)
 		{

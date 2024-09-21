@@ -2,6 +2,7 @@
 #define MAIN_SESSIONS_MANAGER_H
 
 #include <unordered_map>
+#include <vector>
 #include <functional>
 #include "MainSession.h"
 #include "../Classes/RoomsManager.h"
@@ -14,8 +15,7 @@ namespace Main
 		{
 		private:
 			std::unordered_map<std::uint64_t, Main::Network::Session*> m_sessionsBySessionId{};
-			std::unordered_map<std::uint32_t, Main::Network::Session*> m_sessionsByAccountId{};
-
+			std::vector<Main::Network::Session*> m_sessionsVector{};
 			Main::Classes::RoomsManager* roomsManager;
 
 		public:
@@ -42,6 +42,8 @@ namespace Main
 			Main::Network::Session* getSessionByAccountId(std::uint32_t aid);
 
 			Main::Network::Session* getSessionBySessionId(std::size_t sessionId);
+
+			std::uint32_t getTotalSessions() const;
 
 			bool sendTo(std::size_t sessionId, const Common::Network::Packet& packet);
 

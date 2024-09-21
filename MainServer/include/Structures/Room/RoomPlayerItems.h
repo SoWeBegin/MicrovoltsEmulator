@@ -16,8 +16,6 @@ namespace Main
 		{
 			std::array<std::uint32_t, 10> equippedItems{};
 			std::array<std::uint32_t, 7> equippedWeapons{};
-			std::array<std::uint32_t, 10> equippedItems_2{}; // unsure about this
-			std::array<std::uint32_t, 7> equippedWeapons_2{};// unsure about this	
 			Main::Structures::UniqueId uniqueId{};
 		};
 #pragma pack(pop)

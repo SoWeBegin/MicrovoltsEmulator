@@ -13,9 +13,11 @@
 #include "ConstantDatabase/Structures/CdbUpgradeInfo.h"
 #include "ConstantDatabase/Structures/CdbCapsuleInfo.h"
 #include "ConstantDatabase/Structures/CdbCapsulePackageInfo.h"
+#include "ConstantDatabase/Structures/CdbCapsuleDisplay.h"
 #include "ConstantDatabase/Structures/CdbMapInfo.h"
 #include "Structures/Capsule/CapsuleList.h"
 #include <ConstantDatabase/Structures/CdbRewardInfo.h>
+#include <ConstantDatabase/Structures/CdbCapsuleDisplay.h>
 #include <ConstantDatabase/Structures/CdbGradeInfo.h>
 
 namespace Main
@@ -33,6 +35,7 @@ namespace Main
 			using cdbUpgrades = Common::ConstantDatabase::CdbSingleton<Common::ConstantDatabase::CdbUpgradeInfo>;
 			using cdbCapsuleInfos = Common::ConstantDatabase::CdbSingleton<Common::ConstantDatabase::CdbCapsuleInfo>;
 			using cdbCapsulePackageInfos = Common::ConstantDatabase::CdbSingleton<Common::ConstantDatabase::CdbCapsulePackageInfo>;
+			using cdbCapsuleDisplay = Common::ConstantDatabase::CdbSingleton<Common::ConstantDatabase::CdbCapsuleDisplay>;
 			using cdbMapInfo = Common::ConstantDatabase::CdbSingleton<Common::ConstantDatabase::CdbMapInfo>;
 			using cdbRewardInfo = Common::ConstantDatabase::CdbSingleton<Common::ConstantDatabase::CdbRewardInfo>;
 			using ItemTypePricePair = std::pair<Main::Enums::ItemCurrencyType, std::uint32_t>;
@@ -164,19 +167,23 @@ namespace Main
 				return entry->ui_parentid;
 			}
 
+			/*
 			std::vector<Main::Structures::CapsuleList> getCapsuleItems(std::uint32_t maxItems)
 			{	
 				m_maxCapsuleItems = maxItems;
-				auto entries = cdbCapsuleInfos::getInstance().getEntries();
+				//auto entries = cdbCapsuleInfos::getInstance().getEntries();
+				auto entries = cdbCapsulePackageInfos::getInstance().getEntries();
 				std::vector<Main::Structures::CapsuleList> ret;
 				for (std::size_t total = 0; const auto& [id, capsuleInfoStruct] : entries)
 				{
+					std::cout << "CapsuleID: " << capsuleInfoStruct.gi_id << '\n';
 					if (total >= maxItems) break;
-					ret.push_back(Main::Structures::CapsuleList{ static_cast<std::uint32_t>(capsuleInfoStruct.gi_id), static_cast<std::uint32_t>(capsuleInfoStruct.gi_price) });
+					//ret.push_back(Main::Structures::CapsuleList{ static_cast<std::uint32_t>(capsuleInfoStruct.gi_id), static_cast<std::uint32_t>(capsuleInfoStruct.gi_price) });
+					ret.push_back(Main::Structures::CapsuleList{ static_cast<std::uint32_t>(capsuleInfoStruct.gi_id) });
 					++total;
 				}
 				return ret;
-			}
+			}*/
 
 		
 			std::optional<Common::ConstantDatabase::CdbCapsuleInfo> getCapsuleInfoById(std::uint32_t gi_id) const
@@ -200,7 +207,7 @@ namespace Main
 				{
 					if (total == m_maxCapsuleItems) break;
 					// assume max index = MP = 2
-					averageCosts[capsuleInfoStruct.gi_type] += capsuleInfoStruct.gi_price;
+					//averageCosts[capsuleInfoStruct.gi_type] += capsuleInfoStruct.gi_price;
 					++totalCapsuleTypesByCurrency[capsuleInfoStruct.gi_type];
 				}
 				averageCosts[0] /= totalCapsuleTypesByCurrency[0];
@@ -210,7 +217,7 @@ namespace Main
 				return averageCosts;
 			}
 
-			auto getAllEntriesWhereIdSeparated(std::uint32_t infoid) const
+			auto getAllEntriesWhereIdSeparated(std::uint32_t id) const
 				-> std::pair<std::vector<Common::ConstantDatabase::CdbCapsulePackageInfo>, std::vector<Common::ConstantDatabase::CdbCapsulePackageInfo>>
 			{
 				const auto& entries = cdbCapsulePackageInfos::getInstance().getEntries();
@@ -219,11 +226,11 @@ namespace Main
 
 				for (const auto& [entryId, capsulePackageInfoStruct] : entries)
 				{
-					if (capsulePackageInfoStruct.gi_infoid == infoid && capsulePackageInfoStruct.gi_type == 1)
+					if (capsulePackageInfoStruct.pi_id == id && capsulePackageInfoStruct.pi_type == 2)
 					{
 						rares.push_back(capsulePackageInfoStruct);
 					}
-					else if (capsulePackageInfoStruct.gi_infoid == infoid && capsulePackageInfoStruct.gi_type == 0)
+					else if (capsulePackageInfoStruct.pi_id == id && capsulePackageInfoStruct.pi_type == 1)
 					{
 						notRares.push_back(capsulePackageInfoStruct);
 					}
@@ -232,7 +239,7 @@ namespace Main
 				return { rares, notRares };
 			}
 
-			auto getAllEntriesWhereId(std::uint32_t infoid) const
+			auto getAllEntriesWhereId(std::uint32_t itemid) const
 				-> std::vector<Common::ConstantDatabase::CdbCapsulePackageInfo>
 			{
 				const auto& entries = cdbCapsulePackageInfos::getInstance().getEntries();
@@ -240,7 +247,7 @@ namespace Main
 
 				for (const auto& [entryId, capsulePackageInfoStruct] : entries)
 				{
-					if (capsulePackageInfoStruct.gi_infoid == infoid)
+					if (capsulePackageInfoStruct.pi_itemid == itemid)
 					{
 						items.push_back(capsulePackageInfoStruct);
 					}

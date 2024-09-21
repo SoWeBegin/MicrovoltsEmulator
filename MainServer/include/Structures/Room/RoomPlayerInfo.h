@@ -16,11 +16,11 @@ namespace Main
 		// Used to retrieve the infos or the players that are already in the room, then sent to the player that joined that room
 		struct RoomPlayerInfo
 		{
-			Main::Structures::UniqueId uniqueId{};
-			std::uint32_t unknown_0 : 4 = 0;
-			std::uint32_t unknown_1 : 3 = 0;
-			std::uint32_t character : 5 = 0;
-			std::uint32_t team : 3 = 0; // red=1, blue=2, obs=4
+			Main::Structures::UniqueId uniqueId{};  // ok
+			std::uint32_t unknown_0 : 4 = 0; // OK
+			std::uint32_t unknown_1 : 3 = 0; // OK
+			std::uint32_t character : 4 = 0;
+			std::uint32_t team : 4 = 0;  // red=1, blue=2, obs=4
 			std::uint32_t level : 7 = 0; // actual level is givenValue - 1!
 			std::uint32_t unknown_2 : 10 = 0;
 			char playerName[16]{};
@@ -28,7 +28,6 @@ namespace Main
 			std::uint32_t state : 4 = 0; // e.g. 7=capsule (see related enum)
 			std::uint32_t ping : 10 = 0;
 			std::uint32_t unknown_5 : 16 = 0;
-			std::uint32_t id2 = 0;
 		};
 #pragma pack(pop)
 
@@ -36,23 +35,20 @@ namespace Main
 		// Used to send the info of the player who joined to all the players that are already in the room
 		struct RoomLatestEnteredPlayerInfo
 		{
-			Main::Structures::UniqueId uniqueId{};
-			std::uint32_t unknown_0 : 4 = 0;
-			std::uint32_t unknown_1 : 3 = 0;
-			std::uint32_t character : 5 = 0;
-			std::uint32_t team : 3 = 0;  // red=1, blue=2, obs=4
+			Main::Structures::UniqueId uniqueId{};  // ok
+			std::uint32_t unknown_0 : 4 = 0; // OK
+			std::uint32_t unknown_1 : 3 = 0; // OK
+			std::uint32_t character : 4 = 0;
+			std::uint32_t team : 4 = 0;  // red=1, blue=2, obs=4
 			std::uint32_t level : 7 = 0; // actual level is givenValue - 1!
 			std::uint32_t unknown_2 : 10 = 0;
 			std::array<std::uint32_t, 10> equippedItems{};
 			std::array<std::uint32_t, 7> equippedWeapons{};
-			std::array<std::uint32_t, 10> equippedItems_2{};  // unsure about this
-			std::array<std::uint32_t, 7> equippedWeapons_2{}; // unsure about this	
 			char playerName[16]{};
 			std::uint16_t unknown_3 : 3 = 0;
 			std::uint16_t ping : 10 = 0; 
 			std::uint16_t unknown_4 : 2 = 0;
 			std::uint16_t padding : 1 = 0;
-			std::uint32_t unknown_5 = 0;
 		};
 #pragma pack(pop)
 	}

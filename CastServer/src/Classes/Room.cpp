@@ -5,7 +5,6 @@
 #include "../../include/Network/CastSession.h"
 #include "../../include/Classes/Room.h"
 #include <Utils/Logger.h>
-#include <Utils/IPC_Structs.h>
 #include <Enums/RoomEnums.h>
 
 namespace Cast

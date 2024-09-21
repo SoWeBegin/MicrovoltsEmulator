@@ -9,8 +9,7 @@ namespace Common
 		{
 			GRADE_NORMAL = 2,
 			GRADE_MOD = 3,
-			GRADE_TESTER = 4,
-			GRADE_GM = 7
+			GRADE_GM = 4
 		};
 	}
 }

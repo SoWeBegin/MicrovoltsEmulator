@@ -10,6 +10,7 @@
 #include "ConstantDatabase/Structures/CdbWeaponsInfo.h"
 #include "../../CdbUtils.h"
 
+// Note: Creation date cannot be 0 (otherwise the client doesn't know how to handle equipping/unequipping) !!!
 namespace Main
 {
 	namespace Structures
@@ -26,6 +27,21 @@ namespace Main
 			{
 				serialInfo.itemCreationDate = static_cast<__time32_t>(std::time(0));
 				serialInfo.itemOrigin = Main::Enums::ItemFrom::GIFT;
+				serialInfo.m_serverId = 0;
+			}
+		};
+#pragma pack(pop)
+
+#pragma pack(push, 1)
+		struct BoxItem
+		{
+			std::uint32_t itemId{};
+			std::uint32_t expirationDate{};
+			Main::Structures::ItemSerialInfo serialInfo{};
+
+			BoxItem()
+			{
+				serialInfo.itemCreationDate = static_cast<__time32_t>(std::time(0));
 				serialInfo.m_serverId = 0;
 			}
 		};

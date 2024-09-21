@@ -80,9 +80,9 @@ namespace Main
                 session.asyncWrite(response);
             }
 
-            // End packet with extra=16 necessary
+            // Client expects this as confirmation
             response.setOption(0);
-            response.setExtra(16);
+            response.setExtra(5);
             response.setData(nullptr, 0);
             session.asyncWrite(response);
 

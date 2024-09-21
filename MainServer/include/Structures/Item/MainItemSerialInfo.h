@@ -33,6 +33,12 @@ namespace Main
 			
 
 			auto operator<=>(const ItemSerialInfo&) const = default;
+
+			ItemSerialInfo()
+			{
+				itemCreationDate = static_cast<__time32_t>(std::time(0)); // absolutely necessary, can't be 0 otherwise the client doesn't know how to handle
+				// equipping/unequipping of items!
+			}
 		};
 #pragma pack(pop)
 	}

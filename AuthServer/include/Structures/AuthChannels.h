@@ -16,9 +16,9 @@ namespace Auth
 #pragma pack(push, 1)
 		struct ChannelsInfo
 		{
-			std::array<std::uint32_t, 6> channels{};
+			std::array<std::uint32_t, 2> channels{};
 
-			void initializeChannels(std::array<std::uint32_t, 6> givenChannels)
+			void initializeChannels(std::array<std::uint32_t, 2> givenChannels)
 			{
 				for (std::size_t idx = 0; std::uint32_t & current : channels)
 				{

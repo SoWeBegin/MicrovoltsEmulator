@@ -32,13 +32,15 @@ namespace Cast
 
 			void hostForwardToPlayer(std::uint64_t hostSessionId, std::uint64_t receiverSessionId, Common::Network::Packet& packet, bool useHostSessionIdInTcpHeader = true);
 
-			void setMapFor(std::uint64_t hostId, std::uint32_t map);
+			void setMapFor(std::uint64_t playerId, std::uint32_t map);
 
 			void setModeFor(std::uint64_t hostId, std::uint32_t mode);
 
 			void endMatch(std::uint64_t hostId);
 
 			std::uint32_t getMapOf(std::uint64_t hostId);
+
+			bool exists(std::uint64_t playerId);
 
 			void removePlayerFromRoom(std::uint64_t sessionIdToRemoveFromRoom);
 

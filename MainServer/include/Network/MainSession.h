@@ -9,7 +9,6 @@
 #include "../Persistence/MainDatabaseManager.h"
 #include "../Structures/PlayerLists/BlockedPlayer.h"
 #include "../Structures/PlayerLists/Friend.h"
-#include "../Structures/TradeSystem/TradeSystemItem.h"
 #include "../Structures/Mailbox.h"
 #include "Enums/GameEnums.h"
 
@@ -47,9 +46,9 @@ namespace Main
 
 			void addMailboxSent(const Main::Structures::Mailbox& mailbox);
 
-			bool deleteSentMailbox(std::uint32_t timestamp, std::uint32_t accountId);
+			bool deleteSentMailbox(std::uint32_t timestamp);
 
-			bool deleteReceivedMailbox(std::uint32_t timestamp, std::uint32_t accountId);
+			bool deleteReceivedMailbox(std::uint32_t timestamp);
 
 			const std::vector<Main::Structures::Mailbox>& getMailboxReceived() const;
 
@@ -116,10 +115,6 @@ namespace Main
 
 			void addItems(const std::vector<BoughtItem>& boughtItems);
 
-			void addItems(const std::vector<Main::Structures::TradeBasicItem> tradedItems);
-
-			void addItemFromTrade(const Main::Structures::TradeBasicItem& tradeItem);
-
 			void setEquippedItems(const std::unordered_map<std::uint16_t, std::vector<EquippedItem>>& equippedItems);
 
 			void setAccountRockTotens(std::uint32_t rt);
@@ -147,15 +142,11 @@ namespace Main
 
 			void spawnItem(std::uint32_t itemId, const Main::Structures::ItemSerialInfo& itemSerialInfo);
 
-			void spawnItems(const std::vector<Main::Structures::TradeBasicItem>& tradeBasicItems);
-
 			bool deleteItem(const Main::Structures::ItemSerialInfo& itemSerialInfoToDelete);
 
-			bool deleteItems(const std::vector<Main::Structures::TradeBasicItem>& tradeBasicItems);
-
-			void temporarilySealAllItems();
-
 			void sendCurrency();
+
+			void sendMp(std::uint32_t mptoAdd);
 
 			std::pair<std::array<std::uint32_t, 10>, std::array<std::uint32_t, 7>> getEquippedItemsSeparated() const;
 
@@ -163,9 +154,9 @@ namespace Main
 
 			bool isInLobby() const;
 
-			void unsealAllItems();
+			void switchItemEquip(std::uint32_t characterId, std::uint64_t itemNumber);
 
-			void unequipItem(uint64_t itemType);
+			void unequipItem(std::uint64_t itemType);
 
 			bool hasEnoughInventorySpace(std::uint16_t totalNewItems) const;
 
@@ -193,29 +184,12 @@ namespace Main
 
 			Common::Enums::PlayerState getPlayerState() const;
 
-			void lockTrade();
-
-			bool hasPlayerLocked() const;
-
-			void resetTradeInfo();
 
 			void addLuckyPoints(std::uint32_t points);
 
 			void setLuckyPoints(std::uint32_t points);
 
 			std::uint32_t getLuckyPoints() const;
-
-			void setCurrentlyTradingWithAccountId(std::uint32_t targetAccountId);
-
-			std::uint32_t getCurrentlyTradingWithAccountId() const;
-
-			void addTradedItem(std::uint32_t itemId, const Main::Structures::ItemSerialInfo& serialInfo);
-
-			void removeTradedItem(const Main::Structures::ItemSerialInfo& serialInfo);
-
-			void resetTradedItems();
-
-			const std::vector<Main::Structures::TradeBasicItem>& getTradedItems() const;
 
 			void setRoomNumber(std::uint16_t roomNumber);
 
@@ -230,6 +204,8 @@ namespace Main
 			bool isInMatch() const;
 
 			std::string getPlayerInfoAsString() const;
+
+			void sendBattery(std::uint32_t battery);
 
 			void storeEndMatchStats(const Main::Structures::ScoreboardResponse& stats, Main::Enums::MatchEnd matchEnd, bool hasLeveledUp);
 		};

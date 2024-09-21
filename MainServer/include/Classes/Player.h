@@ -6,7 +6,6 @@
 #include "../Structures/AccountInfo/MainAccountInfo.h"
 #include "../Structures/PlayerLists/Friend.h"
 #include "../Structures/Mailbox.h"
-#include "../Structures/TradeSystem/TradeSystemItem.h"
 #include "../Structures/PlayerLists/BlockedPlayer.h"
 #include "../Structures/Item/MainItem.h"
 #include "../Persistence/MainScheduler.h"
@@ -32,7 +31,6 @@ namespace Main
 			using Session = Main::Network::Session;
 			using BlockedPlayer = Main::Structures::BlockedPlayer;
 			using Friend = Main::Structures::Friend;
-			using TradedItem = Main::Structures::TradeBasicItem;
 			using Mailbox = Main::Structures::Mailbox;
 			using Session = Main::Network::Session;
 
@@ -49,12 +47,6 @@ namespace Main
 			std::string m_muteReason;
 			std::string m_mutedUntil;
 			bool m_isInLobby{ true };
-
-
-			// Trade system
-			std::uint32_t m_currentlyTradingWithAccountId{};
-			std::vector<TradedItem> m_tradedItems{};
-			bool m_hasPlayerLocked{};
 
 			// Mailbox specific
 			std::vector<Mailbox> m_mailboxReceived{};
@@ -120,23 +112,22 @@ namespace Main
 			void addItems(const std::vector<Item>& items);
 			void addItem(const Item& item);
 			std::vector<Item> addItems(const std::vector<BoughtItem>& boughtItems);
-			std::vector<Item> addItems(const std::vector<Main::Structures::TradeBasicItem>& tradedItems);
-			Item addItemFromTrade(TradedItem tradeItem);
 			void setEquippedItems(const std::unordered_map<std::uint16_t, std::vector<EquippedItem>>& equippedItems);
 			std::optional<std::pair<std::uint16_t, std::uint64_t>>
 			addEnergyToItem(const Main::Structures::ItemSerialInfo& itemSerialInfo, std::uint32_t energyAdded);
 			// ugly design but easier to write, ideally we shouldn't pass the scheduler to this function...
-			void equipItem(const std::uint16_t itemNumber, Main::Persistence::MainScheduler& scheduler);
+			void equipItem(const std::uint16_t itemNumber, Main::Persistence::MainScheduler& scheduler, std::uint32_t character = -1);
 			std::optional<std::uint64_t> unequipItem(uint64_t itemType, Main::Persistence::MainScheduler& scheduler);
 			std::uint64_t getTotalEquippedItems() const;
+			std::uint32_t addBattery(std::uint32_t battery);
 
-		private:
-			void unequipItemImpl(std::uint64_t itemType, Main::Persistence::MainScheduler& scheduler);
+			void unequipItemImpl(std::uint64_t itemType, Main::Persistence::MainScheduler& scheduler, std::uint32_t character = -1);
 
-		public:
 			std::uint64_t getLatestItemNumber() const;
 			void setLatestItemNumber(std::uint64_t itemNum);
 			std::pair<std::array<std::uint32_t, 10>, std::array<std::uint32_t, 7>> getEquippedItemsSeparated() const;
+			bool unequipItemIfEquipped(std::uint64_t itemNumber, std::uint32_t characterId, Main::Persistence::MainScheduler& scheduler);
+			void equipItemIfNotEquipped(std::uint64_t itemNumber, std::uint32_t characterId, Main::Persistence::MainScheduler& scheduler);
 
 			// Blocked players
 			void blockAccount(std::uint32_t accountId, const char* nickname);
@@ -145,22 +136,11 @@ namespace Main
 			const std::vector<Main::Structures::BlockedPlayer>& getBlockedPlayers() const;
 			void setBlockedPlayers(const std::vector<Main::Structures::BlockedPlayer>& blockedPlayers);
 
-			// Trade system
-			void lockTrade();
-			bool hasPlayerLocked() const;
-			void resetTradeInfo();
-			void setCurrentlyTradingWithAccountId(std::uint32_t targetAccountId);
-			std::uint32_t getCurrentlyTradingWithAccountId() const;
-			void addTradedItem(std::uint32_t itemId, const Main::Structures::ItemSerialInfo& serialInfo);
-			void removeTradedItem(const Main::Structures::ItemSerialInfo& serialInfo);
-			void resetTradedItems();
-			const std::vector<TradedItem>& getTradedItems() const;
-
 			// Mailbox
 			void addMailboxReceived(const Main::Structures::Mailbox& mailbox);
 			void addMailboxSent(const Main::Structures::Mailbox& mailbox);
-			bool deleteSentMailbox(std::uint32_t timestamp, std::uint32_t accountId);
-			bool deleteReceivedMailbox(std::uint32_t timestamp, std::uint32_t accountId);
+			bool deleteSentMailbox(std::uint32_t timestamp);
+			bool deleteReceivedMailbox(std::uint32_t timestamp);
 			const std::vector<Main::Structures::Mailbox>& getMailboxReceived() const;
 			const std::vector<Main::Structures::Mailbox>& getMailboxSent() const;
 			void setMailbox(const std::vector<Main::Structures::Mailbox>& mailbox, bool sent);

@@ -5,10 +5,6 @@
 #include "../../include/Network/SessionsManager.h"
 #include <vector>
 #include "../../../MainServer/include/Structures/AccountInfo/MainAccountInfo.h"
-#include <boost/interprocess/interprocess_fwd.hpp>
-#include <boost/interprocess/mapped_region.hpp>
-#include <boost/interprocess/shared_memory_object.hpp>
-#include <boost/interprocess/sync/interprocess_upgradable_mutex.hpp>
 #include <Utils/Logger.h>
 
 namespace Cast

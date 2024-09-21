@@ -19,7 +19,6 @@ namespace Main
 			std::uint64_t diorama{};  
 			std::uint32_t totalKills{}; //8 ok
 			std::uint32_t deaths{}; //12  ok
-			//std::uint32_t assists{};//16
 			std::uint32_t wins{};//20  ok
 			std::uint32_t losses{};//24  ok
 			std::uint32_t draws{};//28  ok
@@ -31,7 +30,7 @@ namespace Main
 			std::uint32_t bazookaKills{};//52
 			std::uint32_t grenadeKills{};//56
 
-			std::uint64_t unused1 : 27 = 0;//60
+			std::uint64_t unused1 : 27 = 38;//60
 			std::uint64_t headshots : 29 = 0; // ok
 			std::uint64_t killstreak : 8 = 0; // ok
 			std::uint32_t unknown1{};//68
@@ -40,18 +39,16 @@ namespace Main
 			AccountAchievements achievements{}; // Not read from DB currently    // 78
 			std::uint32_t zombieKills{}; //110  //ok
 			std::uint32_t infected{}; //114   //ok
-			std::uint32_t unknown2{};       //118
+			std::uint32_t unknown2{210};       //118
 			char nickname[16]{}; // cannot contain spaces   // 122  // ok
 			std::uint64_t serverTime{}; //138
 			UniqueId uniqueId{}; //148
 
-
-			std::uint64_t playerGrade : 4 = 0;//152   OK
-			std::uint64_t unused2 : 1 = 0; // OK
+			std::uint64_t playerGrade : 5 = 0;//152   OK
 			std::uint64_t latestSelectedCharacter : 4 = 0; // OK
 			std::uint64_t boughtCharacters : 8 = 0;
 			std::uint64_t playerLevel : 7 = 0; // OK?
-			std::uint64_t battery_2: 14 = 0; // prev. coins
+			std::uint64_t battery_2: 14 = 50; // prev. coins
 			std::uint64_t battery : 14 = 0;
 			std::uint64_t luckyPoints : 12 = 0;
 			std::uint32_t experience{};//160   // ok
@@ -66,9 +63,8 @@ namespace Main
 
 			std::uint32_t highestSinglewaveStage : 10 = 0;
 			std::uint32_t highestSingleWaveScore{}; // on client => "invasion" //176
-			std::uint32_t unknown3{493};
-			std::uint32_t userstory{13};
-			//std::uint32_t vipExperience{};//192
+			std::uint32_t unknown3{24};
+			std::uint32_t userstory{25};
 			std::uint32_t accountID{};    //196
 			std::uint32_t accountKey{};//188
 			char unused[8]{};//192
@@ -99,14 +95,8 @@ namespace Main
 			std::uint64_t getUtcTimeMs() const
 			{
 				const auto durationSinceEpoch = std::chrono::system_clock::now().time_since_epoch();
-				return static_cast<std::uint64_t>(duration_cast<std::chrono::milliseconds>(durationSinceEpoch).count());
+				return static_cast<std::uint64_t>(std::chrono::duration_cast<std::chrono::milliseconds>(durationSinceEpoch).count());
 			}
-
-			void setServerTime()
-			{
-				serverTime = 51877635; // getUtcTimeMs();
-			}
-
 		};
 #pragma pack(pop)
 

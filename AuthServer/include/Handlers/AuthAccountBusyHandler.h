@@ -9,6 +9,7 @@ namespace Auth
 	{
 		inline void handleAccountBusyReconnection(const Common::Network::Packet& request, Common::Network::Session& session)
 		{
+			session.asyncWrite(const_cast<Common::Network::Packet&>(request));
 			// Send disconnection request to MainServer
 			// Then proceed normally with the login
 			//session.closeSocket();

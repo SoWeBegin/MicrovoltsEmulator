@@ -8,10 +8,7 @@
 #include "Enums/PlayerEnums.h"
 #include "ChatCommands/ISimpleRoomCommand.h"
 
-#include <boost/interprocess/shared_memory_object.hpp> 
-#include <boost/interprocess/mapped_region.hpp> 
 #include <chrono> 
-#include <Utils/IPC_Structs.h>
 
 namespace Main
 {
@@ -26,7 +23,7 @@ namespace Main
 		{
 			this->m_confirmationMessage += "success";
 
-			response.setOrder(141);
+			response.setOrder(137);
 			response.setExtra(0x1B);
 
 			auto foundRoom = roomsManager.getRoomByNumber(roomNumber);

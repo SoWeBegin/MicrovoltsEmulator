@@ -9,7 +9,8 @@ namespace Main
 {
 	namespace Handlers
 	{
-		inline void handlePlayerBlock(const Common::Network::Packet& request, Main::Network::Session& session, Main::Network::SessionsManager& sessionsManager)
+		inline void handlePlayerBlock(const Common::Network::Packet& request, Main::Network::Session& session, Main::Network::SessionsManager& sessionsManager,
+			Main::Persistence::PersistentDatabase& database)
 		{
 			char targetAccountName[16]{};
 			std::memcpy(targetAccountName, request.getData(), sizeof(targetAccountName));
@@ -31,7 +32,14 @@ namespace Main
 				}
 				else
 				{
-					// Player is offline, check if the nickname is found in the database, otherwise return extra 6?
+					const std::uint32_t targetAccountId = database.blockPlayerByNickname(session.getAccountInfo().accountID, targetAccountName);
+					if (targetAccountId != -1)
+					{
+						session.blockAccount(targetAccountId, targetAccountName);
+						response.setExtra(1);
+						session.deleteFriend(targetAccountId);
+						session.asyncWrite(response);
+					}
 				}
 			}
 		}

@@ -25,7 +25,7 @@ namespace Main
 		private:
 			inline static std::uint16_t idCounter{};
 
-			std::uint32_t m_tick{};
+			std::uint64_t m_tick{};
 			std::uint16_t m_number{};
 			std::string m_title{};    // max = 30
 			std::string m_password{}; // max = 8
@@ -72,7 +72,9 @@ namespace Main
 
 			std::uint32_t getBestMsIndexExceptSelf(bool checkIsInMatch, std::uint64_t selfId);
 
-			void setTick(std::uint32_t tick);
+			void setTick(std::uint64_t tick);
+
+			std::uint64_t getTick() const { return m_tick; }
 
 			std::uint32_t getPlayerIdx(std::uint64_t playerIndex) const;
 
@@ -92,8 +94,6 @@ namespace Main
 
 			bool removePlayer(Main::Network::Session* session, std::uint32_t extra);
 
-			void changeHostTemporarilyToBestMs();
-
 			bool changeHostByNickname(const std::string&);
 
 			std::vector<Main::Structures::RoomPlayerInfo> getAllPlayers() const;
@@ -112,6 +112,18 @@ namespace Main
 			void breakroom();
 
 			void broadcastToRoom(Common::Network::Packet& packet);
+
+			void broadcastToReady(Common::Network::Packet& packet)
+			{
+				for (auto& [roomInfo, session] : m_players)
+				{
+					if (roomInfo.state == Common::Enums::STATE_READY)
+					{
+						packet.setTcpHeader(session->getSessionId(), Common::Enums::USER_LARGE_ENCRYPTION);
+						session->asyncWrite(packet);
+					}
+				}
+			}
 
 			void broadcastToRoomExceptSelf(Common::Network::Packet& packet, const Main::Structures::UniqueId& uniqueId);
 
@@ -144,6 +156,8 @@ namespace Main
 
 			std::uint8_t getSpecificSetting() const;
 
+			const std::string& getRoomTitle() const;
+
 			bool kickPlayer(const std::string& name);
 
 			bool isRoomFullObserverExcluded() const;
@@ -153,6 +167,8 @@ namespace Main
 			void startMatch(const Main::Structures::UniqueId& uniqueId);
 
 			void endMatch();
+
+			bool hasMatchStarted() const;
 
 			bool isObserverFull() const;
 

@@ -39,8 +39,6 @@ namespace Cast
 
 			void setRoomId(std::uint64_t id);
 
-			std::uint64_t getRoomId() const;
-
 			const Main::Structures::AccountInfo& getAccountInfo() const;
 
 			void setUniqueId(const Main::Structures::UniqueId& uniqueId);

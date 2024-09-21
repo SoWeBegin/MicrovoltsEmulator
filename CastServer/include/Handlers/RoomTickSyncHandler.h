@@ -24,8 +24,6 @@ namespace Cast
             const auto selfSessionId = session.getId();
 
             roomsManager.playerForwardToHost(roomHostSessionId, selfSessionId, const_cast<Common::Network::Packet&>(request));
-
-            //roomsManager.printRoomInfo(session.getRoomId(), "After handle room tick sync req");
         }
     }
 }

@@ -9,8 +9,6 @@
     <ClCompile Include="include\Network\MainSession.h" />
     <ClCompile Include="include\Structures\PlayerLists\SingleLobbyList.h" />
     <ClCompile Include="include\Structures\Room\RoomJoinLatestInfo.h" />
-    <ClCompile Include="include\Structures\TradeSystem\TradePlayerInfo.h" />
-    <ClCompile Include="include\Structures\TradeSystem\TradeSystemItem.h" />
     <ClCompile Include="src\Classes\Player.cpp" />
     <ClCompile Include="src\MainServer.cpp" />
     <ClCompile Include="src\MainServerMain.cpp" />
@@ -71,20 +69,12 @@
     <ClInclude Include="include\Handlers\MainLobbyChatHandler.h" />
     <ClInclude Include="include\Handlers\Player\AuthorizationHandler.h" />
     <ClInclude Include="include\Handlers\Player\PlayerStateHandler.h" />
-    <ClInclude Include="include\Handlers\Item\GambleItemHandler.h" />
     <ClInclude Include="include\Handlers\Room\RoomCreationHandler.h" />
     <ClInclude Include="include\Handlers\Room\RoomLeaveHandler.h" />
     <ClInclude Include="include\Handlers\Room\RoomMiscHandler.h" />
     <ClInclude Include="include\Handlers\Room\RoomsListHandler.h" />
     <ClInclude Include="include\Handlers\Room\RoomStartHandler.h" />
     <ClInclude Include="include\Handlers\Room\SimpleSettingHandler.h" />
-    <ClInclude Include="include\Handlers\Trade\TradeAckHandler.h" />
-    <ClInclude Include="include\Handlers\Trade\TradeAddItemHandler.h" />
-    <ClInclude Include="include\Handlers\Trade\TradeCancelHandler.h" />
-    <ClInclude Include="include\Handlers\Trade\TradeFinalizeHandler.h" />
-    <ClInclude Include="include\Handlers\Trade\TradeLockHandler.h" />
-    <ClInclude Include="include\Handlers\Trade\TradeInitializationHandler.h" />
-    <ClInclude Include="include\Handlers\Trade\TradeRemoveItemHandler.h" />
     <ClInclude Include="include\Persistence\MainDatabaseManager.h" />
     <ClInclude Include="include\Database\MainScheduler.h" />
     <ClInclude Include="include\Handlers\Item\BoughtItemHandler.h" />
@@ -121,7 +111,6 @@
     <ClInclude Include="include\Structures\Room\RoomPlayerItems.h" />
     <ClInclude Include="include\Structures\Room\RoomSettingsUpdate.h" />
     <ClInclude Include="include\Structures\Room\RoomsList.h" />
-    <ClInclude Include="include\Structures\TradeSystem\TradeAck.h" />
     <ClInclude Include="include\ChatCommands\ComplexCommands\OneArgumentCommands\Kick.h" />
     <ClInclude Include="include\Handlers\Room\MatchLeaveHandler.h" />
     <ClInclude Include="include\Handlers\Room\EliminationNextRoundHandler.h" />
@@ -139,5 +128,10 @@
     <ClInclude Include="include\ChatCommands\SimpleRoomCommands\Muteroom.h" />
     <ClInclude Include="include\ChatCommands\SimpleRoomCommands\UnmuteRoom.h" />
     <ClInclude Include="include\ChatCommands\ComplexCommands\OneArgumentCommands\ChangeHost.h" />
+    <ClInclude Include="include\Boxes\BoxBase.h" />
+    <ClInclude Include="include\Boxes\BrilliantBox.h" />
+    <ClInclude Include="include\Boxes\MpBox.h" />
+    <ClInclude Include="include\Network\AuthSession.h" />
+    <ClInclude Include="include\Handlers\CapsuleReqHandler.h" />
   </ItemGroup>
 </Project>

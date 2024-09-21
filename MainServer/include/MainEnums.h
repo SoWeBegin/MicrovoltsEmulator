@@ -26,24 +26,6 @@ namespace Main
 			MATCH_DRAW
 		};
 
-		enum TradeSystemExtra
-		{
-			TRADE_SUCCESS = 1,
-			TRADE_CANCELLED = 1,
-			TRADE_CONFIRMED_NOTIFY_OTHER_PLAYER = 1,
-			TARGET_NOT_ENOUGH_INVENTORY_SPACE = 7,
-			TRADE_NOT_ENOUGH_MONEY = 14,
-			TRADE_DISABLED_FOR_MAINTENANCE = 15, // currently unused by the server
-			TRADE_COOLDOWN = 21, // currently unused by the server; "you can trade again in X hours"] where option is X
-			TRADE_DECLINED = 31,
-			ITEMS_CANNOT_BE_CHANGED_AFTER_LOCK = 44, // currently unused by the server (the client prevents changing items after lock already)
-			BOTH_PLAYERS_MUST_CONFIRM_TRADE_BEFORE_FINALIZATION = 45,
-			CANNOT_TRADE_NOW_OR_PLAYER_OFFLINE = 47,
-			PLAYERS_NOT_FRIENDS = 73,
-			LEVEL_TOO_LOW = 74,
-			MAX_NUM_OF_ITEMS_AT_ONCE_REACHED = 75,
-		};
-
 		enum SellItemExtra
 		{
 			SELL_SUCCESS = 1,
@@ -81,8 +63,7 @@ namespace Main
 		{
 			GRADE_NORMAL = 2,
 			GRADE_MOD = 3,
-			GRADE_TESTER = 4,
-			GRADE_GM = 7
+			GRADE_GM = 4
 		};
 
 		enum ChatGrade
@@ -134,6 +115,50 @@ namespace Main
 			ITEM_COIN
 		};
 
+		enum BoxItemsCommon 
+		{
+			MP_100 = 4600001,
+			MP_500 = 4600005,
+			MP_1000 = 4600010,
+			MP_2500 = 4600020,
+			MP_3000 = 4600030,
+			MP_4000 = 4600040,
+			MP_5000 = 4600050,
+			MP_7000 = 4600070,
+			MP_10000 = 4600100,
+			MP_20000 = 4600200,
+			MP_50000 = 4600500,
+			MP_100000 = 4601000,
+			MP_500000 = 4605000,
+			COUPON_1 = 4306001,
+			COUPON_5 = 4306002,
+			COUPON_10 = 4306003,
+			WHITE_HAMMER = 3015250,
+			WHITE_KATANA = 3015450,
+			WHITE_PENCIL = 3015350,
+			WHITE_SEAWASP = 3042850,
+			OUTLAW = 3062850,
+			WHITE_PREDATOR = 3072850,
+			GOLDEN_KUKRI = 3200750,
+			MENTHA = 3023550,
+			ACME_BLASTER = 3037050, // does NOT work (makes client crash) -- replace this one
+			GOLD_CORAL = 3034350,
+		};
+
+		enum BoxIds
+		{
+			BRILLIANT_HAMMER = 4530000,
+			BRILLIANT_SWORD = 4530001,
+			BRILLIANT_PENCIL = 4530002,
+			BRILLIANT_SNIPER = 4530003,
+			BRILLIANT_BAZOOKA = 4530004,
+			BRILLIANT_GRENADE = 4530005,
+			BRILLIANT_KUKRI = 4530007,
+			BRILLIANT_MENTHA = 4530008,
+			BRILLIANT_CORAL = 4530009,
+			BRILLIANT_BLASTER = 4530010,
+		};
+
 		enum ItemExpirationType
 		{
 			// // 0=nothing happens, 1=becomes unused(1 day); 2=bomb?!;  3<=expired
@@ -147,7 +172,6 @@ namespace Main
 			SHOP = 0,
 			GIFT,
 			UNKNOWN,
-			// TRADE??
 		};
 
 		// Sent to the source who sent the friend request

@@ -158,6 +158,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\AuthEnums.h" />
+    <ClInclude Include="include\Constants.h" />
     <ClInclude Include="include\Database\DbPlayerInfo.h" />
     <ClInclude Include="include\Handlers\AuthAccountBusyHandler.h" />
     <ClInclude Include="include\Handlers\AuthAllHandlers.h" />

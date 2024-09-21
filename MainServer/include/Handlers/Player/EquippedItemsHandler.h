@@ -15,18 +15,28 @@ namespace Main
 			Common::Network::Packet response;
 			response.setTcpHeader(request.getSession(), Common::Enums::USER_LARGE_ENCRYPTION);
 			response.setOrder(request.getOrder());
-			response.setExtra(51);
+			response.setExtra(request.getExtra());
 			response.setOption(request.getOption()); // Number of new equipped items / equipped items to unequip for the current character
-			response.setData(nullptr, 0);
 
-			if (request.getMission() == 1)
+			if (request.getExtra() == 51)
+			{
+				for (std::size_t idx = 0; idx < request.getOption(); ++idx)
+				{
+					std::uint16_t character;
+					std::uint32_t itemNumber;
+					std::memcpy(&character, request.getData() + idx * 12, sizeof(character));
+					std::memcpy(&itemNumber, request.getData() + idx * 12 + 4, sizeof(itemNumber));
+					session.switchItemEquip(character, itemNumber);
+				}
+			}
+			else if (request.getMission() == 1)
 			{
 				// Remove a single item based on the passed extra, which is the EquippedItem's type
 				session.unequipItem(request.getExtra());
 				session.asyncWrite(response);
 				return;
 			}
-			if (request.getMission() == 0)
+			else if (request.getMission() == 0)
 			{
 				constexpr std::uint16_t MAX_TYPE = 30;
 				for (std::size_t idx = 0; idx < request.getOption(); ++idx)

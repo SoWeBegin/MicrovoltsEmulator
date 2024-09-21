@@ -36,7 +36,6 @@ namespace Main
 			accountInfo.uniqueId.session = session.getId();
 			accountInfo.uniqueId.server = 4; // currently hardcoded
 			accountInfo.serverTime = accountInfo.getUtcTimeMs() - timeSinceLastServerRestart;
-		   // accountInfo.setServerTime();
 
 			response.setData(reinterpret_cast<std::uint8_t*>(&accountInfo), sizeof(accountInfo));
 			session.asyncWrite(response);
@@ -70,12 +69,11 @@ namespace Main
 			auto newMailboxes = database.getNewMailboxes(accountInfo.accountID);
 			if (newMailboxes.empty()) return;
 			// Send online messages (mailbox) if there are new ones
-			response.setOrder(104);
+			response.setOrder(100);
 			response.setOption(newMailboxes.size());
 			response.setExtra(Main::Enums::MailboxExtra::MAILBOX_RECEIVED);
 			response.setData(reinterpret_cast<std::uint8_t*>(newMailboxes.data()), newMailboxes.size() * sizeof(Main::Structures::Mailbox));
 			session.asyncWrite(response);
-
 		}
 	}
 }

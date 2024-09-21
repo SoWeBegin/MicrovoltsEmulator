@@ -19,7 +19,6 @@ namespace Main
 		using Session = Main::Network::Session;
 		using BlockedPlayer = Main::Structures::BlockedPlayer;
 		using Friend = Main::Structures::Friend;
-		using TradedItem = Main::Structures::TradeBasicItem;
 		using Mailbox = Main::Structures::Mailbox;
 		using Session = Main::Network::Session;
 
@@ -35,6 +34,20 @@ namespace Main
 			m_accountInfo = accountInfo;
 		}
 
+		// returns new total battery
+		std::uint32_t Player::addBattery(std::uint32_t battery)
+		{
+			if (m_accountInfo.battery + battery >= m_accountInfo.maxBattery)
+			{
+				m_accountInfo.battery = m_accountInfo.maxBattery;
+			}
+			else
+			{
+				m_accountInfo.battery += battery;
+			}
+			return m_accountInfo.battery;
+		}
+
 		void Player::addBatteryObtainedInMatch(std::uint32_t newBattery)
 		{
 			m_batteryObtainedInMatch += newBattery;
@@ -42,11 +55,8 @@ namespace Main
 
 		void Player::storeBatteryObtainedInMatch()
 		{
-			std::cout << "Battery Obtained: " << m_batteryObtainedInMatch << '\n';
-
 			if (m_accountInfo.battery + m_batteryObtainedInMatch >= m_accountInfo.maxBattery)
 			{
-				std::cout << "Max Battery: " << m_accountInfo.maxBattery;
 				m_accountInfo.battery = m_accountInfo.maxBattery;
 			}
 			else
@@ -253,14 +263,14 @@ namespace Main
 		{
 			for (const auto& [itemNumber, item] : m_itemsByItemNumber)
 			{
-				if (item.serialInfo == itemSerialInfo)
+				if (item.serialInfo.itemNumber == itemSerialInfo.itemNumber)
 				{
 					return item;
 				}
 			}
 			for (const auto& [itemType, item] : m_equippedItemByCharacter.at(m_accountInfo.latestSelectedCharacter)) // m_equippedItemByType)
 			{
-				if (item.serialInfo == itemSerialInfo)
+				if (item.serialInfo.itemNumber == itemSerialInfo.itemNumber)
 				{
 					return Item{ item };
 				}
@@ -316,10 +326,22 @@ namespace Main
 		{
 			for (auto it = m_itemsByItemNumber.begin(); it != m_itemsByItemNumber.end(); ++it)
 			{
-				if (it->second.serialInfo == itemSerialInfo)
+				if (it->second.serialInfo.itemNumber == itemSerialInfo.itemNumber)
 				{
 					m_itemsByItemNumber.erase(it);
 					return true;
+				}
+			}
+			for (auto& [character, itemMap] : m_equippedItemByCharacter)
+			{
+				for (auto it = itemMap.begin(); it != itemMap.end(); )
+				{
+					if (it->second.serialInfo.itemNumber == itemSerialInfo.itemNumber)
+					{
+						it = itemMap.erase(it);
+						return true;
+					}
+					else ++it;
 				}
 			}
 			return false;
@@ -349,25 +371,6 @@ namespace Main
 			return items;
 		}
 
-		std::vector<Main::Structures::Item> Player::addItems(const std::vector<Main::Structures::TradeBasicItem>& tradedItems)
-		{
-			std::vector<Item> items;
-			for (auto& currentItem : tradedItems)
-			{
-				items.push_back(currentItem);
-				m_itemsByItemNumber[currentItem.itemSerialInfo.itemNumber] = currentItem;
-			}
-			return items;
-		}
-
-		Item Player::addItemFromTrade(TradedItem tradeItem)
-		{
-			tradeItem.itemSerialInfo.itemNumber = ++m_latestItemNumber;
-			Main::Structures::Item item{ tradeItem };
-			m_itemsByItemNumber[tradeItem.itemSerialInfo.itemNumber] = item;
-			return item;
-		}
-
 		void Player::setEquippedItems(const std::unordered_map<std::uint16_t, std::vector<EquippedItem>>& equippedItems)
 		{
 			for (const auto& [characterID, items] : equippedItems)
@@ -387,7 +390,7 @@ namespace Main
 		{
 			for (auto& [itemNumber, item] : m_itemsByItemNumber)
 			{
-				if (item.serialInfo == itemSerialInfo)
+				if (item.serialInfo.itemNumber == itemSerialInfo.itemNumber)
 				{
 					item.energy += energyAdded;
 					m_accountInfo.battery -= energyAdded;
@@ -396,7 +399,7 @@ namespace Main
 			}
 			for (auto& [itemType, item] : m_equippedItemByCharacter.at(m_accountInfo.latestSelectedCharacter))
 			{
-				if (item.serialInfo == itemSerialInfo)
+				if (item.serialInfo.itemNumber == itemSerialInfo.itemNumber)
 				{
 					item.energy += energyAdded;
 					m_accountInfo.battery -= energyAdded;
@@ -406,10 +409,11 @@ namespace Main
 			return std::nullopt;
 		}
 
-		void Player::unequipItemImpl(std::uint64_t itemType, Main::Persistence::MainScheduler& scheduler)
+		void Player::unequipItemImpl(std::uint64_t itemType, Main::Persistence::MainScheduler& scheduler, std::uint32_t character)
 		{
-			auto& itemMap = m_equippedItemByCharacter[m_accountInfo.latestSelectedCharacter];
+			auto& itemMap = m_equippedItemByCharacter[character == -1 ? m_accountInfo.latestSelectedCharacter : character];
 			if (!itemMap.contains(itemType)) return;
+			std::cout << "Unequipping for Character: " << m_accountInfo.latestSelectedCharacter << '\n';
 
 			auto itemNumber = itemMap.at(itemType).serialInfo.itemNumber;
 			m_itemsByItemNumber[itemNumber] = Item{ itemMap.at(itemType) };
@@ -424,7 +428,7 @@ namespace Main
 
 		// ugly design but easier to write, ideally we shouldn't pass the scheduler to this function...
 		// TODO: Test this, add logs, check si_acce_B and si_acce_C
-		void Player::equipItem(const std::uint16_t itemNumber, Main::Persistence::MainScheduler& scheduler)
+		void Player::equipItem(const std::uint16_t itemNumber, Main::Persistence::MainScheduler& scheduler, std::uint32_t character)
 		{
 			// Find the type of the to-be-added equipped item
 			EquippedItem equippedItem = EquippedItem{ m_itemsByItemNumber[itemNumber] };
@@ -441,12 +445,12 @@ namespace Main
 					for (auto currentTypeNotNull : Common::Utils::getPartTypesWhereSetItemInfoTypeNotNull(*entry))
 					{
 						std::cout << "Set Part Found. Unequipping (Type: " << currentTypeNotNull << ")\n";
-						unequipItemImpl(currentTypeNotNull, scheduler);
+						unequipItemImpl(currentTypeNotNull, scheduler, character);
 					}
 				}
 			}
 
-			auto& itemMap = m_equippedItemByCharacter[m_accountInfo.latestSelectedCharacter];
+			auto& itemMap = m_equippedItemByCharacter[character == -1 ? m_accountInfo.latestSelectedCharacter : character];
 
 			// Again, special case: the user has an already equipped set. We need to unequip it if the user is now equipping a part type that is already present in said set.
 			if (itemMap.contains(Common::Enums::ItemType::SET))
@@ -462,7 +466,7 @@ namespace Main
 						if (equippedItem.type == currentTypeNotNull)
 						{
 							std::cout << "Set Found. Unequipping...\n";
-							unequipItemImpl(Common::Enums::SET, scheduler);
+							unequipItemImpl(Common::Enums::SET, scheduler, character);
 							break;
 						}
 					}
@@ -484,7 +488,7 @@ namespace Main
 
 				scheduler.addRepetitiveCallback(m_accountInfo.accountID, &Main::Persistence::PersistentDatabase::swapItems,
 					m_accountInfo.accountID, toUnequipItemNumber, static_cast<std::uint64_t>(equippedItem.serialInfo.itemNumber),
-					static_cast<std::uint16_t>(m_accountInfo.latestSelectedCharacter));
+					static_cast<std::uint16_t>(character == -1 ? m_accountInfo.latestSelectedCharacter : character));
 				return;
 			}
 
@@ -493,9 +497,11 @@ namespace Main
 			++m_totalEquippedItems;
 
 			scheduler.addRepetitiveCallback(m_accountInfo.accountID, &Main::Persistence::PersistentDatabase::equipItem,
-				m_accountInfo.accountID, static_cast<std::uint64_t>(equippedItem.serialInfo.itemNumber), static_cast<std::uint16_t>(m_accountInfo.latestSelectedCharacter));
+				m_accountInfo.accountID, static_cast<std::uint64_t>(equippedItem.serialInfo.itemNumber), 
+				static_cast<std::uint16_t>(character == -1 ? m_accountInfo.latestSelectedCharacter : character));
 		}
 
+		
 		std::optional<std::uint64_t> Player::unequipItem(std::uint64_t itemType, Main::Persistence::MainScheduler& scheduler)
 		{
 			auto& itemMap = m_equippedItemByCharacter[m_accountInfo.latestSelectedCharacter];
@@ -528,6 +534,46 @@ namespace Main
 		{
 			m_latestItemNumber = itemNum;
 		}
+
+		bool Player::unequipItemIfEquipped(std::uint64_t itemNumber, std::uint32_t characterId, Main::Persistence::MainScheduler& scheduler)
+		{
+			if (!m_equippedItemByCharacter.contains(characterId))
+			{
+				std::cout << "Char Not Found [unequip]\n";
+				return false;
+			}
+			auto& itemMap = m_equippedItemByCharacter.at(characterId);
+			for (const auto& [itemType, equippedItem] : itemMap)
+			{
+				if (equippedItem.serialInfo.itemNumber == itemNumber)
+				{
+					unequipItemImpl(itemType, scheduler, characterId);
+					return true;
+				}
+			}
+			std::cout << "Item not found [unequip]\n";
+			return false;
+		}
+
+		void Player::equipItemIfNotEquipped(std::uint64_t itemNumber, std::uint32_t characterId, Main::Persistence::MainScheduler& scheduler)
+		{
+			if (!m_equippedItemByCharacter.contains(characterId))
+			{
+				std::cout << "Char Not Found [equip]\n";
+				return;
+			}
+			auto& itemMap = m_equippedItemByCharacter.at(characterId);
+			for (const auto& [itemType, equippedItem] : itemMap)
+			{
+				if (equippedItem.serialInfo.itemNumber == itemNumber)
+				{
+					std::cout << "itemnumber found in equipped, no need to re-equip [requip]\n";
+					return; 
+				}
+			}
+			equipItem(static_cast<std::uint16_t>(itemNumber), scheduler, characterId);
+		}
+
 
 		std::pair<std::array<std::uint32_t, 10>, std::array<std::uint32_t, 7>> Player::getEquippedItemsSeparated() const
 		{
@@ -611,63 +657,6 @@ namespace Main
 		}
 
 
-		// Trade system
-		void Player::lockTrade()
-		{
-			m_hasPlayerLocked = true;
-		}
-
-		bool Player::hasPlayerLocked() const
-		{
-			return m_hasPlayerLocked;
-		}
-
-		void Player::resetTradeInfo()
-		{
-			m_hasPlayerLocked = false;
-			m_tradedItems.clear();
-			m_currentlyTradingWithAccountId = 0;
-			setPlayerState(Common::Enums::PlayerState::STATE_INVENTORY);
-		}
-
-		void Player::setCurrentlyTradingWithAccountId(std::uint32_t targetAccountId)
-		{
-			m_currentlyTradingWithAccountId = targetAccountId;
-		}
-
-		std::uint32_t Player::getCurrentlyTradingWithAccountId() const
-		{
-			return m_currentlyTradingWithAccountId;
-		}
-
-		void Player::addTradedItem(std::uint32_t itemId, const Main::Structures::ItemSerialInfo& serialInfo)
-		{
-			m_tradedItems.push_back(Main::Structures::TradeBasicItem{ itemId , serialInfo });
-		}
-
-		void Player::removeTradedItem(const Main::Structures::ItemSerialInfo& serialInfo)
-		{
-			for (auto it = m_tradedItems.begin(); it != m_tradedItems.end(); ++it)
-			{
-				if (it->itemSerialInfo == serialInfo)
-				{
-					m_tradedItems.erase(it);
-					return;
-				}
-			}
-		}
-
-		void Player::resetTradedItems()
-		{
-			m_tradedItems.clear();
-		}
-
-		const std::vector<TradedItem>& Player::getTradedItems() const
-		{
-			return m_tradedItems;
-		}
-
-
 		// Mailbox
 		void Player::addMailboxReceived(const Main::Structures::Mailbox& mailbox)
 		{
@@ -679,11 +668,11 @@ namespace Main
 			m_mailboxSent.push_back(mailbox);
 		}
 
-		bool Player::deleteSentMailbox(std::uint32_t timestamp, std::uint32_t accountId)
+		bool Player::deleteSentMailbox(std::uint32_t timestamp)
 		{
 			for (auto it = m_mailboxSent.begin(); it != m_mailboxSent.end(); ++it)
 			{
-				if (it->accountId == accountId && it->timestamp == timestamp)
+				if (it->timestamp == timestamp)
 				{
 					m_mailboxSent.erase(it);
 					return true;
@@ -692,11 +681,11 @@ namespace Main
 			return false;
 		}
 
-		bool Player::deleteReceivedMailbox(std::uint32_t timestamp, std::uint32_t accountId)
+		bool Player::deleteReceivedMailbox(std::uint32_t timestamp)
 		{
 			for (auto it = m_mailboxReceived.begin(); it != m_mailboxReceived.end(); ++it)
 			{
-				if (it->accountId == accountId && it->timestamp == timestamp)
+				if ( it->timestamp == timestamp)
 				{
 					m_mailboxReceived.erase(it);
 					return true;
@@ -748,7 +737,6 @@ namespace Main
 		{
 			std::cout << "Player left match\n";
 			setRoomNumber(0);
-			setPlayerState(Common::Enums::STATE_LOBBY);
 		    setIsInLobby(true);
 			setIsInMatch(false);
 			m_batteryObtainedInMatch = 0;

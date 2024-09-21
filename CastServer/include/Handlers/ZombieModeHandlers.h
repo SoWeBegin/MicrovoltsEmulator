@@ -10,7 +10,7 @@ namespace Cast
 {
 	namespace Handlers
 	{
-        inline void handleZombieModeAmmoRespawn(const Common::Network::Packet& request, Cast::Network::Session& session, Cast::Classes::RoomsManager& roomsManager)
+        inline void handleItemRespawn(const Common::Network::Packet& request, Cast::Network::Session& session, Cast::Classes::RoomsManager& roomsManager)
         {
             roomsManager.broadcastToRoom(session.getId(), const_cast<Common::Network::Packet&>(request));
         }
@@ -21,7 +21,7 @@ namespace Cast
         }
 
         template<Common::Enums::PlayerType PlayerType>
-        inline void handleZombieModeItemPickup(const Common::Network::Packet& request, Cast::Network::Session& session, Cast::Classes::RoomsManager& roomsManager)
+        inline void handleItemPickup(const Common::Network::Packet& request, Cast::Network::Session& session, Cast::Classes::RoomsManager& roomsManager)
         {
             if constexpr (PlayerType == Common::Enums::HOST)
             {

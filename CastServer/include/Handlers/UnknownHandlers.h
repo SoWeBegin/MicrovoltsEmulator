@@ -22,27 +22,10 @@ namespace Cast
 
             session.setIsInMatch(true);
 
-            /*auto mapIdInfoFromMain = ::Utils::IPCManager::ipc_castGetFromMain<::Utils::MapInfo>(std::to_string(session.getRoomNumber()), "map_info");
-            auto opt = roomsManager.getHostIdByRoomNumber(session.getRoomNumber());
-            if (opt != std::nullopt)
-            {
-                roomsManager.setMapFor(*opt, mapIdInfoFromMain.mapId);
-            }
-            else
-            {
-                std::cout << "HandleMatchStart: Nullopt for mapIdInfoFromMain!\n";
-            }
-
-            auto modeIfInfoFromMain = ::Utils::IPCManager::ipc_castGetFromMain<::Utils::ModeInfo>(std::to_string(session.getRoomNumber()), "mode_info");
-            opt = roomsManager.getHostIdByRoomNumber(session.getRoomNumber());
-            if (opt != std::nullopt)
-            {
-                roomsManager.setModeFor(*opt, modeIfInfoFromMain.modeId);
-            }
-            else
-            {
-                std::cout << "HandleMatchStart: Nullopt for modeIfInfoFromMain!\n";
-            }*/
+            auto mapIdInfoFromMain = ::Utils::IPCManager::ipc_castGetFromMain<::Utils::MapInfo>(std::to_string(session.getRoomNumber()), "map_info");
+            roomsManager.setMapFor(mapIdInfoFromMain.hostId, mapIdInfoFromMain.mapId);
+            std::cout << "Map Host From Main: " << mapIdInfoFromMain.hostId << ", map ID: " << mapIdInfoFromMain.mapId << '\n';
+           
 
             const auto receiverSessionId = request.getSession();
             const auto hostSessionId = session.getId();
@@ -90,10 +73,6 @@ namespace Cast
             const auto hostSessionId = request.getSession();
             const auto selfId = session.getId();
             roomsManager.broadcastToRoom(session.getId(), const_cast<Common::Network::Packet&>(request));
-
-            std::cout << "(unknownHandler90) HostSessionID: " << hostSessionId << " => playerSessionID: " << selfId << '\n';
-
-            //  roomsManager.printRoomInfo(session.getRoomId(), "After unknownHandler306");
         }
 
         inline void playerToHost(const Common::Network::Packet& request, Cast::Network::Session& session, Cast::Classes::RoomsManager& roomsManager)

@@ -12,18 +12,16 @@ namespace Main
 		// TODO: Implement "mass" mailbox delete (= deleting multiple mailboxes at once)
 		inline void handleMailboxDelete(const Common::Network::Packet& request, Main::Network::Session& session)
 		{
-			Main::Structures::UniqueId uniqueId;
-			std::uint32_t accountId, timestamp;
-			std::memcpy(&accountId, request.getData() + 4, sizeof(accountId));
-			std::memcpy(&timestamp, request.getData() + 8, sizeof(timestamp));
+			std::uint32_t timestamp;
+			std::memcpy(&timestamp, request.getData() + 4, sizeof(timestamp));
 			
 			if (request.getMission() == Main::Enums::MailboxMission::MISSION_MAILBOX_RECEIVED)
 			{
-				session.deleteReceivedMailbox(timestamp, accountId);
+				session.deleteReceivedMailbox(timestamp);
 			}
 			else
 			{
-				session.deleteSentMailbox(timestamp, accountId);
+				session.deleteSentMailbox(timestamp);
 			}
 		}
 	}

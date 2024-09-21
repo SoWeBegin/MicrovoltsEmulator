@@ -38,7 +38,6 @@ namespace Main
                 response.setExtra(1);
                 response.setOption(selectedBattery);
                 response.setMission(0);
-                response.setData(nullptr, 0);
 
                 std::uint32_t receivedBattery = selectedBattery;
                 response.setData(reinterpret_cast<std::uint8_t*>(&receivedBattery), sizeof(receivedBattery)); 

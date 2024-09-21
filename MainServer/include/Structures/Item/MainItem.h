@@ -8,7 +8,6 @@
 #include "ConstantDatabase/Structures/CdbItemInfo.h"
 #include "ConstantDatabase/Structures/CdbWeaponsInfo.h"
 #include "MainItemSerialInfo.h"
-#include "../TradeSystem/TradeSystemItem.h"
 #include "SpawnedItem.h"
 
 #include "../../CdbUtils.h"
@@ -61,20 +60,19 @@ namespace Main
 			{
 			}
 
-			Item(const Main::Structures::TradeBasicItem& tradedItem)
-				: id{ tradedItem.itemId }, serialInfo{ tradedItem.itemSerialInfo }
-			{
-				// change item origin to ORIGIN_TRADE
-				Main::ConstantDatabase::CdbUtil cdbUtil(tradedItem.itemId);
-				expirationDate = 0; // trade only works with unlimited items
-				durability = *(cdbUtil.getItemDurability());
-			}
-
 			Item(const Main::Structures::SpawnedItem& spawnedItem)
 				: id{ spawnedItem.itemId }, serialInfo{ spawnedItem.serialInfo }
 			{
 				Main::ConstantDatabase::CdbUtil cdbUtil(spawnedItem.itemId);
 				expirationDate = spawnedItem.expirationDate; 
+				durability = *(cdbUtil.getItemDurability());
+			}
+
+			Item(const Main::Structures::BoxItem& boxItem)
+				: id{ boxItem.itemId }, serialInfo{ boxItem.serialInfo }
+			{
+				Main::ConstantDatabase::CdbUtil cdbUtil(boxItem.itemId);
+				expirationDate = boxItem.expirationDate;
 				durability = *(cdbUtil.getItemDurability());
 			}
 

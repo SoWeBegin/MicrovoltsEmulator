@@ -5,30 +5,42 @@
 
 // This struct is sent to the client as the last one when one joins a room
 // It includes information (such as some room settings) that weren't sent before, e.g. "specialSetting" and "isItemOn"
-
 namespace Main
 {
 	namespace Structures
 	{
 #pragma pack(push,1)
-		struct RoomJoinLatestInfo
-		{
-			// N.B GM grade can't enter observer mode at all seemingly (it's literally disabled)
-			std::uint16_t unknown = 0;
-			std::uint16_t specialSetting : 5 = 0; // Special Setting: total kills, rounds etc. not sent before
-			std::uint16_t unknown1 : 3 = 0;
-			std::uint16_t keepThisOne : 1 = 1; // For some reason, the next bit needs this one to be set to '1' to work properly
-			std::uint16_t hasMatchStarted : 1 = 0;
-			std::uint16_t isItemOn : 1 = 0;
-			std::uint16_t time : 5 = 0;
-			std::uint32_t weaponRestriction : 4 = 0;
-			std::uint32_t unknown2 : 28 = 0;
+        struct ModeInfoTDM
+        {
+            std::uint64_t redscore : 8 = 0;
+            std::uint64_t bluescore : 8 = 0;
+            std::uint64_t winrule : 8 = 0;
+            std::uint64_t state : 2 = 0;
+            std::uint64_t kitdrop : 1 = 1;
+            std::uint64_t timelimited : 5 = 0;
+            std::uint64_t weaponlimited : 4 = 0;
+        };
+#pragma pack(pop)
 
-			RoomJoinLatestInfo(std::uint16_t specialSetting, bool hasMatchStarted, bool isItemOn, std::uint16_t time, std::uint32_t weaponRestriction)
-				: specialSetting{ specialSetting }, hasMatchStarted{ hasMatchStarted }, isItemOn{ isItemOn }, time{ time }, weaponRestriction{ weaponRestriction }
-			{
-			}
-		};
+#pragma pack(push,1)
+        struct ModeInfoFFA
+        {
+            std::uint64_t timelimited : 5 = 0;
+            std::uint64_t winrule : 5 = 0;
+            std::uint64_t team_balance : 1 = 0;
+            std::uint64_t state : 2 = 3;
+            std::uint64_t weaponlimited : 4 = 0;
+        };
+#pragma pack(pop)
+
+#pragma pack(push,1)
+        struct ModeInfoScrimmage
+        {
+            std::uint64_t unknown : 45 = 0;
+            std::uint64_t state : 2 = 3;
+            std::uint64_t timelimited : 5 = 0;
+            std::uint64_t weaponlimited : 4 = 0;
+        };
 #pragma pack(pop)
 	}
 }

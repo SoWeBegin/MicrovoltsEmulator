@@ -8,8 +8,6 @@
 #include "Enums/PlayerEnums.h"
 #include "ChatCommands/ISimpleRoomCommand.h"
 
-#include <boost/interprocess/shared_memory_object.hpp> 
-#include <boost/interprocess/mapped_region.hpp> 
 #include <chrono> 
 
 namespace Main

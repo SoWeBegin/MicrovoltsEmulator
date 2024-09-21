@@ -12,13 +12,8 @@ namespace Main
 		inline void handleItemDelete(const Common::Network::Packet& request, Main::Network::Session& session)
 		{
 			Main::Structures::ItemSerialInfo itemSerialInfoToDelete{};
-			std::uint32_t totalItemsToDelete;
-			std::memcpy(&totalItemsToDelete, request.getData(), sizeof(totalItemsToDelete)); 
-			for (std::uint32_t i = 0; i < totalItemsToDelete; ++i)
-			{
-				std::memcpy(&itemSerialInfoToDelete, request.getData() + 4 * (i+1), sizeof(itemSerialInfoToDelete));
-				session.deleteItem(itemSerialInfoToDelete);
-			}
+			std::memcpy(&itemSerialInfoToDelete, request.getData(), sizeof(itemSerialInfoToDelete));
+			session.deleteItem(itemSerialInfoToDelete);
 		}
 	}
 }

@@ -9,6 +9,43 @@
 #include "../include/Network/Packet.h"
 #include "../include/Utils/Utils.h"
 #include <iostream>
+#include "../../include/AuthServer.h"
+#include "../../include/Constants.h"
+
+bool removeAlreadyOnlinePlayer(std::uint32_t accountID)
+{
+	asio::io_context ioContext;
+	asio::ip::tcp::socket socket(ioContext);
+	asio::ip::tcp::resolver resolver(ioContext);
+	asio::connect(socket, resolver.resolve(Auth::Constants::mainServerIp, std::to_string(Auth::Constants::mainServerPort)));
+
+	const std::string request = "is_player_online " + std::to_string(accountID) + "\n";
+	asio::write(socket, asio::buffer(request));
+
+	asio::streambuf responseBuffer;
+	try
+	{
+		asio::error_code ec;
+		asio::read_until(socket, responseBuffer, "\n", ec);
+
+		if (ec)
+		{
+			std::cerr << "Error during read: " << ec.message() << std::endl;
+			return true; //intentional
+		}
+
+		std::istream responseStream(&responseBuffer);
+		std::string response;
+		std::getline(responseStream, response);
+
+		return response == "removed";
+	}
+	catch (const std::exception& e)
+	{
+		std::cerr << "Exception: " << e.what() << std::endl;
+		return true; //intentional
+	}
+}
 
 namespace Auth
 {
@@ -18,6 +55,7 @@ namespace Auth
 			: db{ SQLite::Database(path.c_str(), SQLite::OPEN_READWRITE) }
 		{
 		}
+
 		void PersistentDatabase::addHash(std::uint32_t accountID, std::uint32_t key)
 		{
 			try
@@ -54,7 +92,7 @@ namespace Auth
 					"SELECT Users.*, Clans.Clanname, Clans.ClanFrontIcon, Clans.ClanBackIcon FROM Users LEFT JOIN Clans ON Users.ClanID = Clans.ClanId WHERE  Username=? AND Password=?");
 
 				query.bind(1, username);
-				query.bind(2, password);
+				query.bind(2, Common::Utils::calculateHashCryptoPP<CryptoPP::SHA256>(password));
 
 				if (query.executeStep())
 				{
@@ -79,8 +117,8 @@ namespace Auth
 						playerInfoStructure.clanIconFrontID = static_cast<std::uint16_t>(query.getColumn("ClanFrontIcon").getInt());
 						playerInfoStructure.clanIconBackID = static_cast<std::uint16_t>(query.getColumn("ClanBackIcon").getInt());
 						playerInfoStructure.hashKey = Common::Utils::generateHash(playerInfoStructure.accountId);
-						const bool isOnline = static_cast<bool>(query.getColumn("IsOnline").getInt()); 
-						if (isOnline)
+
+						if (!removeAlreadyOnlinePlayer(playerInfoStructure.accountId))
 						{
 							playerInfo.setExtra(Auth::Enums::Login::ACCOUNT_BUSY);
 						}

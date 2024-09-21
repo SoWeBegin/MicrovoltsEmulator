@@ -168,9 +168,12 @@ namespace Common
             }
 
             
+            
             //do printing here so I can filter based on orders
-            if (m_command.getOrder() == 71 || m_command.getOrder() == 72)// || m_command.getOrder() == 281)
+            if (m_command.getOrder() == 281 || m_command.getOrder() == 322)
+            {
                 return;
+            }
 
             std::cout << "\n\033[1;32m[ client -> server ]\033[1;36m";
             std::cout << "\033[1;35mSize:" << size << "] \n";

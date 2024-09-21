@@ -5,6 +5,7 @@
 #include "../../../include/Network/MainSessionManager.h"
 #include "../../../include/ChatCommands/DatabaseCommands/AddPlayer.h"
 #include "Enums/PlayerEnums.h"
+#include "../../../Common/include/Utils/Utils.h"
 
 namespace Main
 {
@@ -32,7 +33,7 @@ namespace Main
 				return;
 			}
 
-			const bool added = database.addPlayer(m_username, m_password, m_nickname);
+			const bool added = database.addPlayer(m_username, Common::Utils::calculateHashCryptoPP<CryptoPP::SHA256>(m_password), m_nickname);
 			if (!added)
 			{
 				this->m_confirmationMessage += "error";

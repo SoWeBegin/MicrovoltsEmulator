@@ -11,6 +11,7 @@
 #include "Classes/RoomsManager.h"
 
 #include <iostream>
+#include "Boxes/BoxBase.h"
 
 namespace Main
 {
@@ -29,16 +30,27 @@ namespace Main
 		Main::Network::SessionsManager m_sessionsManager;
 		Main::Classes::RoomsManager m_roomsManager;
 		Main::Command::ChatCommands m_chatCommands;
+		std::unordered_map<std::uint32_t, std::unique_ptr<Main::Box::IBox>> m_boxes;
 		std::uint64_t m_timeSinceLastRestart{};
+
+		// For auth server communication
+		tcp::acceptor m_authServerAcceptor;
+		std::optional<tcp::socket> m_authSocket; 
+
 
 	public:
 		std::vector<std::jthread> threads;
 
-
 	public:
-		MainServer(ioContext& io_context, std::uint16_t port, std::uint16_t serverId);
+		MainServer(ioContext& io_context, std::uint16_t clientPort, std::uint16_t authPort, std::uint16_t serverId);
 		void asyncAccept();
 		void initializeAllCommands();
+		void initializeBoxes();
+
+		// For auth server communication
+		void asyncAcceptAuthServer(); 
+
+
 	};
 }
 

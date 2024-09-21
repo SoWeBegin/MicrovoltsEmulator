@@ -32,7 +32,8 @@ void initializeCdbFiles()
 	const std::string cdbSetItemInfoName = "setiteminfo.cdb";
 	const std::string cdbWeaponItemInfoName = "itemweaponsinfo.cdb";
 	const std::string cdbCapsuleInfoName = "gachaponinfo.cdb";
-	const std::string cdbCapsulePackageInfoName = "gachaponpackageinfo.cdb";
+	const std::string cdbCapsuleDisplayName = "gachapondisplay.cdb";
+	const std::string cdbCapsulePackageInfoName = "packageinfo.cdb";
 	const std::string cdbUpgradeInfoName = "upgradeinfo.cdb";
 	const std::string cdbRewardInfo = "rewardinfo.cdb";
 	const std::string cdbGradeInfo = "gradeinfo.cdb";
@@ -45,6 +46,7 @@ void initializeCdbFiles()
 	using capsuleInfos = Common::ConstantDatabase::CdbSingleton<Common::ConstantDatabase::CdbCapsuleInfo>;
 	using rewardInfo = Common::ConstantDatabase::CdbSingleton<Common::ConstantDatabase::CdbRewardInfo>;
 	using levelInfo = Common::ConstantDatabase::CdbSingleton<Common::ConstantDatabase::CdbGradeInfo>;
+	using cdbCapsuleDisplay = Common::ConstantDatabase::CdbSingleton<Common::ConstantDatabase::CdbCapsuleDisplay>;
 
 	std::cout << "[Info] Initializing constant database maps...\n";
 	cdbItems::initialize(cdbItemInfoPath, cdbItemInfoName);
@@ -56,30 +58,35 @@ void initializeCdbFiles()
 	capsulePackageInfos::initialize(cdbItemInfoPath, cdbCapsulePackageInfoName);
 	rewardInfo::initialize(cdbItemInfoPath, cdbRewardInfo);
 	levelInfo::initialize(cdbItemInfoPath, cdbGradeInfo);
+	cdbCapsuleDisplay::initialize(cdbItemInfoPath, cdbCapsuleDisplayName);
 	std::cout << "[Info] Constant database successfully initialized.\n";
 }
 
 int main()
 {
-    SetConsoleTitleW(L"Microvolts Main Server");
-    asio::io_context io_context;
-    auto work_guard = asio::make_work_guard(io_context);
-    Main::MainServer srv(io_context, 13005, 1);
+	SetConsoleTitleW(L"Microvolts Main Server");
 
-    printInitialInformation();
-    initializeCdbFiles();
-    Utils::IPCManager::cleanupSharedMemory();
+	asio::io_context io_context;
+	auto work_guard = asio::make_work_guard(io_context);
 
-    srv.asyncAccept();
-    std::vector<std::thread> threads;
-    const std::uint32_t num_threads = std::thread::hardware_concurrency();
-    for (std::uint32_t i = 0; i < num_threads; ++i)
-    {
-        threads.emplace_back([&io_context]()
-            {
-                io_context.run();  
-            });
-    }
+	Main::MainServer srv(io_context, 13005, 13004, 1);  
 
-    io_context.run();
+	printInitialInformation();
+	initializeCdbFiles();
+	Utils::IPCManager::cleanupSharedMemory();
+
+	srv.asyncAccept();        
+	srv.asyncAcceptAuthServer(); 
+
+	std::vector<std::thread> threads;
+	const std::uint32_t num_threads = std::thread::hardware_concurrency();
+	for (std::uint32_t i = 0; i < num_threads; ++i)
+	{
+		threads.emplace_back([&io_context]()
+			{
+				io_context.run();
+			});
+	}
+
+	io_context.run();
 }

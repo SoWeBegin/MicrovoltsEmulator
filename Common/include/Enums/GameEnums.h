@@ -53,20 +53,16 @@ namespace Common
 
 		enum PlayerState : std::uint32_t
 		{
-			STATE_EXIT = 0,
-            STATE_SINGLEPLAYER = 3,
-			STATE_LOBBY = 4,
-			STATE_SHOP = 5,
-			STATE_INVENTORY = 6,
-			STATE_CAPSULE = 7,
-			STATE_WAITING = 8,
-			STATE_READY = 9,
-			STATE_LOADING = 10,
-			STATE_LOADED = 11,
-			STATE_NORMAL = 12, 
-			STATE_DYING = 13, // ???
-			STATE_TRADE = 14, // N.b. this state is only for the server, doesn't exist in the client
-			STATE_MATCH = 15, // Custom thing
+			STATE_PLAYING = 1,
+			//STATE_UNKNOWN2 = 2,
+			STATE_SHOP = 3,
+			STATE_INVENTORY = 4,
+			STATE_CAPSULE = 5,
+			STATE_WAITING = 6,
+			STATE_READY = 7,
+
+			// Tried for "Playing": 8, 9, 10, 11, 12, 13
+			//STATE_NORMAL = 9, 
 		};
 
 		enum PlayerType

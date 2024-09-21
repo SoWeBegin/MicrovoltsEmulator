@@ -6,7 +6,6 @@
 #include "Network/Packet.h"
 #include "../../Network/MainSessionManager.h"
 #include "Utils/Logger.h"
-#include "Utils/IPC_Structs.h"
 
 namespace Main
 {
@@ -48,13 +47,12 @@ namespace Main
 		{
 			Utils::Logger& logger = Utils::Logger::getInstance();
 
-			Common::Network::Packet response;
-			response.setTcpHeader(request.getSession(), Common::Enums::USER_LARGE_ENCRYPTION);
-			response.setOrder(request.getOrder());
-
 			auto roomOpt = roomsManager.getRoomByNumber(session.getRoomNumber());
 			if (roomOpt == std::nullopt)
 			{
+				Common::Network::Packet response;
+				response.setTcpHeader(request.getSession(), Common::Enums::USER_LARGE_ENCRYPTION);
+				response.setOrder(request.getOrder());
 				response.setExtra(RoomLeaveExtra::LEAVE_ERROR);
 				session.asyncWrite(response);
 				return;
@@ -63,7 +61,6 @@ namespace Main
 
 			if (request.getExtra() == ClientExtra::KICK_PLAYER)
 			{
-				response.setExtra(RoomLeaveExtra::LEAVE_KICKED_BY_HOST);
 				Main::Structures::UniqueId uniqueId;
 				std::memcpy(&uniqueId, request.getData(), sizeof(uniqueId));
 				uniqueId.server = 4;
@@ -71,14 +68,12 @@ namespace Main
 				if (targetSession)
 				{
 					if (targetSession->getAccountInfo().playerGrade >= session.getAccountInfo().playerGrade) return; // Add error messages, i.e. "cannot kick same or higher grade account"
-					room.removePlayer(targetSession, RoomLeaveExtra::LEAVE_KICKED_BY_HOST); // RemovePlayer also takes care of sending the packet to the client.
 					room.addKickedPlayer(targetSession->getAccountInfo().accountID);
+					room.removePlayer(targetSession, RoomLeaveExtra::LEAVE_KICKED_BY_HOST); // RemovePlayer also takes care of sending the packet to the client.
 				}
 			}
 			else
 			{
-				response.setExtra(RoomLeaveExtra::LEAVE_NORMAL);
-
 				// If there are no players left after this player left, or if there were errors while switching to a new host, just close the room to avoid further issues.
 				const bool mustRoomBeClosed = room.removePlayer(&session, RoomLeaveExtra::LEAVE_NORMAL);
 				// nb. removePlayer does NOT notify cast server whether room must be closed, so we do it here.

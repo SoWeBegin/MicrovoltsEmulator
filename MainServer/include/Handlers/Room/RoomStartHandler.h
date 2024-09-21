@@ -6,11 +6,9 @@
 #include "Network/Packet.h"
 #include "../../Classes/RoomsManager.h"
 
-#include <boost/interprocess/shared_memory_object.hpp> 
-#include <boost/interprocess/mapped_region.hpp> 
 #include <chrono> 
-#include <Utils/IPC_Structs.h>
 #include "Utils/Logger.h"
+#include <Utils/IPC_Structs.h>
 
 namespace Main
 {
@@ -44,11 +42,6 @@ namespace Main
 			if (request.getExtra() == 38) // SingleWave: extra is 6!
 			{
 				session.setIsInMatch(true);
-
-				// REMOVE WHEN IMPLEMENTED!!
-				auto gameMode = room.getRoomSettings().mode;
-				if (gameMode == Common::Enums::AiBattle || gameMode == Common::Enums::BossBattle) return;
-
 				room.startMatch(selfUniqueId);
 
 				response.setOrder(request.getOrder());
@@ -57,22 +50,10 @@ namespace Main
 				response.setData(reinterpret_cast<std::uint8_t*>(&selfUniqueId), sizeof(selfUniqueId));
 				room.broadcastToRoom(response); 
 
-				logger.log("The player " + session.getPlayerInfoAsString() + " is entering in the match. " 
-					+ room.getRoomInfoAsString(), Utils::LogType::Normal, "Room::handleRoomStart");
-
-				// NOTE: This is here only as a TEMPORARY fix to a bug where starting the first match (after relogging) with ready players in FFA modes causes issues 
-				response.setOrder(125);
-				response.setMission(0);
-				response.setExtra(0);
-				response.setOption(room.getRoomSettings().mode);
-				auto settings = room.getRoomSettingsUpdate();
-				response.setData(reinterpret_cast<std::uint8_t*>(&settings), sizeof(settings));
-				session.asyncWrite(response);
-
 				if (room.isHost(selfUniqueId))
 				{
 					// Notify cast (IPC) about room's map
-					Utils::MapInfo mapInfo{room.getRoomSettings().map};
+					Utils::MapInfo mapInfo{ room.getRoomSettings().map, selfUniqueId.session };
 					Utils::IPCManager::ipc_mainToCast(mapInfo, std::to_string(room.getRoomNumber()), "map_info");
 
 					logger.log("The player " + session.getPlayerInfoAsString() + " is also host. Main=>Cast notification about room map and mode info sent. "
@@ -80,14 +61,13 @@ namespace Main
 
 				}
 			}
+			// When joining someone's match, this is sent only for specific modes (like ELI), but not for others (e.g. TDM), for which infinite match load happens???
 			else if (request.getExtra() == 41)
 			{
 				if (room.isHost(selfUniqueId))
 				{
-					room.setCurrentHostAsOriginalHost();
-
 					response.setOrder(258);
-					response.setExtra(1 /* there's also 5, unknown */); 
+					response.setExtra(1); 
 					response.setOption(0);
 					struct Response
 					{
@@ -96,8 +76,8 @@ namespace Main
 					Response respMessage;
 					respMessage.tick = getUtcTimeMs() - timeSinceLastServerRestart;
 					response.setData(reinterpret_cast<std::uint8_t*>(&respMessage), sizeof(respMessage));
+					room.setTick(respMessage.tick);
 					room.broadcastToRoom(response);
-
 					logger.log("The player " + session.getPlayerInfoAsString() + " is also host. RoomTick set and broadcast to room. "
 						+ room.getRoomInfoAsString(), Utils::LogType::Normal, "Room::handleRoomStart");
 				}

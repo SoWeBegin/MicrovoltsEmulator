@@ -18,17 +18,15 @@ namespace Main
 		{
 			using PlayerGrade = Main::Enums::PlayerGrade;
 			using ChatGrade = Main::Enums::ChatGrade;
-			if (playerGrade == PlayerGrade::GRADE_NORMAL || playerGrade == PlayerGrade::GRADE_MOD) return static_cast<ChatGrade>(playerGrade - 2);
-			if (playerGrade == PlayerGrade::GRADE_TESTER) return ChatGrade::CHAT_TESTER;
-			return ChatGrade::CHAT_GM;
+			if (playerGrade == PlayerGrade::GRADE_NORMAL) return static_cast<ChatGrade>(0);
+			else if (playerGrade == PlayerGrade::GRADE_MOD) return static_cast<Main::Enums::ChatGrade>(3);
+			return static_cast<Main::Enums::ChatGrade>(2);
 		}
 
-		inline void handleLobbyChatMessage(const Common::Network::Packet& request, Main::Network::Session& session, Main::Network::SessionsManager& sessionsManager,
-			Main::Command::ChatCommands& chatCommands, Main::Classes::RoomsManager& roomsManager, Main::Persistence::PersistentDatabase& database)
+		inline bool checkIfMuted(Main::Network::Session& session, std::uint32_t sessionId)
 		{
-
 			Common::Network::Packet response;
-			response.setTcpHeader(request.getSession(), Common::Enums::USER_LARGE_ENCRYPTION);
+			response.setTcpHeader(sessionId, Common::Enums::USER_LARGE_ENCRYPTION);
 
 			if (session.isMuted())
 			{
@@ -39,23 +37,22 @@ namespace Main
 				response.setData(reinterpret_cast<std::uint8_t*>(m_confirmationMessage.data()), m_confirmationMessage.size());
 				response.setOption(m_confirmationMessage.size());
 				session.asyncWrite(response);
-				return;
+				return true;
 			}
-			
-			response.setOrder(316);
-			response.setOption(request.getOption()); 
-			response.setExtra(request.getExtra()); 
+			return false;
+		}
 
-			const auto& accountInfo = session.getAccountInfo();
-			response.setMission(getChatGrade(static_cast<Common::Enums::PlayerGrade>(accountInfo.playerGrade)));
-
-			if (request.getExtra() == Enums::ChatExtra::COMMAND) 
+		inline bool executeCommand(Main::Network::Session& session, const Common::Network::Packet& request, Common::Network::Packet& response,
+			Main::Classes::RoomsManager& roomsManager, Main::Command::ChatCommands& chatCommands, Main::Network::SessionsManager& sessionsManager,
+			Main::Persistence::PersistentDatabase& database, const Main::Network::Session::AccountInfo& accountInfo)
+		{
+			if (request.getExtra() == Enums::ChatExtra::COMMAND)
 			{
-				const std::string command{ reinterpret_cast<const char*>(request.getData() + 1), static_cast<std::size_t>(request.getOption() - 1)};
+				const std::string command{ reinterpret_cast<const char*>(request.getData() + 1), static_cast<std::size_t>(request.getOption() - 1) };
 				if (command == "?")
 				{
 					chatCommands.showUsages(session, response, static_cast<Common::Enums::PlayerGrade>(accountInfo.playerGrade));
-					return;
+					return true;
 				}
 				const std::string commandName = command.substr(0, command.find(' '));
 				if (!chatCommands.executeSimpleCommand(commandName, session, sessionsManager, response))
@@ -65,7 +62,7 @@ namespace Main
 						if (!chatCommands.executeDatabaseCommand(commandName, command, session, database, response))
 						{
 							const std::uint16_t roomNumber = session.getRoomNumber();
-							if (!roomNumber) return;
+							if (!roomNumber) return true;
 							if (!chatCommands.executeSimpleRoomCommand(commandName, session, roomsManager, roomNumber, response))
 							{
 								if (!chatCommands.executeComplexRoomCommand(commandName, command, session, roomsManager, response));
@@ -73,94 +70,187 @@ namespace Main
 						}
 					}
 				}
-				return;
+				return true;
+			}
+			return false;
+		}
+
+		inline void handleWhisperMessage(const Common::Network::Packet& request, Main::Network::Session& session,
+			Main::Network::SessionsManager& sessionsManager, Common::Network::Packet& response)
+		{
+			constexpr std::uint16_t playerNameLength = 16;
+			char receiverNickname[16];
+			std::memcpy(receiverNickname, request.getData(), playerNameLength);
+
+			auto* targetSession = sessionsManager.findSessionByName(receiverNickname);
+			bool inRoom = false;
+			if (!targetSession)
+			{
+				Main::Structures::UniqueId uniqueId;
+				auto data = request.getData();
+				std::memcpy(&uniqueId, data, sizeof(uniqueId));
+				targetSession = sessionsManager.getSessionBySessionId(uniqueId.session);
+				inRoom = true;
+			}
+
+			const auto& accountInfo = session.getAccountInfo();
+			constexpr std::size_t uidSize = sizeof(accountInfo.uniqueId);
+			const char* senderNickname = accountInfo.nickname;
+			const uint8_t* uid = reinterpret_cast<const uint8_t*>(&(accountInfo.uniqueId));
+			const char* message = reinterpret_cast<const char*>(request.getData() + (inRoom ? sizeof(Main::Structures::UniqueId) : playerNameLength));
+
+			std::vector<std::uint8_t> responseData(playerNameLength + request.getOption() + uidSize);
+			std::copy(uid, uid + uidSize, responseData.begin());
+			std::copy(senderNickname, senderNickname + playerNameLength, responseData.begin() + uidSize);
+			std::copy(message, message + request.getOption(), responseData.begin() + playerNameLength + uidSize);
+
+			response.setData(responseData.data(), responseData.size());
+			if (targetSession)
+			{
+				const auto& targetAccountInfo = targetSession->getAccountInfo();
+				if (session.hasBlocked(targetAccountInfo.accountID))
+				{
+					response.setExtra(Enums::WhisperExtra::WHISPER_SENDER_BLOCKED_RECEIVER);
+				}
+				else if (targetSession->hasBlocked(accountInfo.accountID))
+				{
+					response.setExtra(Enums::WhisperExtra::WHISPER_RECEIVER_BLOCKED_SENDER);
+				}
+				else
+				{
+					sessionsManager.sendTo(targetSession->getId(), response);
+					response.setExtra(Enums::WhisperExtra::WHISPER_SENT);
+				}
+			}
+			else
+			{
+				response.setExtra(Enums::WhisperExtra::RECEIVER_OFFLINE);
+			}
+
+			response.setOrder(315); // 315 extra used to notify the sender whether their whisper was sent
+			response.setMission(1);  // 1 = WhisperConfirmation
+			response.setData(nullptr, 0);
+			session.asyncWrite(response);
+		}
+
+		inline bool executeCommon(const Common::Network::Packet& request, Main::Network::Session& session, Main::Network::SessionsManager& sessionsManager,
+			Main::Command::ChatCommands& chatCommands, Main::Classes::RoomsManager& roomsManager, Main::Persistence::PersistentDatabase& database,
+			const Main::Network::Session::AccountInfo& accountInfo, Common::Network::Packet& response)
+		{
+			if (checkIfMuted(session, request.getSession()))
+			{
+				return true;
+			}
+
+			if (executeCommand(session, request, response, roomsManager, chatCommands, sessionsManager, database, accountInfo))
+			{
+				return true;
 			}
 
 			constexpr std::uint16_t playerNameLength = 16;
-			const char* senderNickname = accountInfo.nickname;
-			if (request.getExtra() == Enums::ChatExtra::WHISPER) 
+			if (request.getExtra() == Enums::ChatExtra::WHISPER)
 			{
-				constexpr std::size_t uidSize = sizeof(accountInfo.uniqueId);
-				const uint8_t* uid = reinterpret_cast<const uint8_t*>(&(accountInfo.uniqueId));
-				const char* message = reinterpret_cast<const char*>(request.getData() + playerNameLength);
-				std::vector<std::uint8_t> responseData(playerNameLength + request.getOption() + uidSize);
-				std::copy(uid, uid + uidSize, responseData.begin());
-				std::copy(senderNickname, senderNickname + playerNameLength, responseData.begin() + uidSize);
-				std::copy(message, message + request.getOption(), responseData.begin() + playerNameLength + uidSize);
-				response.setData(responseData.data(), responseData.size());
+				handleWhisperMessage(request, session, sessionsManager, response);
+				return true;
+			}
 
-				char receiverNickname[16];
-				std::memcpy(receiverNickname, request.getData(), playerNameLength);
-				
-				auto* targetSession = sessionsManager.findSessionByName(receiverNickname);
-				if (targetSession)
+			return false;
+		}
+
+
+		inline void handleLobbyChatMessage(const Common::Network::Packet& request, Main::Network::Session& session, Main::Network::SessionsManager& sessionsManager,
+			Main::Command::ChatCommands& chatCommands, Main::Classes::RoomsManager& roomsManager, Main::Persistence::PersistentDatabase& database)
+		{
+			constexpr std::uint16_t playerNameLength = 16;
+
+			Common::Network::Packet response;
+			response.setTcpHeader(request.getSession(), Common::Enums::USER_LARGE_ENCRYPTION);
+			response.setOrder(316);
+			response.setOption(request.getOption());
+			response.setExtra(request.getExtra());
+			const auto& accountInfo = session.getAccountInfo();
+			response.setMission(getChatGrade(static_cast<Common::Enums::PlayerGrade>(accountInfo.playerGrade)));
+
+			if (executeCommon(request, session, sessionsManager, chatCommands, roomsManager, database, accountInfo, response))
+			{
+				return;
+			}
+
+			const char* senderNickname = accountInfo.nickname;
+			const char* message = reinterpret_cast<const char*>(request.getData());
+			std::vector<std::uint8_t> responseData(playerNameLength + request.getOption());
+			std::copy(senderNickname, senderNickname + playerNameLength, responseData.begin());
+			std::copy(message, message + request.getOption(), responseData.begin() + playerNameLength);
+			response.setData(responseData.data(), responseData.size());
+
+			if (request.getExtra() == Enums::ChatExtra::NORMAL)
+			{
+				sessionsManager.broadcastToLobbyExceptSelf(session.getId(), response);
+			}
+			else 
+			{
+				sessionsManager.broadcastToClan(session.getId(), response);
+			}
+		}
+
+		inline void handleRoomChatMessage(const Common::Network::Packet& request, Main::Network::Session& session, Main::Network::SessionsManager& sessionsManager,
+			Main::Command::ChatCommands& chatCommands, Main::Classes::RoomsManager& roomsManager, Main::Persistence::PersistentDatabase& database)
+		{
+			constexpr std::uint16_t playerNameLength = 16;
+
+			Common::Network::Packet response;
+			response.setTcpHeader(request.getSession(), Common::Enums::USER_LARGE_ENCRYPTION);
+			response.setOrder(316);
+			response.setOption(request.getOption());
+			response.setExtra(request.getExtra());
+			const auto& accountInfo = session.getAccountInfo();
+			response.setMission(getChatGrade(static_cast<Common::Enums::PlayerGrade>(accountInfo.playerGrade)));
+
+			if (executeCommon(request, session, sessionsManager, chatCommands, roomsManager, database, accountInfo, response))
+			{
+				return;
+			}
+
+			const char* senderNickname = accountInfo.nickname;
+			const char* message = reinterpret_cast<const char*>(request.getData());
+			std::vector<std::uint8_t> responseData(playerNameLength + request.getOption());
+			std::copy(senderNickname, senderNickname + playerNameLength, responseData.begin());
+			std::copy(message, message + request.getOption(), responseData.begin() + playerNameLength);
+			response.setData(responseData.data(), responseData.size());
+
+			if (request.getExtra() != Enums::ChatExtra::CLAN)
+			{
+				auto room = roomsManager.getRoomByNumber(session.getRoomNumber());
+				if (!room) return;
+				auto& actualRoom = room->get();
+
+				if (actualRoom.isMuted() && session.getAccountInfo().playerGrade < Common::Enums::GRADE_MOD)
 				{
-					// Warning: This will NOT work with multithreading: targetSession might still become invalidated here
-					const auto& targetAccountInfo = targetSession->getAccountInfo();
-					if (session.hasBlocked(targetAccountInfo.accountID))
-					{
-						response.setExtra(Enums::WhisperExtra::WHISPER_SENDER_BLOCKED_RECEIVER);
-					}
-					else if (targetSession->hasBlocked(accountInfo.accountID))
-					{
-						response.setExtra(Enums::WhisperExtra::WHISPER_RECEIVER_BLOCKED_SENDER);
-					}
-					else
-					{
-						sessionsManager.sendTo(targetSession->getId(), response);
-						response.setExtra(Enums::WhisperExtra::WHISPER_SENT);
-					}
-				} 
+					std::string m_confirmationMessage{ std::string(16, '0') };
+					m_confirmationMessage += "the room is currently muted";
+					response.setOrder(316);
+					response.setExtra(1);
+					response.setData(reinterpret_cast<std::uint8_t*>(m_confirmationMessage.data()), m_confirmationMessage.size());
+					response.setOption(m_confirmationMessage.size());
+					response.setMission(0);
+					session.asyncWrite(response);
+				}
 				else
 				{
-					response.setExtra(Enums::WhisperExtra::RECEIVER_OFFLINE);
-				}
-				response.setOrder(315); // 315 extra used to notify the sender whether their whisper was sent
-				response.setMission(1); // 1 = WhisperConfirmation
-				response.setData(nullptr, 0);
-				session.asyncWrite(response);
-			}
-			else if (request.getExtra() == Enums::ChatExtra::NORMAL || request.getExtra() == Enums::ChatExtra::CLAN
-				|| request.getExtra() == Enums::ChatExtra::TEAM)  // yes, these conditions ARE necessary
-			{
-				const char* message = reinterpret_cast<const char*>(request.getData());
-				std::vector<std::uint8_t> responseData(playerNameLength + request.getOption());
-				std::copy(senderNickname, senderNickname + playerNameLength, responseData.begin()); 
-				std::copy(message, message + request.getOption(), responseData.begin() + playerNameLength);
-				response.setData(responseData.data(), responseData.size());
-
-				if (request.getOrder() == 161)
-				{
-					auto room = roomsManager.getRoomByNumber(session.getRoomNumber());
-					if (!room) return;
-					auto& actualRoom = room->get();
-
-					if (actualRoom.isMuted() && session.getAccountInfo().playerGrade < Common::Enums::GRADE_MOD)
+					if (session.isInMatch())
 					{
-						std::string m_confirmationMessage{ std::string(16, '0') };
-						m_confirmationMessage += "the room is currently muted";
-						response.setOrder(316);
-						response.setExtra(1);
-						response.setData(reinterpret_cast<std::uint8_t*>(m_confirmationMessage.data()), m_confirmationMessage.size());
-						response.setOption(m_confirmationMessage.size());
-						response.setMission(0);
-						session.asyncWrite(response);
+						roomsManager.broadcastToMatchExceptSelf(session.getRoomNumber(), session.getAccountInfo().uniqueId, response, request.getExtra());
 					}
 					else
 					{
-						if (session.isInMatch())
-						{
-							roomsManager.broadcastToMatchExceptSelf(session.getRoomNumber(), session.getAccountInfo().uniqueId, response, request.getExtra());
-						}
-						else
-						{
-							roomsManager.broadcastOutsideMatchExceptSelf(session.getRoomNumber(), session.getAccountInfo().uniqueId, response, request.getExtra());
-						}
-						return;
+						roomsManager.broadcastOutsideMatchExceptSelf(session.getRoomNumber(), session.getAccountInfo().uniqueId, response, request.getExtra());
 					}
+					return;
 				}
-				else if (request.getExtra() == Enums::ChatExtra::NORMAL) sessionsManager.broadcastToLobbyExceptSelf(session.getId(), response);
-				else sessionsManager.broadcastToClan(session.getId(), response);
+			}
+			else
+			{
+				sessionsManager.broadcastToClan(session.getId(), response);
 			}
 		}
 	}

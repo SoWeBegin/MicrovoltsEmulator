@@ -27,6 +27,7 @@
     <ClInclude Include="include\ChatCommands\ISimpleRoomCommand.h" />
     <ClInclude Include="include\ConstantDatabase\Cdb.h" />
     <ClInclude Include="include\ConstantDatabase\CdbSingleton.h" />
+    <ClInclude Include="include\ConstantDatabase\Structures\CdbCapsuleDisplay.h" />
     <ClInclude Include="include\ConstantDatabase\Structures\CdbCapsuleInfo.h" />
     <ClInclude Include="include\ConstantDatabase\Structures\CdbItemInfo.h" />
     <ClInclude Include="include\ConstantDatabase\Structures\CdbMapInfo.h" />

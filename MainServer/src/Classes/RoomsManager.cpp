@@ -3,8 +3,6 @@
 #include "../../include/Classes/Room.h"
 #include "../../include/Classes/RoomsManager.h"
 #include "../../include/Structures/Room/RoomsList.h"
-#include <Utils/IPC_Structs.h>
-
 
 namespace Main
 {

@@ -5,7 +5,7 @@
 #include "../../Classes/RoomsManager.h"
 #include "Network/Packet.h"
 #include "../../MainEnums.h"
-#include <Utils/Utils.h>
+#include "../../Utilities.h"
 
 namespace Main
 {
@@ -13,13 +13,17 @@ namespace Main
 	{
 		inline void handleCharacterSelection(const Common::Network::Packet& request, Main::Network::Session& session, Main::Classes::RoomsManager& roomsManager)
 		{
-			session.setAccountLatestCharacterSelected(request.getOption());
+			const auto selectedCharacter = request.getOption();
+			constexpr std::uint32_t characterAvailable = 1;
 			Common::Network::Packet response;
 			response.setTcpHeader(request.getSession(), Common::Enums::USER_LARGE_ENCRYPTION);
 			response.setOrder(request.getOrder());
-			response.setExtra(1); // 1 == character available (elaborate this)
-			response.setOption(request.getOption()); // selected character
+			response.setExtra(characterAvailable); 
+			response.setOption(selectedCharacter); 
 			session.asyncWrite(response);
+			session.setAccountLatestCharacterSelected(selectedCharacter);
+
+			Details::broadcastPlayerItems(roomsManager, session, request);
 		}
 	}
 }

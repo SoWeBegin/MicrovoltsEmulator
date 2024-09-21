@@ -4,9 +4,6 @@
 #include <functional>
 #include "../../include/Network/MainSessionManager.h"
 #include "../../include/Handlers/Room/RoomLeaveHandler.h"
-#include <boost/interprocess/shared_memory_object.hpp> 
-#include <boost/interprocess/mapped_region.hpp> 
-#include <Utils/IPC_Structs.h>
 
 namespace Main
 {
@@ -15,9 +12,10 @@ namespace Main
 		void SessionsManager::addSession(Main::Network::Session* session)
 		{
 			m_sessionsBySessionId.emplace(session->getId(), session);
-			m_sessionsByAccountId.emplace(session->getAccountInfo().accountID, session);
+			m_sessionsVector.push_back(session);
 		}
 
+		// Todo: This must update "IsOnline" to 0!
 		void SessionsManager::removeSession(std::size_t sessionId)
 		{
 			if (m_sessionsBySessionId.contains(sessionId))
@@ -62,9 +60,6 @@ namespace Main
 							m_sessionsBySessionId[sessionId]->setIsInMatch(false);
 
 							room.removePlayer(m_sessionsBySessionId[sessionId], 1);
-
-							// unnedeed, since if this is the case, client just sends endMatch request.
-							//room.removeHostIfAloneAndModeDoesntAllowIt();
 						}
 					}
 					else
@@ -80,6 +75,15 @@ namespace Main
 				}
 				m_sessionsBySessionId[sessionId]->clear();
 				m_sessionsBySessionId.erase(sessionId);
+
+				auto it = std::find_if(m_sessionsVector.begin(), m_sessionsVector.end(),
+					[&](Session* session) { return session->getSessionId() == sessionId; });
+				if (it != m_sessionsVector.end())
+				{
+					m_sessionsVector.erase(it);
+				}
+
+				
 			}
 		}
 
@@ -101,48 +105,50 @@ namespace Main
 
 		void SessionsManager::broadcast(const Common::Network::Packet& message) const
 		{
-			for (auto& [sessionId, otherSession] : m_sessionsBySessionId)
+			for (auto& currentSession : m_sessionsVector)
 			{
-				otherSession->asyncWrite(message);
+				currentSession->asyncWrite(message);
 			}
 		}
 
 		void SessionsManager::broadcastExceptSelf(std::size_t selfSessionId, const Common::Network::Packet& message) const
 		{
-			for (auto& [sessionId, otherSession] : m_sessionsBySessionId)
+			for (auto& currentSession : m_sessionsVector)
 			{
-				if (selfSessionId == sessionId) continue; // don't broad cast to sender
-				otherSession->asyncWrite(message);
+				if (currentSession->getId() == selfSessionId) continue;
+				currentSession->asyncWrite(message);
 			}
 		}
 
 		void SessionsManager::broadcastToLobbyExceptSelf(std::size_t selfSessionId, const Common::Network::Packet& message) const
 		{
-			for (auto& [sessionId, otherSession] : m_sessionsBySessionId)
+			for (auto& currentSession : m_sessionsVector)
 			{
-				if (selfSessionId == sessionId || !otherSession->isInLobby()) continue; // don't broad cast to sender
-				otherSession->asyncWrite(message);
+				if (selfSessionId == currentSession->getId() || !currentSession->isInLobby()) continue; 
+				currentSession->asyncWrite(message);
 			}
 		}
 
 		void SessionsManager::broadcastToClan(std::uint64_t selfSessionId, const Common::Network::Packet& message) const
 		{
 			const auto& selfAccountInfo = m_sessionsBySessionId.at(selfSessionId)->getAccountInfo();
-			for (auto& [sessionId, otherSession] : m_sessionsBySessionId)
+			for (auto& currentSession : m_sessionsVector)
 			{
-				if (selfSessionId == sessionId) continue; // don't broad cast to sender
-				const auto& otherAccountInfo = otherSession->getAccountInfo();
-				if (otherAccountInfo.clanId == selfAccountInfo.clanId) otherSession->asyncWrite(message);
+				if (selfSessionId == currentSession->getId()) continue;
+				if (selfAccountInfo.clanId == currentSession->getAccountInfo().clanId)
+				{
+					currentSession->asyncWrite(message);
+				}
 			}
 		}
 
 		Main::Network::Session* SessionsManager::findSessionByName(const char* nickname)
 		{
-			for (auto& [sessionId, session] : m_sessionsBySessionId)
+			for (auto& currentSession : m_sessionsVector)
 			{
-				if (std::strcmp(session->getPlayerName(), nickname) == 0)
+				if (std::strcmp(currentSession->getPlayerName(), nickname) == 0)
 				{
-					return session;
+					return currentSession;
 				}
 			}
 			return nullptr;
@@ -150,11 +156,11 @@ namespace Main
 
 		Main::Network::Session* SessionsManager::getSessionByAccountId(std::uint32_t aid)
 		{
-			for (const auto& currentSession : m_sessionsBySessionId)
+			for (const auto& currentSession : m_sessionsVector)
 			{
-				if (currentSession.second->getAccountInfo().accountID == aid)
+				if (currentSession->getAccountInfo().accountID == aid)
 				{
-					return currentSession.second;
+					return currentSession;
 				}
 			}
 			return nullptr;
@@ -167,6 +173,11 @@ namespace Main
 				return m_sessionsBySessionId[sessionId];
 			}
 			return nullptr;
+		}
+
+		std::uint32_t SessionsManager::getTotalSessions() const
+		{
+			return m_sessionsBySessionId.size();
 		}
 
 		bool SessionsManager::sendTo(std::size_t sessionId, const Common::Network::Packet& packet)

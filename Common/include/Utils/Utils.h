@@ -1,6 +1,11 @@
 #ifndef GENERAL_UTILS_COMMON_H
 #define GENERAL_UTILS_COMMON_H
 
+#include "cryptopp/sha.h"
+#include <cryptopp/sha.h>
+#include <cryptopp/hex.h>
+#include <cryptopp/filters.h>
+#include <cryptopp/base64.h>
 
 #include <limits>
 #include <utility>
@@ -18,6 +23,28 @@ namespace Common
 			std::size_t fullHash = hasher(accountId);
 			return static_cast<std::uint32_t>(fullHash % std::numeric_limits<std::uint32_t>::max());
 		}
+
+		template<typename HashType>
+		std::string calculateHashCryptoPP(const std::string& input)
+		{
+			HashType hash;
+			std::string result;
+
+			CryptoPP::byte digest[HashType::DIGESTSIZE];
+			hash.Update(reinterpret_cast<const CryptoPP::byte*>(input.data()), input.size());
+			hash.Final(digest);
+
+			CryptoPP::HexEncoder encoder;
+			encoder.Attach(new CryptoPP::StringSink(result));
+			encoder.Put(digest, sizeof(digest));
+			encoder.MessageEnd();
+
+			std::transform(result.begin(), result.end(), result.begin(),
+				[](unsigned char c) { return std::tolower(c); });
+
+			return result;
+		}
+
 
 		inline std::vector<Common::Enums::ItemType> getPartTypesWhereSetItemInfoTypeNotNull(const Common::ConstantDatabase::SetItemInfo& entry)
 		{

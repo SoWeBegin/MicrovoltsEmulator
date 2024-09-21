@@ -60,9 +60,8 @@ namespace Main
 		private:
 			struct Data
 			{
-				std::uint32_t type : 8 = 0;
-				std::uint32_t equippedItemId : 24 = 0;    
-				std::uint32_t unknown = 0;
+				std::uint32_t type : 8 = 254; // this value is on purpose! If default is 0, it will override the type HAIR!
+				std::uint32_t equippedItemId : 24 = 0;
 
 				Data(const Main::Structures::EquippedItem& equippedItem)
 					: equippedItemId{ equippedItem.id }, type{ equippedItem.type }
@@ -73,8 +72,17 @@ namespace Main
 			};
 
 		public:
-			std::array<Data, 7> equippedWeapons{};
-			std::array<Data, 10> equippedItems{};
+			std::array<Data, 17> items{};
+
+			Data& operator[](std::size_t index)
+			{
+				return items[index];
+			}
+
+			const Data& operator[](std::size_t index) const
+			{
+				return items[index];
+			}
 		};
 #pragma pack(pop)
 	}

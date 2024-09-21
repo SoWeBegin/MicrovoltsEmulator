@@ -7,7 +7,6 @@
 #include "../../include/Persistence/MainDatabaseManager.h"
 #include "../../include/Structures/PlayerLists/BlockedPlayer.h"
 #include "../../include/Structures/PlayerLists/Friend.h"
-#include "../../include/Structures/TradeSystem/TradeSystemItem.h"
 #include "../../include/Structures/Mailbox.h"
 #include "Enums/GameEnums.h"
 
@@ -54,33 +53,33 @@ namespace Main
 		{
 			m_player.addMailboxReceived(mailbox);
 			m_scheduler.addRepetitiveCallback(m_player.getAccountID(), &Main::Persistence::PersistentDatabase::storeMailbox,
-				mailbox, false);
+				mailbox, m_player.getAccountID(), false);
 		}
 
 		void Session::addMailboxSent(const Main::Structures::Mailbox& mailbox)
 		{
 			m_player.addMailboxSent(mailbox);
 			m_scheduler.addRepetitiveCallback(m_player.getAccountID(), &Main::Persistence::PersistentDatabase::storeMailbox,
-				mailbox, true);
+				mailbox, m_player.getAccountID(), true);
 		}
 
-		bool Session::deleteSentMailbox(std::uint32_t timestamp, std::uint32_t accountId)
+		bool Session::deleteSentMailbox(std::uint32_t timestamp)
 		{
-			if (m_player.deleteSentMailbox(timestamp, accountId))
+			if (m_player.deleteSentMailbox(timestamp))
 			{
 				m_scheduler.addRepetitiveCallback(m_player.getAccountID(), &Main::Persistence::PersistentDatabase::deleteMailbox,
-					timestamp, accountId, true);
+					timestamp, m_player.getAccountID(), true);
 				return true;
 			}
 			return false;
 		}
 
-		bool Session::deleteReceivedMailbox(std::uint32_t timestamp, std::uint32_t accountId)
+		bool Session::deleteReceivedMailbox(std::uint32_t timestamp)
 		{
-			if (m_player.deleteReceivedMailbox(timestamp, accountId))
+			if (m_player.deleteReceivedMailbox(timestamp))
 			{
 				m_scheduler.addRepetitiveCallback(m_player.getAccountID(), &Main::Persistence::PersistentDatabase::deleteMailbox,
-					timestamp, accountId, false);
+					timestamp, m_player.getAccountID(), false);
 				return true;
 			}
 			return false;
@@ -222,7 +221,7 @@ namespace Main
 			m_player.deleteFriend(targetAccountId);
 			if (persist)
 			{
-				m_scheduler.addRepetitiveCallback(m_player.getAccountID(), &Main::Persistence::PersistentDatabase::removeFriend,
+				m_scheduler.immediatePersist(m_player.getAccountID(), &Main::Persistence::PersistentDatabase::removeFriend,
 					m_player.getAccountID(), targetAccountId);
 			}
 		}
@@ -291,18 +290,6 @@ namespace Main
 			m_scheduler.addRepetitiveCallback(m_player.getAccountID(), &Main::Persistence::PersistentDatabase::addPlayerItems, m_player.getAccountID(), items, 0);
 		}
 
-		void Session::addItems(const std::vector<Main::Structures::TradeBasicItem> tradedItems)
-		{
-			auto items = m_player.addItems(tradedItems);
-			m_scheduler.addRepetitiveCallback(m_player.getAccountID(), &Main::Persistence::PersistentDatabase::addPlayerItems, m_player.getAccountID(), items, 0);
-		}
-
-		void Session::addItemFromTrade(const Main::Structures::TradeBasicItem& tradeItem)
-		{
-			auto item = m_player.addItemFromTrade(tradeItem);
-			m_scheduler.addRepetitiveCallback(m_player.getAccountID(), &Main::Persistence::PersistentDatabase::addPlayerItem, item, m_player.getAccountID(), 0);
-		}
-
 		void Session::setEquippedItems(const std::unordered_map<std::uint16_t, std::vector<EquippedItem>>& equippedItems)
 		{
 			m_player.setEquippedItems(equippedItems);
@@ -362,8 +349,8 @@ namespace Main
 		{
 			m_player.addOfflineFriend(ffriend);
 
-			m_scheduler.addRepetitiveCallback(m_player.getAccountID(), &Main::Persistence::PersistentDatabase::addFriend, m_player.getAccountID(), ffriend.targetAccountId);
-			m_scheduler.addRepetitiveCallback(m_player.getAccountID(), &Main::Persistence::PersistentDatabase::addFriend, ffriend.targetAccountId, m_player.getAccountID());
+			m_scheduler.immediatePersist(m_player.getAccountID(), &Main::Persistence::PersistentDatabase::addFriend, m_player.getAccountID(), ffriend.targetAccountId);
+			m_scheduler.immediatePersist(m_player.getAccountID(), &Main::Persistence::PersistentDatabase::addFriend, ffriend.targetAccountId, m_player.getAccountID());
 		}
 
 		bool Session::isFriend(std::uint32_t accountId)
@@ -376,7 +363,7 @@ namespace Main
 			auto ffriend = m_player.addOnlineFriend(session);
 			if (ffriend != std::nullopt)
 			{
-				m_scheduler.addRepetitiveCallback(m_player.getAccountID(), &Main::Persistence::PersistentDatabase::addFriend,
+				m_scheduler.immediatePersist(m_player.getAccountID(), &Main::Persistence::PersistentDatabase::addFriend,
 					m_player.getAccountID(), ffriend->targetAccountId);
 			}
 		}
@@ -402,65 +389,40 @@ namespace Main
 			addItem(spawnedItem);
 		}
 
-		void Session::spawnItems(const std::vector<Main::Structures::TradeBasicItem>& tradeBasicItems)
-		{
-			for (const auto& current : tradeBasicItems)
-			{
-				spawnItem(current.itemId, current.itemSerialInfo);
-			}
-		}
-
 		bool Session::deleteItem(const Main::Structures::ItemSerialInfo& itemSerialInfoToDelete)
 		{
 			Common::Network::Packet response;
 			response.setTcpHeader(0, Common::Enums::USER_LARGE_ENCRYPTION);
-			response.setOrder(89);
-
-			struct ItemDeletion
-			{
-				std::uint32_t totalItemsToDelete{};
-				Main::Structures::ItemSerialInfo itemSerialInfo{};
-			} itemDeletion{ 1, itemSerialInfoToDelete };
-
-			response.setData(reinterpret_cast<std::uint8_t*>(&itemDeletion), sizeof(itemDeletion));
+			response.setOrder(88);
+			response.setData(reinterpret_cast<std::uint8_t*>(&const_cast<Main::Structures::ItemSerialInfo&>(itemSerialInfoToDelete)), sizeof(itemSerialInfoToDelete));
 			bool removed = m_player.deleteItemBasic(itemSerialInfoToDelete);
 			if (removed)
 			{
 				m_scheduler.addRepetitiveCallback(m_player.getAccountID(), &Main::Persistence::PersistentDatabase::removePlayerItem,
 					m_player.getAccountID(), static_cast<std::uint32_t>(itemSerialInfoToDelete.itemNumber));
 			}
+			std::cout << "Was removed? " << std::boolalpha << removed << '\n';
 			response.setExtra(removed ? 1 : 0);
 			asyncWrite(response);
 			return removed;
 		}
 
-		bool Session::deleteItems(const std::vector<Main::Structures::TradeBasicItem>& tradeBasicItems)
-		{
-			for (const auto& current : tradeBasicItems)
-			{
-				if (!deleteItem(current.itemSerialInfo)) return false;
-			}
-		}
-
-		void Session::temporarilySealAllItems()
+		void Session::sendMp(std::uint32_t mpToAdd)
 		{
 			Common::Network::Packet response;
 			response.setTcpHeader(0, Common::Enums::USER_LARGE_ENCRYPTION);
-			response.setOrder(200);
-			response.setExtra(1); // seal success
-			std::uint32_t unused = 0;
-
-			// Currently causing a client crash in some special circumstances??
-			for (const auto& [itemNum, item] : m_player.getItems())
+			response.setOrder(307);
+			struct Message
 			{
-				std::vector<std::uint8_t> message(24);
-				std::memcpy(message.data(), &item.serialInfo, 8); // Item Serial Info
-				std::memcpy(message.data() + 8, &unused, 4);
-				std::memcpy(message.data() + 12, &unused, 4);
-				std::memcpy(message.data() + 16, &item.serialInfo, 8);
-				response.setData(message.data(), message.size());
-				asyncWrite(response);
-			}
+				std::uint32_t rt{};
+				std::uint32_t mp{};
+			};
+			const auto& accountInfo = m_player.getAccountInfo();
+			Message message{ accountInfo.rockTotens, accountInfo.microPoints + mpToAdd };
+			response.setData(reinterpret_cast<std::uint8_t*>(&message), sizeof(message));
+			asyncWrite(response);
+
+			setAccountMicroPoints(accountInfo.microPoints + mpToAdd);
 		}
 
 		void Session::sendCurrency()
@@ -495,27 +457,18 @@ namespace Main
 			return m_player.isInLobby();
 		}
 
-		void Session::unsealAllItems()
+	
+		void Session::switchItemEquip(std::uint32_t characterId, std::uint64_t itemNumber)
 		{
-			Common::Network::Packet response;
-			response.setTcpHeader(0, Common::Enums::USER_LARGE_ENCRYPTION);
-			response.setOrder(201);
-			response.setExtra(1); // unseal success
-			std::vector<std::uint8_t> message(8);
-
-			for (const auto& [itemNum, item] : m_player.getItems())
+			if (!m_player.unequipItemIfEquipped(itemNumber, characterId, m_scheduler))
 			{
-				std::memcpy(message.data(), &item.serialInfo, sizeof(item.serialInfo));
-				response.setData(message.data(), message.size());
-				asyncWrite(response);
+				m_player.equipItemIfNotEquipped(itemNumber, characterId, m_scheduler);
 			}
 		}
 
-		void Session::unequipItem(uint64_t itemType)
+		void Session::unequipItem(std::uint64_t itemType)
 		{
-			auto itemNumber = m_player.unequipItem(itemType, m_scheduler);
-			if (itemNumber == std::nullopt) return;
-			m_scheduler.addRepetitiveCallback(m_player.getAccountID(), &Main::Persistence::PersistentDatabase::unequipItem, m_player.getAccountID(), *itemNumber);
+			m_player.unequipItemImpl(itemType, m_scheduler);
 		}
 
 		bool Session::hasEnoughInventorySpace(std::uint16_t totalNewItems) const
@@ -600,22 +553,6 @@ namespace Main
 			return m_player.getPlayerState();
 		}
 
-		void Session::lockTrade()
-		{
-			m_player.lockTrade();
-		}
-
-		bool Session::hasPlayerLocked() const
-		{
-			return m_player.hasPlayerLocked();
-		}
-
-		void Session::resetTradeInfo()
-		{
-			unsealAllItems();
-			m_player.resetTradeInfo();
-		}
-
 		void Session::addLuckyPoints(std::uint32_t points)
 		{
 			m_player.addLuckyPoints(points);
@@ -629,36 +566,6 @@ namespace Main
 		std::uint32_t Session::getLuckyPoints() const
 		{
 			return m_player.getLuckyPoints();
-		}
-
-		void Session::setCurrentlyTradingWithAccountId(std::uint32_t targetAccountId)
-		{
-			m_player.setCurrentlyTradingWithAccountId(targetAccountId);
-		}
-
-		std::uint32_t Session::getCurrentlyTradingWithAccountId() const
-		{
-			return m_player.getCurrentlyTradingWithAccountId();
-		}
-
-		void Session::addTradedItem(std::uint32_t itemId, const Main::Structures::ItemSerialInfo& serialInfo)
-		{
-			m_player.addTradedItem(itemId, serialInfo);
-		}
-
-		void Session::removeTradedItem(const Main::Structures::ItemSerialInfo& serialInfo)
-		{
-			m_player.removeTradedItem(serialInfo);
-		}
-
-		void Session::resetTradedItems()
-		{
-			m_player.resetTradedItems();
-		}
-
-		const std::vector<Main::Structures::TradeBasicItem>& Session::getTradedItems() const
-		{
-			return m_player.getTradedItems();
 		}
 
 		void Session::setRoomNumber(std::uint16_t roomNumber)
@@ -695,6 +602,22 @@ namespace Main
 		std::string Session::getPlayerInfoAsString() const
 		{
 			return m_player.getPlayerInfoAsString();
+		}
+
+		void Session::sendBattery(std::uint32_t battery)
+		{
+			// currently does not work:
+			Common::Network::Packet response;
+			response.setTcpHeader(getId(), Common::Enums::USER_LARGE_ENCRYPTION);
+			response.setOrder(89);
+			response.setExtra(1);
+			response.setOption(battery);
+			response.setData(reinterpret_cast<std::uint8_t*>(&battery), sizeof(battery));
+			asyncWrite(response);
+
+			const std::uint32_t totalNewBattery = m_player.addBattery(battery);
+			m_scheduler.immediatePersist(m_player.getAccountID(), &Main::Persistence::PersistentDatabase::updateBattery, m_player.getAccountID(),
+				totalNewBattery);
 		}
 
 		void Session::storeEndMatchStats(const Main::Structures::ScoreboardResponse& stats, Main::Enums::MatchEnd matchEnd, bool hasLeveledUp)

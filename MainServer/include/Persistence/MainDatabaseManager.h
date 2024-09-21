@@ -699,6 +699,34 @@ namespace Main
 				}
 			}
 
+			void switchItemEquip(std::uint32_t accountID, std::uint64_t itemNumber, std::uint32_t characterId)
+			{
+				try
+				{
+					SQLite::Transaction transaction(db);
+
+					SQLite::Statement query(db, "UPDATE UserItems SET IsEquipped = CASE WHEN IsEquipped = 0 THEN 1 ELSE 0 END, CharacterID = ? WHERE AccountID = ? AND ItemNumber = ?");
+
+					query.bind(1, characterId);
+					query.bind(2, accountID);
+					query.bind(3, static_cast<std::int64_t>(itemNumber));
+
+					if (!query.exec())
+					{
+						std::cerr << "[Main::Database::switchItemEquip] Error executing query: " << query.getExpandedSQL() << '\n';
+						std::cerr << "[Main::Database::switchItemEquip] Error message: " << query.getErrorMsg() << '\n';
+						return;
+					}
+
+					transaction.commit();
+				}
+				catch (const std::exception& e)
+				{
+					std::cerr << "[Main::Database::switchItemEquip] SQLite exception: " << e.what() << '\n';
+				}
+			}
+
+
 			void unequipItem(std::uint32_t accountID, std::uint64_t unequipItemNumber)
 			{
 				try
@@ -812,6 +840,157 @@ namespace Main
 					std::cerr << "[Main::Database::addFriend] SQLite exception: " << e.what() << '\n';
 				}
 			}
+
+			bool resetKillDeath(std::uint32_t accountID)
+			{
+				try
+				{
+					const std::string resetKills = "UPDATE Users SET Kills = 0 WHERE AccountID = ?";
+					const std::string resetDeaths = "UPDATE Users SET Deaths = 0 WHERE AccountID = ?";
+
+					SQLite::Transaction transaction(db);
+					SQLite::Statement resetKillsQuery(db, resetKills);
+					SQLite::Statement resetDeathsQuery(db, resetDeaths);
+					resetKillsQuery.bind(1, accountID);
+					resetDeathsQuery.bind(1, accountID);
+
+					const int killsResult = resetKillsQuery.exec();
+					const int deathsResult = resetDeathsQuery.exec();
+					if (killsResult <= 0 || deathsResult <= 0)
+					{
+						std::cerr << "[Main::Database::resetKillDeath] Error executing query: no rows affected\n";
+						return false;
+					}
+
+					transaction.commit();
+					return true;
+				}
+				catch (const std::exception& e)
+				{
+					std::cerr << "[Main::Database::resetKillDeath] SQLite exception: " << e.what() << '\n';
+					return false;
+				}
+			}
+
+
+			bool resetRecord(std::uint32_t accountID)
+			{
+				try
+				{
+					const std::string resetWins = "UPDATE Users SET Wins = 0 WHERE AccountID = ?";
+					const std::string resetLosses = "UPDATE Users SET Loses = 0 WHERE AccountID = ?";
+					const std::string resetDraws = "UPDATE Users SET Draws = 0 WHERE AccountID = ?";
+
+					SQLite::Transaction transaction(db);
+					SQLite::Statement resetWinsQuery(db, resetWins);
+					SQLite::Statement resetLosesQuery(db, resetLosses);
+					SQLite::Statement resetDrawsQuery(db, resetDraws);
+
+					resetWinsQuery.bind(1, accountID);
+					resetLosesQuery.bind(1, accountID);
+					resetDrawsQuery.bind(1, accountID);
+
+					const int winsResult = resetWinsQuery.exec();
+					const int losesResults = resetLosesQuery.exec();
+					const int drawsResults = resetDrawsQuery.exec();
+					if (winsResult <= 0 || losesResults <= 0 || drawsResults <= 0)
+					{
+						std::cerr << "[Main::Database::resetRecord] Error executing query: no rows affected\n";
+						return false;
+					}
+
+					transaction.commit();
+					return true;
+				}
+				catch (const std::exception& e)
+				{
+					std::cerr << "[Main::Database::resetRecord] SQLite exception: " << e.what() << '\n';
+					return false;
+				}
+			}
+
+			bool batteryRecharge(std::uint32_t accountID, std::uint32_t quantity)
+			{
+				try
+				{
+					const std::string getBattery = "SELECT Battery FROM Users WHERE AccountID = ?";
+					const std::string updateBattery = "UPDATE Users SET Battery = ? WHERE AccountID = ?";
+
+					SQLite::Transaction transaction(db);
+					SQLite::Statement getBatteryQuery(db, getBattery);
+					getBatteryQuery.bind(1, accountID);
+					if (!getBatteryQuery.executeStep())
+					{
+						std::cerr << "[Main::Database::batteryRecharge] Error: Account not found\n";
+						return false;
+					}
+
+					std::uint32_t oldBattery = getBatteryQuery.getColumn(0).getUInt();
+					std::uint32_t newBattery = oldBattery + quantity;
+
+					SQLite::Statement updateBatteryQuery(db, updateBattery);
+					updateBatteryQuery.bind(1, newBattery);
+					updateBatteryQuery.bind(2, accountID);
+
+					if (updateBatteryQuery.exec() <= 0)
+					{
+						std::cerr << "[Main::Database::batteryRecharge] Error executing update: no rows affected\n";
+						return false;
+					}
+					transaction.commit();
+					return true;
+				}
+				catch (const std::exception& e)
+				{
+					std::cerr << "[Main::Database::batteryRecharge] SQLite exception: " << e.what() << '\n';
+					return false;
+				}
+			}
+
+
+			bool batteryExpansion(std::uint32_t accountID)
+			{
+				try
+				{
+					const std::string getMaxBattery = "SELECT MaxBattery FROM Users WHERE AccountID = ?";
+					const std::string updateMaxBattery = "UPDATE Users SET MaxBattery = ? WHERE AccountID = ?";
+
+					SQLite::Transaction transaction(db);
+					SQLite::Statement getMaxBatteryQuery(db, getMaxBattery);
+					getMaxBatteryQuery.bind(1, accountID);
+					if (!getMaxBatteryQuery.executeStep())
+					{
+						std::cerr << "[Main::Database::batteryExpansion] Error: Account not found\n";
+						return false;
+					}
+
+					std::uint32_t currentMaxBattery = getMaxBatteryQuery.getColumn(0).getUInt();
+					if (currentMaxBattery >= 4000)
+					{
+						std::cout << "[Main::Database::batteryExpansion] MaxBattery is already at or above 4000, no expansion needed.\n";
+						return false;
+					}
+
+					const std::uint32_t newMaxBattery = currentMaxBattery + 1000;
+					SQLite::Statement updateMaxBatteryQuery(db, updateMaxBattery);
+					updateMaxBatteryQuery.bind(1, newMaxBattery);
+					updateMaxBatteryQuery.bind(2, accountID);
+
+					if (updateMaxBatteryQuery.exec() <= 0)
+					{
+						std::cerr << "[Main::Database::batteryExpansion] Error executing update: no rows affected\n";
+						return false;
+					}
+					transaction.commit();
+					return true;
+				}
+				catch (const std::exception& e)
+				{
+					std::cerr << "[Main::Database::batteryExpansion] SQLite exception: " << e.what() << '\n';
+					return false;
+				}
+			}
+
 
 			void removeFriend(std::uint32_t accountID, std::uint32_t targetAccountId)
 			{
@@ -932,6 +1111,43 @@ namespace Main
 					std::cerr << "[Main::Database::blockPlayer] SQLite exception: " << e.what() << '\n';
 				}
 			}
+
+			std::uint32_t blockPlayerByNickname(std::uint32_t accountID, const std::string& targetNickname)
+			{
+				try
+				{
+					const std::string findTargetAccountIdQuery = "SELECT AccountID FROM Users WHERE Nickname = ?";
+					SQLite::Statement findQuery(db, findTargetAccountIdQuery);
+					findQuery.bind(1, targetNickname);
+					if (!findQuery.executeStep())
+					{
+						std::cerr << "[Main::Database::blockPlayer] Nickname not found: " << targetNickname << '\n';
+						return -1;
+					}
+
+					auto targetAccountId = findQuery.getColumn(0).getUInt();
+					const std::string blockPlayerQuery = "INSERT INTO BlockedPlayers (AccountID, TargetAccountID) VALUES (?, ?)";
+					SQLite::Transaction transaction(db);
+					SQLite::Statement blockQuery(db, blockPlayerQuery);
+					blockQuery.bind(1, accountID);
+					blockQuery.bind(2, targetAccountId);
+
+					if (!blockQuery.exec())
+					{
+						std::cerr << "[Main::Database::blockPlayer] Error executing block query: " << blockQuery.getExpandedSQL() << '\n';
+						std::cerr << "[Main::Database::blockPlayer] Error message: " << blockQuery.getErrorMsg() << '\n';
+						return -1;
+					}
+					transaction.commit();
+					return targetAccountId;
+				}
+				catch (const std::exception& e)
+				{
+					std::cerr << "[Main::Database::blockPlayer] SQLite exception: " << e.what() << '\n';
+					return -1;
+				}
+			}
+
 
 			void unblockPlayer(std::uint32_t accountID, std::uint32_t targetAccountId)
 			{
@@ -1103,7 +1319,7 @@ namespace Main
 				return events;
 			}
 
-			void storeMailbox(const Main::Structures::Mailbox& mailbox, bool isSent)
+			void storeMailbox(const Main::Structures::Mailbox& mailbox, std::uint32_t accountId, bool isSent)
 			{
 				try
 				{
@@ -1111,7 +1327,7 @@ namespace Main
 					SQLite::Transaction transaction(db);
 					SQLite::Statement query(db, storeMailboxQuery);
 
-					query.bind(1, mailbox.accountId);
+					query.bind(1, accountId);
 					query.bind(2, mailbox.timestamp);
 					//query.bind(3, mailbox.uniqueId);
 					query.bind(4, mailbox.nickname);
@@ -1196,7 +1412,6 @@ namespace Main
 					{
 						mailbox.accountId = query.getColumn("accountId").getInt();
 						mailbox.timestamp = query.getColumn("timestamp").getInt();
-						mailbox.uniqueId = {};
 						std::memcpy(mailbox.nickname, query.getColumn("nickname").getString().c_str(), 16);
 						std::memcpy(mailbox.message, query.getColumn("message").getString().c_str(), 256);
 						mailboxes.push_back(mailbox);
@@ -1275,7 +1490,7 @@ namespace Main
 					{
 						mailbox.accountId = query.getColumn("accountId").getInt();
 						mailbox.timestamp = query.getColumn("timestamp").getInt();
-						mailbox.uniqueId = {};
+						mailbox.hasBeenRead = true;
 						std::memcpy(mailbox.nickname, query.getColumn("nickname").getString().c_str(), 16);
 						std::memcpy(mailbox.message, query.getColumn("message").getString().c_str(), 256);
 						mailboxes.push_back(mailbox);

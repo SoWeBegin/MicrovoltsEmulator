@@ -7,6 +7,7 @@
 #include "../../Structures/Room/RoomJoinLatestInfo.h"
 #include <Enums/PlayerEnums.h>
 #include "Utils/Logger.h"
+#include "../../Structures/Room/RoomJoinLatestInfo.h"
 
 namespace Main
 {
@@ -14,11 +15,11 @@ namespace Main
 	{
 		enum RoomJoinOrder
 		{
-			RoomInfo = 139,
-			RoomLatestEnteredPlayerInfo = 421,
+			RoomInfo = 135, // ok
+			RoomLatestEnteredPlayerInfo = 421, // ok
 			RoomPlayersInfos = 406,
 			RoomPlayersItems = 303,
-			RoomLatestInfo = 309,
+			RoomLatestInfo = 309, // The structure for this handler may be different for CMV, check!
 			RoomPlayersClans = 409,
 		};
 
@@ -38,7 +39,8 @@ namespace Main
 
 		// N.B GM grade can't enter observer mode at all seemingly (it's literally disabled)
 		// Checked.
-		inline void handleRoomJoin(const Common::Network::Packet& request, Main::Network::Session& session, Main::Classes::RoomsManager& roomsManager)
+		inline void handleRoomJoin(const Common::Network::Packet& request, Main::Network::Session& session, Main::Classes::RoomsManager& roomsManager,
+			bool roomJoinCheckPassword = false)
 		{
 			Utils::Logger& logger = Utils::Logger::getInstance();
 
@@ -50,6 +52,8 @@ namespace Main
 			} requestStructure;
 			std::memcpy(&requestStructure, request.getData(), sizeof(requestStructure));
 
+			std::cout << "ROOM JOIN. ROOM NNUMBER: " << requestStructure.roomNumber << ", UNKNOWN: " << requestStructure.unknown
+				<< ", PASS: " << requestStructure.password << '\n';
 			Common::Network::Packet response;
 			response.setTcpHeader(request.getSession(), Common::Enums::USER_LARGE_ENCRYPTION);
 			response.setOrder(request.getOrder());
@@ -69,6 +73,13 @@ namespace Main
 			auto& room = foundRoom.value().get();
 			auto roomInfo = room.getRoomJoinInfo();
 			const auto& roomSettings = room.getRoomSettings();
+
+			if (roomJoinCheckPassword)
+			{
+				response.setExtra(RoomJoinExtra::JOIN_ASK_PASSWORD);
+				session.asyncWrite(response);
+				return;
+			}
 
 			// 1. Check password - mods/tester/gm can join in rooms with passwords
 			if (accountInfo.playerGrade >= Common::Enums::PlayerGrade::GRADE_MOD && roomInfo.hasPassword)
@@ -203,19 +214,43 @@ namespace Main
 			response.setExtra(joinedAsObserver ? RoomJoinExtra::JOIN_OBSERVER_MODE : RoomJoinExtra::JOIN_SUCCESS);
 			session.asyncWrite(response);
 
-			// THIS SEEMS WRONG. FIRST IT NEEDS TO BE SENT BEFORE "SUCCESS IN JOINING THE ROOM" PROBABLY; BUT THEN SETTINGS ARE WRONG.
 			/*
 			// Latest, missing information about the room
-			Main::Structures::RoomJoinLatestInfo roomJoinLatestInfo{ room.getSpecificSetting(), static_cast<bool>(roomInfo.hasMatchStarted), static_cast<bool>(roomSettings.isItemOn),
-				static_cast<std::uint16_t>(roomSettings.time), roomSettings.weaponRestriction };
 			response.setOrder(RoomJoinOrder::RoomLatestInfo);
 			response.setOption(roomSettings.mode); // mode
 			response.setMission(0);
 			response.setExtra(0);
-			response.setData(reinterpret_cast<std::uint8_t*>(&roomJoinLatestInfo), sizeof(roomJoinLatestInfo));
+
+			
+			if (roomSettings.mode == Common::Enums::FreeForAll)
+			{
+				Main::Structures::ModeInfoFFA info;
+				info.state = room.hasMatchStarted() + 1;
+				info.timelimited = roomSettings.time;
+				info.weaponlimited = roomSettings.weaponRestriction;
+				info.winrule = room.getSpecificSetting();
+				info.team_balance = false;
+				response.setData(reinterpret_cast<std::uint8_t*>(&info), sizeof(info));
+			}
+			else if (roomSettings.mode == Common::Enums::Scrimmage)
+			{
+				Main::Structures::ModeInfoScrimmage info;
+				info.state = room.hasMatchStarted() + 1;
+				info.timelimited = roomSettings.time;
+				info.weaponlimited = roomSettings.weaponRestriction;
+				response.setData(reinterpret_cast<std::uint8_t*>(&info), sizeof(info));
+			}
+			else
+			{
+				Main::Structures::ModeInfoTDM info;
+				info.state = room.hasMatchStarted() + 1;
+				info.timelimited = roomSettings.time;
+				info.weaponlimited = roomSettings.weaponRestriction;
+				info.winrule = room.getSpecificSetting();
+				response.setData(reinterpret_cast<std::uint8_t*>(&info), sizeof(info));
+			}
 			session.asyncWrite(response);
 			*/
-
 			// Send the info of the player that just joined to the whole room
 			Main::Structures::RoomLatestEnteredPlayerInfo latestEnteredPlayerInfo;
 			latestEnteredPlayerInfo.character = accountInfo.latestSelectedCharacter;
@@ -235,6 +270,7 @@ namespace Main
 				if (room.isModeTeamBased())
 				{
 					latestEnteredPlayerInfo.team = room.calculateNewPlayerTeam();
+					latestEnteredPlayerInfo.team = Common::Enums::Team::TEAM_ALL; // REMOVE LATER!
 				}
 				else
 				{

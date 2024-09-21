@@ -12,6 +12,7 @@ namespace Utils
 	struct MapInfo // map_info
 	{
 		std::uint32_t mapId;
+		std::uint32_t hostId;
 	};
 
 	class IPCManager

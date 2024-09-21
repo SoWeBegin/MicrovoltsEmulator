@@ -91,7 +91,7 @@ namespace Cast
                 playerInfoBasicResponse.rotation3 = playerPositionFromClient.rotation;
                 playerInfoBasicResponse.specificInfo.sessionId = static_cast<std::uint32_t>(session.getId());
 
-               /* if ((session.getRoomId() == session.getId()) && Cast::Utils::isSuicide(roomsManager.getMapOf(session.getRoomId()), playerInfoBasicResponse.position.positionZ))
+                if (roomsManager.exists(session.getId()) && Cast::Utils::isSuicide(roomsManager.getMapOf(session.getId()), playerInfoBasicResponse.position.positionZ))
                 {
                     response.setOrder(264);
                     Cast::Structures::SuicideStructure suicideStruct;
@@ -100,9 +100,9 @@ namespace Cast
                     suicideStruct.posY = playerPositionFromClient.position.positionY;
                     suicideStruct.posZ = playerPositionFromClient.position.positionZ;
                     response.setData(reinterpret_cast<std::uint8_t*>(&suicideStruct), sizeof(suicideStruct));
-                    roomsManager.broadcastToRoom(session.getRoomId(), response);
+                    roomsManager.broadcastToRoom(session.getId(), response);
                     return;
-                }*/
+                }
                 if (fullSize == 28)
                 {
                     response.setData(reinterpret_cast<std::uint8_t*>(&playerInfoBasicResponse), sizeof(playerInfoBasicResponse));

@@ -112,10 +112,12 @@ namespace Main
 						session.addOnlineFriend(senderSession);
 						session.asyncWrite(response);
 
+						/*
 						Main::Structures::Friend ffriend{ accountInfo.uniqueId, accountInfo.accountID };
 						std::memcpy(ffriend.targetNickname, accountInfo.nickname, 16);
 						response.setData(reinterpret_cast<std::uint8_t*>(&ffriend), sizeof(ffriend));
 						senderSession->asyncWrite(response);
+						*/
 					}
 				}
 			}
