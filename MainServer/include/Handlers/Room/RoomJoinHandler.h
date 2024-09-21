@@ -214,13 +214,11 @@ namespace Main
 			response.setExtra(joinedAsObserver ? RoomJoinExtra::JOIN_OBSERVER_MODE : RoomJoinExtra::JOIN_SUCCESS);
 			session.asyncWrite(response);
 
-			/*
 			// Latest, missing information about the room
 			response.setOrder(RoomJoinOrder::RoomLatestInfo);
 			response.setOption(roomSettings.mode); // mode
 			response.setMission(0);
 			response.setExtra(0);
-
 			
 			if (roomSettings.mode == Common::Enums::FreeForAll)
 			{
@@ -250,7 +248,7 @@ namespace Main
 				response.setData(reinterpret_cast<std::uint8_t*>(&info), sizeof(info));
 			}
 			session.asyncWrite(response);
-			*/
+
 			// Send the info of the player that just joined to the whole room
 			Main::Structures::RoomLatestEnteredPlayerInfo latestEnteredPlayerInfo;
 			latestEnteredPlayerInfo.character = accountInfo.latestSelectedCharacter;
