@@ -65,8 +65,8 @@ namespace Auth
 					{
 						playerInfo.setExtra(Auth::Enums::Login::SUCCESS);
 						playerInfoStructure.accountId = static_cast<std::uint32_t>(query.getColumn("AccountID").getInt());
-						strcpy_s(playerInfoStructure.playerName, query.getColumn("Nickname").getString().c_str());
-						strcpy_s(playerInfoStructure.clanName, query.getColumn("Clanname").getString().c_str());
+						strncpy(playerInfoStructure.playerName, query.getColumn("Nickname").getString().c_str(), sizeof(playerInfoStructure.playerName));
+						strncpy(playerInfoStructure.clanName, query.getColumn("Clanname").getString().c_str(), sizeof(playerInfoStructure.clanName));
 						playerInfo.setOption(static_cast<std::uint32_t>(query.getColumn("Grade").getInt()));
 						playerInfoStructure.level = static_cast<std::uint32_t>(query.getColumn("Level").getInt()) + 1;
 						playerInfoStructure.exp = static_cast<std::uint32_t>(query.getColumn("Experience").getInt());

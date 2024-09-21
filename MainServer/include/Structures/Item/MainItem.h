@@ -2,7 +2,6 @@
 #ifndef MAIN_ITEM_INFO_H
 #define MAIN_ITEM_INFO_H
 
-#include <corecrt.h>
 #include <cstdint>
 #include "ConstantDatabase/CdbSingleton.h"
 #include "ConstantDatabase/Structures/CdbItemInfo.h"

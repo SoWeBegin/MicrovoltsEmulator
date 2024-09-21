@@ -2,6 +2,7 @@
 #include <chrono>
 #include <string>
 #include <format>
+#include <thread>
 #include <asio/execution_context.hpp>
 #include "../include/CastServer.h"
 #include "../include/ConstantDatabase/CdbSingleton.h"
@@ -28,8 +29,9 @@ void printInitialInformation()
 
 int main()
 {
+#if defined WIN32
     SetConsoleTitleW(L"Microvolts Cast Server");
-
+#endif
     asio::io_context io_context;
 
     Cast::CastServer srv(io_context, 13006, 4);
