@@ -37,7 +37,7 @@ namespace Main
                 singlePlayerList.clanLogoBackId = partialAccountData.clanLogoBackId;
                 singlePlayerList.clanLogoFrontId = partialAccountData.clanLogoFrontId;
                 singlePlayerList.level = partialAccountData.playerLevel;
-                strcpy_s(singlePlayerList.name, partialAccountData.nickname);
+                strncpy(singlePlayerList.name, partialAccountData.nickname, sizeof(singlePlayerList.name));
                 singlePlayerList.uniqueId.server = partialAccountData.uniqueId.server;
                 singlePlayerList.uniqueId.session = partialAccountData.uniqueId.session;
                 singlePlayerList.uniqueId.unknown = partialAccountData.uniqueId.unknown;

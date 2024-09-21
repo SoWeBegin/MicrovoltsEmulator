@@ -102,8 +102,8 @@ namespace Main
 
 					if (query.executeStep())
 					{
-						strcpy_s(playerInfoStructure.nickname, sizeof(playerInfoStructure.nickname), query.getColumn("Nickname").getString().c_str());
-						strcpy_s(playerInfoStructure.clanName, sizeof(playerInfoStructure.clanName), query.getColumn("Clanname").getString().c_str());
+						strncpy(playerInfoStructure.nickname, query.getColumn("Nickname").getString().c_str(), sizeof(playerInfoStructure.nickname));
+						strncpy(playerInfoStructure.clanName, query.getColumn("Clanname").getString().c_str(), sizeof(playerInfoStructure.clanName));
 
 						playerInfoStructure.accountID = playerID;
 						playerInfoStructure.accountKey = static_cast<std::uint32_t>(query.getColumn("AccountKey").getInt());
