@@ -6,8 +6,6 @@
 #include "../../../MainEnums.h"
 #include "../../../Structures/PlayerLists/Friend.h"
 #include "Network/Packet.h"
-
-#include <algorithm>
 #include <cstring>
 
 namespace Main
@@ -17,6 +15,7 @@ namespace Main
 		inline void handleGeneralFriendRequests(const Common::Network::Packet& request, Main::Network::Session& session, Main::Network::SessionsManager& sessionsManager,
 			Main::Persistence::PersistentDatabase& database)
 		{
+			constexpr const std::uint32_t MAX_FRIENDS = 30;
 			const auto& accountInfo = session.getAccountInfo();
 			const auto* const data = request.getData();
 
@@ -24,15 +23,13 @@ namespace Main
 			response.setTcpHeader(request.getSession(), Common::Enums::USER_LARGE_ENCRYPTION);
 			response.setOrder(request.getOrder());
 
-			constexpr const std::uint32_t maxFriends = 30;
-
 			switch (request.getExtra())
 			{
 				case Main::Enums::ClientFriendExtra::FRIEND_REQUEST_SENT:
 				{
 					if (request.getOption() != 2) break; // option seems to always be 2 when a friend request is sent
 
-					if (session.getFriendlist().size() > maxFriends)
+					if (session.getFriendlist().size() > MAX_FRIENDS)
 					{
 						response.setExtra(Main::Enums::AddFriendServerExtra::TARGET_OR_SENDER_FRIEND_LIST_FULL);
 						response.setMission(Main::Enums::AddFriendServerMission::SENDER_FRIENDLIST_FULL);
@@ -41,10 +38,9 @@ namespace Main
 					}
 
 					auto* targetSession = sessionsManager.findSessionByName(reinterpret_cast<const char*>(data));
-					if (!targetSession) // target offline
+					if (!targetSession) 
 					{
-						const auto res = database.addPendingFriendRequest(session.getAccountInfo().accountID, reinterpret_cast<const char*>(data));
-
+						const auto res = database.addPendingFriendRequest(accountInfo.accountID, reinterpret_cast<const char*>(data));
 						if (res == Enums::AddFriendServerExtra::DB_ERROR)
 						{
 							return;
@@ -63,7 +59,7 @@ namespace Main
 					else
 					{
 						// The target is online, use their cached information
-						if (targetSession->getFriendlist().size() > maxFriends)
+						if (targetSession->getFriendlist().size() > MAX_FRIENDS)
 						{
 							response.setExtra(Main::Enums::AddFriendServerExtra::TARGET_OR_SENDER_FRIEND_LIST_FULL);
 							response.setMission(Main::Enums::AddFriendServerMission::RECEIVER_FRIENDLIST_FULL);
@@ -111,13 +107,6 @@ namespace Main
 						senderSession->addOnlineFriend(&session);
 						session.addOnlineFriend(senderSession);
 						session.asyncWrite(response);
-
-						/*
-						Main::Structures::Friend ffriend{ accountInfo.uniqueId, accountInfo.accountID };
-						std::memcpy(ffriend.targetNickname, accountInfo.nickname, 16);
-						response.setData(reinterpret_cast<std::uint8_t*>(&ffriend), sizeof(ffriend));
-						senderSession->asyncWrite(response);
-						*/
 					}
 				}
 			}

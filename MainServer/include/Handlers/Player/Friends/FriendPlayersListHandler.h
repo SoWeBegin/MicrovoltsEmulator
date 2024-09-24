@@ -18,10 +18,7 @@ namespace Main
 			const auto& pendingRequests = database.loadPendingFriendRequests(session.getAccountInfo().accountID);
 			if (!pendingRequests.empty())
 			{
-				Common::Network::Packet response;
-				response.setOrder(61);
-				response.setOption(2);
-				response.setExtra(Main::Enums::AddFriendServerExtra::SEND_REQUEST_TO_TARGET);
+				response.setCommand(61, 0, Main::Enums::AddFriendServerExtra::SEND_REQUEST_TO_TARGET, 2);
 
 				for (auto currentPendingFriend : pendingRequests)
 				{
@@ -32,10 +29,8 @@ namespace Main
 			}
 			
             std::vector<Main::Structures::Friend> friendlist = session.getFriendlist();
-			response.setOrder(request.getOrder());
-            response.setOption(friendlist.size());
+			response.setCommand(request.getOrder(), 0, 37, friendlist.size());
             response.setData(reinterpret_cast<std::uint8_t*>(friendlist.data()), friendlist.size() * sizeof(Main::Structures::Friend));
-            response.setExtra(37);
             session.asyncWrite(response);
         }
     }

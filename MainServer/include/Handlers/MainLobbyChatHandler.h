@@ -27,16 +27,9 @@ namespace Main
 		{
 			Common::Network::Packet response;
 			response.setTcpHeader(sessionId, Common::Enums::USER_LARGE_ENCRYPTION);
-
 			if (session.isMuted())
 			{
-				std::string m_confirmationMessage{ std::string(16, '0') };
-				m_confirmationMessage += "you have been muted by a moderator.";
-				response.setOrder(316);
-				response.setExtra(1);
-				response.setData(reinterpret_cast<std::uint8_t*>(m_confirmationMessage.data()), m_confirmationMessage.size());
-				response.setOption(m_confirmationMessage.size());
-				session.asyncWrite(response);
+				Details::sendMessage("you have been muted by a moderator.", session);
 				return true;
 			}
 			return false;
@@ -162,14 +155,11 @@ namespace Main
 			Main::Command::ChatCommands& chatCommands, Main::Classes::RoomsManager& roomsManager, Main::Persistence::PersistentDatabase& database)
 		{
 			constexpr std::uint16_t playerNameLength = 16;
+			const auto& accountInfo = session.getAccountInfo();
 
 			Common::Network::Packet response;
 			response.setTcpHeader(request.getSession(), Common::Enums::USER_LARGE_ENCRYPTION);
-			response.setOrder(316);
-			response.setOption(request.getOption());
-			response.setExtra(request.getExtra());
-			const auto& accountInfo = session.getAccountInfo();
-			response.setMission(getChatGrade(static_cast<Common::Enums::PlayerGrade>(accountInfo.playerGrade)));
+			response.setCommand(316, getChatGrade(static_cast<Common::Enums::PlayerGrade>(accountInfo.playerGrade)), request.getExtra(), request.getOption());
 
 			if (executeCommon(request, session, sessionsManager, chatCommands, roomsManager, database, accountInfo, response))
 			{
@@ -196,15 +186,12 @@ namespace Main
 		inline void handleRoomChatMessage(const Common::Network::Packet& request, Main::Network::Session& session, Main::Network::SessionsManager& sessionsManager,
 			Main::Command::ChatCommands& chatCommands, Main::Classes::RoomsManager& roomsManager, Main::Persistence::PersistentDatabase& database)
 		{
+			const auto& accountInfo = session.getAccountInfo();
 			constexpr std::uint16_t playerNameLength = 16;
 
 			Common::Network::Packet response;
+			response.setCommand(316, getChatGrade(static_cast<Common::Enums::PlayerGrade>(accountInfo.playerGrade)), request.getExtra(), request.getOption());
 			response.setTcpHeader(request.getSession(), Common::Enums::USER_LARGE_ENCRYPTION);
-			response.setOrder(316);
-			response.setOption(request.getOption());
-			response.setExtra(request.getExtra());
-			const auto& accountInfo = session.getAccountInfo();
-			response.setMission(getChatGrade(static_cast<Common::Enums::PlayerGrade>(accountInfo.playerGrade)));
 
 			if (executeCommon(request, session, sessionsManager, chatCommands, roomsManager, database, accountInfo, response))
 			{
@@ -226,14 +213,7 @@ namespace Main
 
 				if (actualRoom.isMuted() && session.getAccountInfo().playerGrade < Common::Enums::GRADE_MOD)
 				{
-					std::string m_confirmationMessage{ std::string(16, '0') };
-					m_confirmationMessage += "the room is currently muted";
-					response.setOrder(316);
-					response.setExtra(1);
-					response.setData(reinterpret_cast<std::uint8_t*>(m_confirmationMessage.data()), m_confirmationMessage.size());
-					response.setOption(m_confirmationMessage.size());
-					response.setMission(0);
-					session.asyncWrite(response);
+					Details::sendMessage("the room is currently muted", session);
 				}
 				else
 				{

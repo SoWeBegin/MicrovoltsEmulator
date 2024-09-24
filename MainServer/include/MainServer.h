@@ -44,11 +44,19 @@ namespace Main
 	public:
 		MainServer(ioContext& io_context, std::uint16_t clientPort, std::uint16_t authPort, std::uint16_t serverId);
 		void asyncAccept();
+		void asyncAcceptAuthServer();
 		void initializeAllCommands();
 		void initializeBoxes();
 
-		// For auth server communication
-		void asyncAcceptAuthServer(); 
+		template<typename T>
+		T parseData(const Common::Network::Packet& request)
+		{
+			assert(sizeof(T) == request.getDataSize());
+
+			T t;
+			std::memcpy(&t, request.getData(), request.getDataSize());
+			return t;
+		}
 
 
 	};

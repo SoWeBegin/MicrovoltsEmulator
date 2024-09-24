@@ -27,7 +27,7 @@ namespace Main
 			
 			std::uint64_t itemNumber : 20 = 0;
 			std::uint64_t m_serverId : 4 = 0;
-			std::uint64_t unknown : 4 = 0;
+			std::uint64_t handlePlayerInvite : 4 = 0;
 			std::uint64_t itemOrigin : 4 = 0; 
 			std::uint64_t itemCreationDate : 32 = 0;
 			

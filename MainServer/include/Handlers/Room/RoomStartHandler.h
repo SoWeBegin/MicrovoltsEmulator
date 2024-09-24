@@ -5,20 +5,12 @@
 #include "../../../include/Structures/AccountInfo/MainAccountInfo.h"
 #include "Network/Packet.h"
 #include "../../Classes/RoomsManager.h"
-
-#include <chrono> 
-#include "Utils/Logger.h"
 #include <Utils/IPC_Structs.h>
 
 namespace Main
 {
 	namespace Handlers
 	{
-		enum RoomStartExtra
-		{
-			START_SUCCESS = 38,
-		};
-
 		std::uint64_t getUtcTimeMs()
 		{
 			const auto durationSinceEpoch = std::chrono::system_clock::now().time_since_epoch();
@@ -28,8 +20,6 @@ namespace Main
 		inline void handleRoomStart(const Common::Network::Packet& request, Main::Network::Session& session, Main::Classes::RoomsManager& roomsManager,
 			std::uint64_t timeSinceLastServerRestart)
 		{
-			Utils::Logger& logger = Utils::Logger::getInstance();
-
 			const auto foundRoom = roomsManager.getRoomByNumber(session.getRoomNumber());
 			if (foundRoom == std::nullopt) return;
 			auto& room = foundRoom.value().get(); 
@@ -38,62 +28,106 @@ namespace Main
 			response.setTcpHeader(request.getSession(), Common::Enums::USER_LARGE_ENCRYPTION);
 			auto selfUniqueId = session.getAccountInfo().uniqueId;
 
-			// Click on "Start" button (match) -- host clicks start or we (as non-host) click start
-			if (request.getExtra() == 38) // SingleWave: extra is 6!
+			if (request.getExtra() == 38) // host or non-host clicks on "start" button (n.b: SingleWave's extra is 6)
 			{
-				session.setIsInMatch(true);
-				room.startMatch(selfUniqueId);
-
-				response.setOrder(request.getOrder());
-				response.setExtra(38);
-				response.setOption(room.getRoomSettings().map);
+				response.setCommand(request.getOrder(), 0, 38, room.getRoomSettings().map);
 				response.setData(reinterpret_cast<std::uint8_t*>(&selfUniqueId), sizeof(selfUniqueId));
 				room.broadcastToRoom(response); 
 
 				if (room.isHost(selfUniqueId))
 				{
-					// Notify cast (IPC) about room's map
 					Utils::MapInfo mapInfo{ room.getRoomSettings().map, selfUniqueId.session };
 					Utils::IPCManager::ipc_mainToCast(mapInfo, std::to_string(room.getRoomNumber()), "map_info");
-
-					logger.log("The player " + session.getPlayerInfoAsString() + " is also host. Main=>Cast notification about room map and mode info sent. "
-						+ room.getRoomInfoAsString(), Utils::LogType::Normal, "Room::handleRoomStart");
-
 				}
-			}
-			// When joining someone's match, this is sent only for specific modes (like ELI), but not for others (e.g. TDM), for which infinite match load happens???
-			else if (request.getExtra() == 41)
-			{
-				if (room.isHost(selfUniqueId))
-				{
-					response.setOrder(258);
-					response.setExtra(1); 
-					response.setOption(0);
-					struct Response
-					{
-						std::uint64_t tick{};
-					};
-					Response respMessage;
-					respMessage.tick = getUtcTimeMs() - timeSinceLastServerRestart;
 
-					response.setData(reinterpret_cast<std::uint8_t*>(&respMessage), sizeof(respMessage));
-					room.setTick(respMessage.tick);
-					room.broadcastToRoom(response);
-					logger.log("The player " + session.getPlayerInfoAsString() + " is also host. RoomTick set and broadcast to room. "
-						+ room.getRoomInfoAsString(), Utils::LogType::Normal, "Room::handleRoomStart");
+				// 421
+				auto accountInfo = session.getAccountInfo();
+				Main::Structures::RoomLatestEnteredPlayerInfo latestEnteredPlayerInfo;
+				latestEnteredPlayerInfo.character = accountInfo.latestSelectedCharacter;
+				latestEnteredPlayerInfo.level = accountInfo.playerLevel;
+				latestEnteredPlayerInfo.ping = session.getPing();
+				latestEnteredPlayerInfo.uniqueId = accountInfo.uniqueId;
+				std::memcpy(latestEnteredPlayerInfo.playerName, accountInfo.nickname, 16);
+				auto separatedItems = session.getEquippedItemsSeparated(); // first=items, second=weapons
+				latestEnteredPlayerInfo.equippedItems = separatedItems.first;
+				latestEnteredPlayerInfo.equippedWeapons = separatedItems.second;
+				if (false) // joined as observer
+				{
+					latestEnteredPlayerInfo.team = Common::Enums::TEAM_OBSERVER;
 				}
 				else
 				{
-					// Tell the other players in the match that we joined
-					response.setOrder(415); 
-					response.setExtra(1);
-					response.setData(reinterpret_cast<std::uint8_t*>(&selfUniqueId), sizeof(selfUniqueId));
-					response.setMission(0);
-					response.setOption(0);
-					room.broadcastToRoom(response);
+					if (room.isModeTeamBased())
+					{
+						latestEnteredPlayerInfo.team = room.calculateNewPlayerTeam();
+					}
+					else
+					{
+						latestEnteredPlayerInfo.team = Common::Enums::Team::TEAM_ALL;
+					}
+				}
+				response.setCommand(RoomJoinOrder::RoomLatestEnteredPlayerInfo, 0, 0, 0);
+				response.setData(reinterpret_cast<std::uint8_t*>(&latestEnteredPlayerInfo), sizeof(latestEnteredPlayerInfo));
+				room.broadcastToRoom(response);
 
-					logger.log("The player " + session.getPlayerInfoAsString() + " is NOT host. Notifying other players about their match join. "
-						+ room.getRoomInfoAsString(), Utils::LogType::Normal, "Room::handleRoomStart");
+				// 409
+				auto roomSettings = room.getRoomSettings();
+				response.setCommand(RoomJoinOrder::RoomLatestInfo, 0, 0, roomSettings.mode);
+				if (roomSettings.mode == Common::Enums::FreeForAll)
+				{
+					Main::Structures::ModeInfoFFA info;
+					info.state = room.hasMatchStarted() + 1;
+					info.timelimited = roomSettings.time;
+					info.weaponlimited = roomSettings.weaponRestriction;
+					info.winrule = room.getSpecificSetting();
+					info.team_balance = false;
+					response.setData(reinterpret_cast<std::uint8_t*>(&info), sizeof(info));
+				}
+				else if (roomSettings.mode == Common::Enums::Scrimmage)
+				{
+					Main::Structures::ModeInfoScrimmage info;
+					info.state = room.hasMatchStarted() + 1;
+					info.timelimited = roomSettings.time;
+					info.weaponlimited = roomSettings.weaponRestriction;
+					response.setData(reinterpret_cast<std::uint8_t*>(&info), sizeof(info));
+				}
+				else
+				{
+					Main::Structures::ModeInfoTDM info;
+					info.state = room.hasMatchStarted() + 1;
+					info.timelimited = roomSettings.time;
+					info.weaponlimited = roomSettings.weaponRestriction;
+					info.winrule = room.getSpecificSetting();
+					response.setData(reinterpret_cast<std::uint8_t*>(&info), sizeof(info));
+				}
+				session.asyncWrite(response);
+
+				// 312
+				response.setOrder(312);
+				response.setOption(11);
+				response.setMission(0);
+				response.setExtra(0);
+				response.setData(reinterpret_cast<std::uint8_t*>(&accountInfo.uniqueId), sizeof(accountInfo));
+				session.asyncWrite(response);
+			}
+			else if (request.getExtra() == 41)
+			{
+				session.setIsInMatch(true);
+
+				if (room.isHost(selfUniqueId)) // broadcast the tick to the room
+				{
+					std::uint64_t roomTick = getUtcTimeMs() - timeSinceLastServerRestart;
+					room.setTick(roomTick);
+					response.setCommand(258, 0, 1, 0);
+					response.setData(reinterpret_cast<std::uint8_t*>(&roomTick), sizeof(roomTick));
+					room.broadcastToRoom(response);
+					room.startMatch(selfUniqueId);
+				}
+				else // Tell the other players in the match that we joined
+				{
+					response.setCommand(415, 0, 1, 0);
+					response.setData(reinterpret_cast<std::uint8_t*>(&selfUniqueId), sizeof(selfUniqueId));
+					room.broadcastToRoom(response);
 				}
 			}
 		}

@@ -60,6 +60,7 @@ namespace Common
 			STATE_CAPSULE = 5,
 			STATE_WAITING = 6,
 			STATE_READY = 7,
+			STATE_PLAY = 11,
 
 			// Tried for "Playing": 8, 9, 10, 11, 12, 13
 			//STATE_NORMAL = 9, 

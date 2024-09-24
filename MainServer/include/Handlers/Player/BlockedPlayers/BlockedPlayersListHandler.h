@@ -3,6 +3,7 @@
 
 #include "../../../../include/Network/MainSessionManager.h"
 #include "../../../../include/Structures/PlayerLists/BlockedPlayer.h"
+#include <vector>
 
 namespace Main
 {
@@ -14,10 +15,8 @@ namespace Main
 
             Common::Network::Packet response;
             response.setTcpHeader(request.getSession(), Common::Enums::USER_LARGE_ENCRYPTION);
-            response.setOrder(request.getOrder());
-            response.setOption(blockedPlayers.size());
+            response.setCommand(request.getOrder(), 0, 37, blockedPlayers.size());  // max blocked players is 30, should never exceed 1440 bytes in total
             response.setData(reinterpret_cast<std::uint8_t*>(blockedPlayers.data()), blockedPlayers.size() * sizeof(Main::Structures::BlockedPlayer));
-            response.setExtra(37);
             session.asyncWrite(response);
         }
     }

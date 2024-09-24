@@ -570,6 +570,10 @@ namespace Main
 
 		void Session::setRoomNumber(std::uint16_t roomNumber)
 		{
+			if (roomNumber)
+			{
+				m_player.setIsInLobby(false);
+			}
 			m_player.setRoomNumber(roomNumber);
 		}
 

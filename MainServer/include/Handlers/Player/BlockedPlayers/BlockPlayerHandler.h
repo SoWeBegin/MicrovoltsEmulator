@@ -3,6 +3,7 @@
 
 #include "../../../Network/MainSession.h"
 #include "../../../Network/MainSessionManager.h"
+#include "../../../Persistence/MainDatabaseManager.h"
 #include "Network/Packet.h"
 
 namespace Main
@@ -12,20 +13,19 @@ namespace Main
 		inline void handlePlayerBlock(const Common::Network::Packet& request, Main::Network::Session& session, Main::Network::SessionsManager& sessionsManager,
 			Main::Persistence::PersistentDatabase& database)
 		{
-			char targetAccountName[16]{};
-			std::memcpy(targetAccountName, request.getData(), sizeof(targetAccountName));
-
-			Common::Network::Packet response;
-			response.setTcpHeader(request.getSession(), Common::Enums::USER_LARGE_ENCRYPTION);
-			response.setOrder(request.getOrder());
-			
 			if (request.getOption() == 2) // for some reason the client always sends this option for blocked players list
 			{
-				if (auto* targetSession = sessionsManager.findSessionByName(targetAccountName)) // player is online
+				char targetAccountName[16]{};
+				std::memcpy(targetAccountName, request.getData(), sizeof(targetAccountName));
+
+				Common::Network::Packet response;
+				response.setTcpHeader(request.getSession(), Common::Enums::USER_LARGE_ENCRYPTION);
+				response.setCommand(request.getOrder(), 0, 1, 0);
+
+				if (auto* targetSession = sessionsManager.findSessionByName(targetAccountName))
 				{
 					const std::uint32_t targetAccountId = targetSession->getAccountInfo().accountID;
 					session.blockAccount(targetAccountId, targetAccountName);
-					response.setExtra(1);
 					session.deleteFriend(targetAccountId);
 					targetSession->deleteFriend(session.getAccountInfo().accountID, false);
 					session.asyncWrite(response);
@@ -36,7 +36,6 @@ namespace Main
 					if (targetAccountId != -1)
 					{
 						session.blockAccount(targetAccountId, targetAccountName);
-						response.setExtra(1);
 						session.deleteFriend(targetAccountId);
 						session.asyncWrite(response);
 					}

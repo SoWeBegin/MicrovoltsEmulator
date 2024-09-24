@@ -18,37 +18,6 @@ namespace Main
 		inline void handleMailboxDisplay(const Common::Network::Packet& request, Main::Network::Session& session, Main::Network::SessionsManager& sessionsManager,
             Main::Persistence::PersistentDatabase& database)
 		{
-            /*
-            Common::Network::Packet response;
-            response.setTcpHeader(session.getId(), Common::Enums::USER_LARGE_ENCRYPTION);
-            response.setOrder(request.getOrder();
-            response.setOption(1); // Num of mailboxes
-            Main::Structures::Mailbox mailbox;
-            mailbox.timestamp = static_cast<__time32_t>(std::time(0));
-            mailbox.accountId = 1;
-            mailbox.hasBeenRead = false;
-            response.setData(reinterpret_cast<std::uint8_t*>(&mailbox), sizeof(mailbox));
-
-			if (request.getMission() == 0)
-			{
-				// incoming mailboxes
-                response.setMission(0);
-                session.asyncWrite(response);
-                response.setExtra(51);
-                session.asyncWrite(response);
-                return;
-			}
-            else if (request.getMission() == 1)
-            {
-                // sent mailboxes
-                response.setMission(1);
-                session.asyncWrite(response);
-                response.setExtra(51);
-                session.asyncWrite(response);
-                return;
-            }
-            */
-
             auto actualMailbox = request.getMission() == 0 ? session.getMailboxReceived() : session.getMailboxSent();
             auto mailboxData = actualMailbox.data();
             auto accountID = session.getAccountInfo().accountID;
@@ -60,9 +29,7 @@ namespace Main
 
             Common::Network::Packet response;
             response.setTcpHeader(session.getId(), Common::Enums::USER_LARGE_ENCRYPTION);
-            response.setOrder(request.getOrder());
-            response.setMission(request.getMission());
-            response.setOption(actualMailbox.size());
+            response.setCommand(request.getOrder(), request.getMission(), 0, actualMailbox.size());
 
             if (actualMailbox.empty())
             {
@@ -81,7 +48,7 @@ namespace Main
                 response.setExtra(37);
                 response.setData(reinterpret_cast<std::uint8_t*>(const_cast<Main::Structures::Mailbox*>(mailboxData)), totalBytes);
                 session.asyncWrite(response);
-                response.setExtra(51);
+                response.setExtra(51); // this is needed as a "confirmation"
                 session.asyncWrite(response);
                 return;
             }

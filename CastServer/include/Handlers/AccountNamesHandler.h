@@ -10,6 +10,7 @@ namespace Cast
     {
         inline void handleAccountNames(const Common::Network::Packet& request, Cast::Network::Session& session, Cast::Classes::RoomsManager& roomsManager)
         {
+            std::cout << "OKKKKKKKKKKKKKKKKKKKKKK\n";
             // This should only be broadcast to players that are NOT inside the match, but inside the room!
             roomsManager.broadcastToRoomExceptSelf(session.getId(), const_cast<Common::Network::Packet&>(request)); // note: do not broadcast to self!
 

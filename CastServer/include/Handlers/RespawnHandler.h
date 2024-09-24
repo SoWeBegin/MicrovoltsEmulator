@@ -5,6 +5,7 @@
 #include "../Network/CastSession.h"
 #include "../../../MainServer/include/Structures/AccountInfo/MainAccountUniqueId.h"
 
+#include <boost/interprocess/mapped_region.hpp> 
 #include <chrono> 
 #include "../../../MainServer/include/Structures/AccountInfo/MainAccountInfo.h"
 

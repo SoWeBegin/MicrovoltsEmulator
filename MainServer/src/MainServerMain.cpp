@@ -69,7 +69,7 @@ int main()
 	asio::io_context io_context;
 	auto work_guard = asio::make_work_guard(io_context);
 
-	Main::MainServer srv(io_context, 13005, 13004, 1);  
+	Main::MainServer srv(io_context, 13005, 13004, 4);  
 
 	printInitialInformation();
 	initializeCdbFiles();

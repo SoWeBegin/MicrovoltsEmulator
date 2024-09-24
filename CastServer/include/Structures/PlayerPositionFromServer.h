@@ -19,7 +19,7 @@ namespace Cast
             std::uint32_t animation1 : 7 = 0;
             std::uint32_t enableRotation : 1 = true;
             std::uint32_t animation2 : 6 = 0;
-            std::uint32_t unknown : 1 = true;
+            std::uint32_t handlePlayerInvite : 1 = true;
             std::uint32_t enableJump : 1 = false;
         };
 #pragma pack(push, 1)

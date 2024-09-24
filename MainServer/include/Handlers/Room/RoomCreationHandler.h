@@ -22,7 +22,6 @@ namespace Main
 			CREATION_BOTBATTLE = 61,
 		};
 
-		// Checked
 		inline void handleRoomCreation(const Common::Network::Packet& request, Main::Network::Session& session, Main::Classes::RoomsManager& roomsManager)
 		{
 			if (request.getFullSize() == sizeof(Common::Protocol::TcpHeader) + sizeof(Common::Protocol::CommandHeader)) return;
@@ -52,7 +51,7 @@ namespace Main
 				room.setPassword(completeRoomInfo.password);
 			}
 			room.setSpecificSetting(request.getExtra()); // request.getExtra() == specific setting. E.g eli => num of rounds, TDM => num of total kills / 10
-			
+
 			struct ResponseMessage
 			{
 				std::uint16_t roomNumber{};
@@ -66,7 +65,7 @@ namespace Main
 				response.setExtra(RoomCreationExtra::CREATION_FAIL);
 				session.asyncWrite(response);
 
-				logger.log("The player " + session.getPlayerInfoAsString() + " attempted to create a new room, but there are >= 30 rooms thus the creation failed. " 
+				logger.log("The player " + session.getPlayerInfoAsString() + " attempted to create a new room, but there are >= 30 rooms thus the creation failed. "
 					+ room.getRoomInfoAsString(), Utils::LogType::Warning, "Main::handleRoomCreation");
 			}
 			else
@@ -83,7 +82,6 @@ namespace Main
 				session.setIsInLobby(false);
 
 
-				/*
 				// Disable Team balance for now: it causes issues such as team bugs.
 				if (room.isModeTeamBased())
 				{
@@ -95,7 +93,7 @@ namespace Main
 					response.setData(reinterpret_cast<std::uint8_t*>(&settings), sizeof(settings));
 					session.asyncWrite(response);
 				}
-				*/
+				
 				logger.log("The player " + session.getPlayerInfoAsString() + " has created a new room. " + room.getRoomInfoAsString(),
 					Utils::LogType::Normal, "Main::handleRoomCreation");
 			}

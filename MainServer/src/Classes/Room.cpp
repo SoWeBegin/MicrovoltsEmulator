@@ -31,15 +31,44 @@ namespace Main
 
 			m_isTeamBalanceOn = false; // For now, team balance isn't supported as it causes issues e.g. team bug.
 			//m_isTeamBalanceOn = isModeTeamBased() ? true : false; // Team balance is by default on for team-based modes
+		}
 
-			m_originalHost = player;
+		void Room::addPlayer(Main::Network::Session* session, std::uint32_t team)
+		{
+			const auto& accountInfo = session->getAccountInfo();
+			Main::Structures::RoomPlayerInfo roomPlayerInfo;
+			roomPlayerInfo.character = accountInfo.latestSelectedCharacter;
+			roomPlayerInfo.level = accountInfo.playerLevel;
+			roomPlayerInfo.ping = session->getPing();
+			std::memcpy(roomPlayerInfo.playerName, accountInfo.nickname, 16);
+			roomPlayerInfo.state = Common::Enums::STATE_WAITING;
+			roomPlayerInfo.uniqueId = accountInfo.uniqueId;
+			roomPlayerInfo.team = team;
+
+			m_players.push_back(std::pair{ roomPlayerInfo, session });
+			session->setRoomNumber(m_number);
+		}
+
+		void Room::addObserverPlayer(Main::Network::Session* session)
+		{
+			const auto& accountInfo = session->getAccountInfo();
+			Main::Structures::RoomPlayerInfo roomPlayerInfo;
+			roomPlayerInfo.ping = session->getPing();
+			roomPlayerInfo.character = accountInfo.latestSelectedCharacter;
+			roomPlayerInfo.level = accountInfo.playerLevel;
+			std::memcpy(roomPlayerInfo.playerName, accountInfo.nickname, 16);
+			roomPlayerInfo.uniqueId = accountInfo.uniqueId;
+			roomPlayerInfo.team = Common::Enums::Team::TEAM_OBSERVER;
+			roomPlayerInfo.state = Common::Enums::STATE_WAITING;
+
+			m_observerPlayers.push_back(std::pair{ roomPlayerInfo, session });
+			session->setRoomNumber(m_number);
 		}
 
 		void Room::setTick(std::uint64_t tick)
 		{
 			m_tick = tick;
 		}
-
 
 		std::uint32_t Room::getPlayerIdx(std::uint64_t playerId) const
 		{
@@ -63,40 +92,6 @@ namespace Main
 		std::uint16_t Room::getRoomNumber() const
 		{
 			return m_number;
-		}
-
-		void Room::addPlayer(Main::Network::Session* session, std::uint32_t team)
-		{
-			const auto& accountInfo = session->getAccountInfo();
-			Main::Structures::RoomPlayerInfo roomPlayerInfo;
-			roomPlayerInfo.character = accountInfo.latestSelectedCharacter;
-			roomPlayerInfo.level = accountInfo.playerLevel;
-			roomPlayerInfo.ping = session->getPing();
-			std::memcpy(roomPlayerInfo.playerName, accountInfo.nickname, 16);
-			roomPlayerInfo.state = Common::Enums::STATE_WAITING;
-			roomPlayerInfo.uniqueId = accountInfo.uniqueId;
-			roomPlayerInfo.team = team;
-			
-			m_players.push_back(std::pair{ roomPlayerInfo, session });
-			session->setRoomNumber(m_number);
-			session->setIsInLobby(false);
-		}
-
-		void Room::addObserverPlayer(Main::Network::Session* session)
-		{
-			const auto& accountInfo = session->getAccountInfo();
-			Main::Structures::RoomPlayerInfo roomPlayerInfo;
-			roomPlayerInfo.ping = session->getPing();
-			roomPlayerInfo.character = accountInfo.latestSelectedCharacter;
-			roomPlayerInfo.level = accountInfo.playerLevel;
-			std::memcpy(roomPlayerInfo.playerName, accountInfo.nickname, 16);
-			roomPlayerInfo.uniqueId = accountInfo.uniqueId;
-			roomPlayerInfo.team = Common::Enums::Team::TEAM_OBSERVER;
-			roomPlayerInfo.state = Common::Enums::STATE_WAITING;
-
-			m_observerPlayers.push_back(std::pair{ roomPlayerInfo, session });
-			session->setRoomNumber(m_number);
-			session->setIsInLobby(false);
 		}
 
 		void Room::updatePlayerInfo(Main::Network::Session* session) 
@@ -144,7 +139,8 @@ namespace Main
 			removePlayerFromRoomServerRequest.setOrder(137);
 			removePlayerFromRoomServerRequest.setExtra(1);
 
-			auto removePlayer = [&](auto& players) {
+			auto removePlayer = [&](auto& players) 
+				{
 				for (auto& player : players)
 				{
 					removePlayerFromRoomServerRequest.setTcpHeader(player.second->getId(), Common::Enums::USER_LARGE_ENCRYPTION);
@@ -157,7 +153,6 @@ namespace Main
 			removePlayer(m_players);
 			removePlayer(m_observerPlayers);
 		}
-
 
 		// Returns the index of the player with the best ms, and if no player is found that meets the requirements, -1 is returned to signal that.
 		std::uint32_t Room::getBestMsIndexExceptSelf(bool checkIsInMatch, std::uint64_t selfId)
@@ -548,7 +543,7 @@ namespace Main
 				}
 				else
 				{
-					playerClan.unknown = 1;
+					playerClan.handlePlayerInvite = 1;
 				}
 				ret.push_back(playerClan);
 			}
@@ -695,11 +690,6 @@ namespace Main
 			}
 			std::swap(m_players[0], m_players[newHostIdx]); 
 			return true;
-		}
-
-		void Room::setCurrentHostAsOriginalHost()
-		{
-			m_originalHost = m_players[0].first;
 		}
 
 		Main::Network::Session* Room::getPlayer(const Main::Structures::UniqueId& uniqueId)
@@ -894,12 +884,13 @@ namespace Main
 						Common::Network::Packet response;
 						response.setTcpHeader(session->getId(), Common::Enums::USER_LARGE_ENCRYPTION);
 
-
+						/*
 						response.setOrder(312);
 						response.setOption(2);
 						response.setData(reinterpret_cast<std::uint8_t*>(&roomInfo.uniqueId), sizeof(uniqueId));
 						session->asyncWrite(response);
 						setStateFor(uniqueId, static_cast<Common::Enums::PlayerState>(2));
+						*/
 						return;
 					}
 				}

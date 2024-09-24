@@ -21,7 +21,6 @@ namespace Main
 
             if (allSessions.empty() || allSessions.size() == 1)
             {
-                response.setData(nullptr, 0);
                 response.setExtra(6);
                 session.asyncWrite(response);
                 return;
@@ -30,7 +29,7 @@ namespace Main
             std::vector<Main::Structures::SinglePlayerInfoList> playerList;
             for (const auto& [sessionId, currentSession] : allSessions)
             {
-                if (sessionId == session.getId() || !currentSession->isInLobby()) continue; // We don't want to show the user itself in the lobby's player list...
+                if (sessionId == session.getId() || !currentSession->isInLobby()) continue; // skip self
                 const auto& partialAccountData = currentSession->getAccountInfo();
                 Main::Structures::SinglePlayerInfoList singlePlayerList;
 
@@ -40,7 +39,7 @@ namespace Main
                 strcpy_s(singlePlayerList.name, partialAccountData.nickname);
                 singlePlayerList.uniqueId.server = partialAccountData.uniqueId.server;
                 singlePlayerList.uniqueId.session = partialAccountData.uniqueId.session;
-                singlePlayerList.uniqueId.unknown = partialAccountData.uniqueId.unknown;
+                singlePlayerList.uniqueId.handlePlayerInvite = partialAccountData.uniqueId.handlePlayerInvite;
 
                 playerList.push_back(singlePlayerList);
             }
@@ -65,7 +64,6 @@ namespace Main
 
                 while (currentPlayerIndex < allSessions.size())
                 {
-                    // WARNING: SET OPTION! (setOption(allSessions.size() - currentPlayerIndex) => test it
                     std::vector<Main::Structures::SinglePlayerInfoList> currentPlayerListPacket(
                         playerList.begin() + currentPlayerIndex,
                         playerList.begin() + std::min(currentPlayerIndex + playersToSend, playerList.size())

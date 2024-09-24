@@ -11,7 +11,6 @@ namespace Main
 {
 	namespace Handlers
 	{	
-		// Checked
 		inline void handleMatchLeave(const Common::Network::Packet& request, Main::Network::Session& session, Main::Network::SessionsManager& sessionsManager, Main::Classes::RoomsManager& roomsManager)
 		{
 			Utils::Logger& logger = Utils::Logger::getInstance();
@@ -29,8 +28,7 @@ namespace Main
 				logger.log("The host " + session.getPlayerInfoAsString() + " is attempting to leave the match. " + room.getRoomInfoAsString(),
 					Utils::LogType::Normal, "Main::handleMatchLeave");
 
-				bool roomMustBeClosed = room.removeHostFromMatch();
-				if (roomMustBeClosed)
+				if (room.removeHostFromMatch())
 				{
 					logger.log("Attempting to close the room " + room.getRoomInfoAsString(),
 						Utils::LogType::Normal, "Main::handleMatchLeave");
@@ -44,20 +42,16 @@ namespace Main
 					Utils::LogType::Normal, "Main::handleMatchLeave");
 
 				// Send leave match packet to client 
+				auto uniqueId = session.getAccountInfo().uniqueId;
 				Common::Network::Packet response;
 				response.setTcpHeader(request.getSession(), Common::Enums::USER_LARGE_ENCRYPTION);
-				response.setOrder(request.getOrder());
-				response.setExtra(0);
-				auto uniqueId = session.getAccountInfo().uniqueId;
+				response.setCommand(request.getOrder(), 0, 0, 0);
 				response.setData(reinterpret_cast<std::uint8_t*>(&uniqueId), sizeof(uniqueId));
 				roomsManager.broadcastToRoom(room.getRoomNumber(), response);
 
 				// Update server status for this player
 				session.setIsInMatch(false);
 				room.setStateFor(session.getAccountInfo().uniqueId, Common::Enums::STATE_WAITING);
-
-				// This is NOT necessary: when the user clicks the sign of end match, they leave the match. Check which packet that is.
-				//room.removeHostIfAloneAndModeDoesntAllowIt();
 
 				logger.log("The player " + session.getPlayerInfoAsString() + " has left the match. " + room.getRoomInfoAsString(),
 					Utils::LogType::Normal, "Main::handleMatchLeave");

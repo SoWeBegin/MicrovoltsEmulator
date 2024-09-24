@@ -22,7 +22,7 @@ namespace Main
 			std::uint32_t hasPassword : 1 = 0;
 			std::uint32_t isOpen : 1 = 0;  
 			std::uint32_t weaponRestriction : 4 = 0; 
-			std::uint32_t unknown : 1 = 0;  // if 1 then client crashes?!  
+			std::uint32_t handlePlayerInvite : 1 = 0;  // if 1 then client crashes?!  
 			std::uint32_t isTeamBalanceOn : 1 = 0; 
 			std::uint32_t isTeamBalanceOn2 : 1 = 0; // ?
 			std::uint32_t isObserverOn : 1 = 0;

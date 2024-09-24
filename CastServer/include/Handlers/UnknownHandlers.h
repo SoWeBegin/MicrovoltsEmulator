@@ -30,8 +30,6 @@ namespace Cast
             const auto receiverSessionId = request.getSession();
             const auto hostSessionId = session.getId();
 
-            roomsManager.broadcastToRoomExceptSelf(hostSessionId, const_cast<Common::Network::Packet&>(request));
-
             roomsManager.hostForwardToPlayer(hostSessionId, receiverSessionId, const_cast<Common::Network::Packet&>(request));
 
             // For some reason, whenever a new round starts in elimination, the client resends this packet to the host

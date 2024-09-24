@@ -13,20 +13,15 @@ namespace Main
 {
 	namespace Handlers
 	{
-		inline void handleLobbyAccountInfo(const Common::Network::Packet& request, Main::Network::Session& session, Main::Network::SessionsManager& sessionsManager)
+		inline void handleLobbyAccountInfo(const Common::Network::Packet& request, Main::Network::Session& session, Main::Network::SessionsManager& sessionsManager, 
+			std::uint32_t serverId)
 		{
-			Common::Network::Packet response;
-			response.setTcpHeader(request.getSession(), Common::Enums::USER_LARGE_ENCRYPTION);
-			response.setOrder(request.getOrder());
-			response.setOption(4); // which server, hardcoded for now
-
 			Main::Structures::UniqueId uniqueId;
 			std::memcpy(&uniqueId, request.getData(), sizeof(Main::Structures::UniqueId));
 			auto* targetSession = sessionsManager.getSessionBySessionId(uniqueId.session);
 			if (!targetSession) return;
-			response.setExtra(targetSession->getAccountInfo().clanId >= 8 ? 1 : 0);  // 0 = no clan, 1 = has clan
-			Main::Structures::LobbyAccountInfo lobbyAccountInfo(targetSession->getAccountInfo());
 
+			Main::Structures::LobbyAccountInfo lobbyAccountInfo(targetSession->getAccountInfo());
 			using setItems = Common::ConstantDatabase::CdbSingleton<Common::ConstantDatabase::SetItemInfo>;
 			for (const auto& [type, item] : targetSession->getEquippedItems())
 			{
@@ -44,6 +39,9 @@ namespace Main
 				else lobbyAccountInfo.items[type] = (item.id >> 1);
 			}
 		
+			Common::Network::Packet response;
+			response.setTcpHeader(request.getSession(), Common::Enums::USER_LARGE_ENCRYPTION);
+			response.setCommand(request.getOrder(), 0, targetSession->getAccountInfo().clanId >= 8 ? 1 : 0, serverId);
 			response.setData(reinterpret_cast<std::uint8_t*>(&lobbyAccountInfo), sizeof(Main::Structures::LobbyAccountInfo));
 			session.asyncWrite(response);
 		}

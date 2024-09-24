@@ -116,10 +116,8 @@ namespace Cast
 		Common::Network::Session::addCallback<Cast::Network::Session>(256, [&](const Common::Network::Packet& request,
 			Cast::Network::Session& session) { Cast::Handlers::handleMatchLeave(request, session, m_roomsManager); });
 
-		/*
 		Common::Network::Session::addCallback<Cast::Network::Session>(284, [&](const Common::Network::Packet& request,
 			Cast::Network::Session& session) { Cast::Handlers::handleAccountNames(request, session, m_roomsManager); });
-		*/
 
 		Common::Network::Session::addCallback<Cast::Network::Session>(309, [&](const Common::Network::Packet& request,
 			Cast::Network::Session& session) { Cast::Handlers::handlePlayerSyncWithRoom(request, session, m_roomsManager); }); 

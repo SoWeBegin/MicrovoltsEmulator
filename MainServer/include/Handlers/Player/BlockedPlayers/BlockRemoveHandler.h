@@ -14,11 +14,9 @@ namespace Main
 			std::uint32_t targetAccountId;
 			std::memcpy(&targetAccountId, request.getData(), sizeof(std::uint32_t));
 
-			const bool unblocked = session.unblockAccount(targetAccountId);
 			Common::Network::Packet response;
 			response.setTcpHeader(request.getSession(), Common::Enums::USER_LARGE_ENCRYPTION);
-			response.setOrder(request.getOrder());
-			response.setExtra(unblocked);
+			response.setCommand(request.getOrder(), 0, session.unblockAccount(targetAccountId), 0);
 			session.asyncWrite(response);
 		}
 	}

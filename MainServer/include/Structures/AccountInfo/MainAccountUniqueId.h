@@ -13,7 +13,7 @@ namespace Main
         {
             std::uint32_t session : 16 = 0; 
             std::uint32_t server : 15 = 0; 
-            std::uint32_t unknown : 1 = 0; 
+            std::uint32_t handlePlayerInvite : 1 = 0; 
 
             bool operator==(const UniqueId& other) const = default;
         };

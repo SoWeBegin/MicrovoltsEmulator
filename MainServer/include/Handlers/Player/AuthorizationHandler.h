@@ -40,6 +40,7 @@ namespace Main
 			{
 				response.setExtra(AuthorizationExtra::AUTHORIZATION_FAILED);
 			}
+			// Doesn't seem to work correctly for CMV:
 			//session.asyncWrite(response);
 
 			return accountInfo;

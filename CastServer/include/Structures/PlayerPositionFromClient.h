@@ -57,7 +57,7 @@ namespace Cast
             std::uint32_t animation2 : 6 = 0;
             std::uint32_t weapon : 4 = 0;
             std::uint32_t rotation : 9 = 0;
-            std::uint32_t unknown : 6 = 0;
+            std::uint32_t handlePlayerInvite : 6 = 0;
         };
 #pragma pack(pop)
 

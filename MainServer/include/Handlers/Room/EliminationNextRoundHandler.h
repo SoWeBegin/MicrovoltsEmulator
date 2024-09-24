@@ -29,12 +29,11 @@ namespace Main
 			{
 				std::uint32_t redScore : 8 = 0;
 				std::uint32_t blueScore : 8 = 0;
-				std::uint32_t unknown : 8 = 0; // Seems related to num of players
+				std::uint32_t unknown1 : 8 = 0; // Seems related to num of players
 				std::uint32_t unknown2 : 8 = 0; // Seems related to num of players
 			} clientEndMatchNotificationHeader;
 
 			std::memcpy(&clientEndMatchNotificationHeader, request.getData(), sizeof(clientEndMatchNotificationHeader));
-
 
 			// First, client sends all info of all players in the room, we resend it back to everyone
 			roomsManager.broadcastToRoomExceptSelf(session.getRoomNumber(), session.getAccountInfo().uniqueId, const_cast<Common::Network::Packet&>(request));

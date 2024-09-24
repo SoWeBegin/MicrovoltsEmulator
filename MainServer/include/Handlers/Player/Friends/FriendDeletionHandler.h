@@ -15,7 +15,6 @@ namespace Main
 			std::memcpy(&targetAccountIdToDelete, request.getData(), sizeof(std::uint32_t));
 
 			session.deleteFriend(targetAccountIdToDelete);
-
 			if (auto* foundSession = sessionsManager.getSessionByAccountId(targetAccountIdToDelete))
 			{
 				foundSession->deleteFriend(session.getAccountInfo().accountID, false);

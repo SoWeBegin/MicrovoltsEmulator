@@ -17,16 +17,14 @@ namespace Main
 		{
 			session.setPlayerState(static_cast<Common::Enums::PlayerState>(request.getOption()));
 
-			Common::Network::Packet response;
-			response.setTcpHeader(request.getSession(), Common::Enums::USER_LARGE_ENCRYPTION);
-
 			auto foundRoom = roomsManager.getRoomByNumber(session.getRoomNumber());
 			if (foundRoom == std::nullopt) return;
 			auto& room = foundRoom->get();
 
-			response.setOrder(Details::Orders::PLAYER_STATE_NOTIFICATION); 
-			response.setOption(session.getPlayerState());
 			auto uniqueId = session.getAccountInfo().uniqueId;
+			Common::Network::Packet response;
+			response.setTcpHeader(request.getSession(), Common::Enums::USER_LARGE_ENCRYPTION);
+			response.setCommand(Details::Orders::PLAYER_STATE_NOTIFICATION, 0, 0, session.getPlayerState());
 			response.setData(reinterpret_cast<std::uint8_t*>(&uniqueId), sizeof(uniqueId));
 			room.broadcastToRoom(response);
 			room.setStateFor(uniqueId, session.getPlayerState());

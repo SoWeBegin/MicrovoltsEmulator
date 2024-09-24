@@ -14,7 +14,8 @@ namespace Main
 	namespace Handlers
 	{
 		inline void handleInitialPlayerInfos(const Common::Network::Packet& request, Main::Network::Session& session,
-			Main::Network::SessionsManager& sessionsManager, Main::Persistence::PersistentDatabase& database, std::uint64_t timeSinceLastServerRestart)
+			Main::Network::SessionsManager& sessionsManager, Main::Persistence::PersistentDatabase& database, std::uint64_t timeSinceLastServerRestart,
+			std::uint32_t serverId)
 		{
 			Main::Structures::AccountInfo accountInfo = handleAuthorization(request, session, database);
 
@@ -22,7 +23,7 @@ namespace Main
 
 			//handleMapEvents(request, session, database);
 
-			handleAccountInformation(request, session, sessionsManager, database, accountInfo, timeSinceLastServerRestart);
+			handleAccountInformation(request, session, sessionsManager, database, accountInfo, timeSinceLastServerRestart, serverId);
 
 			handleInventoryInformation(request, session, sessionsManager, database);
 		}

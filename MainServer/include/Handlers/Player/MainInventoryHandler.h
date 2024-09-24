@@ -4,8 +4,6 @@
 #include "Network/Session.h"
 #include "../../MainEnums.h"
 
-#include <unordered_map>
-
 namespace Main
 {
     namespace Handlers
@@ -23,16 +21,14 @@ namespace Main
             // Handle non-equipped items
             Common::Network::Packet response;
             response.setTcpHeader(request.getSession(), Common::Enums::USER_LARGE_ENCRYPTION);
-            response.setOrder(77);
-            response.setOption(nonEquippedItems.size());
+            response.setCommand(77, 0, 0, nonEquippedItems.size());
 
             constexpr std::size_t headerSize = sizeof(Common::Protocol::TcpHeader) + sizeof(Common::Protocol::CommandHeader);
-            std::size_t totalSize = headerSize + nonEquippedItems.size() * sizeof(Main::Structures::Item);
+            const std::size_t totalSize = headerSize + nonEquippedItems.size() * sizeof(Main::Structures::Item);
             constexpr std::size_t MAX_PACKET_SIZE = 1440;
 
             if (totalSize == headerSize)
             {
-                response.setData(nullptr, 0);
                 response.setExtra(6);
                 session.asyncWrite(response);
             }
@@ -58,19 +54,17 @@ namespace Main
 
                     packetExtra = currentItemIndex == 0 ? 37 : 0;
                     response.setExtra(packetExtra);
-                    response.setData(reinterpret_cast<std::uint8_t*>(packetItems.data()), packetItems.size() * sizeof(Main::Structures::Item));
                     response.setOption(packetItems.size());
+                    response.setData(reinterpret_cast<std::uint8_t*>(packetItems.data()), packetItems.size() * sizeof(Main::Structures::Item));
                     session.asyncWrite(response);
 
                     currentItemIndex += itemsToSend;
                 }
             }
-
             session.setUnequippedItems(nonEquippedItems);
 
             // Handle equipped items
             response.setOrder(75);
-            response.setMission(0);
 
             for (auto& [characterID, items] : equippedItems)
             {

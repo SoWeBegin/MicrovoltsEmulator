@@ -724,7 +724,6 @@ namespace Main
 
 		void Player::setIsInMatch(bool val)
 		{
-			std::cout << "Set Is In Match to: " << val << '\n';
 			m_isInMatch = val;
 		}
 
@@ -735,7 +734,6 @@ namespace Main
 
 		void Player::leaveRoom()
 		{
-			std::cout << "Player left match\n";
 			setRoomNumber(0);
 		    setIsInLobby(true);
 			setIsInMatch(false);
@@ -747,7 +745,6 @@ namespace Main
 			if (m_roomNumber > 0)
 			{
 				--m_roomNumber;
-				std::cout << "PLAYER ROOM NUMBER: " << m_roomNumber << '\n';
 			}
 		}
 	}

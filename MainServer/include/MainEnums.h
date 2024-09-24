@@ -159,6 +159,17 @@ namespace Main
 			BRILLIANT_BLASTER = 4530010,
 		};
 
+		enum ItemIds
+		{
+			RECORD_RESET = 4302000,
+			KILLDEATH_RESET = 4303000,
+			BATTERY_500_RT = 4305005,
+			BATTERY_500_MP = 4305009,
+			BATTERY_1000_RT = 4305006,
+			BATTERY_1000_MP = 4305010,
+			BATTERY_EXPANSION = 4305007,
+		};
+
 		enum ItemExpirationType
 		{
 			// // 0=nothing happens, 1=becomes unused(1 day); 2=bomb?!;  3<=expired

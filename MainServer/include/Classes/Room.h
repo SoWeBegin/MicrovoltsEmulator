@@ -43,11 +43,9 @@ namespace Main
 
 			// Other
 			bool m_isMuted = false;
-			Main::Structures::RoomPlayerInfo m_originalHost{};
 
 		public:
 			Room() = default;
-
 			explicit Room(const std::string& title, const Main::Structures::RoomSettings& settings, const Main::Structures::RoomPlayerInfo& player, Main::Network::Session* session);
 
 			std::string getRoomInfoAsString() const
@@ -57,10 +55,9 @@ namespace Main
 			}
 
 			Main::Network::Session* getHost() { return m_players[0].second; }
-
 			Main::Network::Session* getPlayer(const Main::Structures::UniqueId& uniqueId);
-
 			void addObserverPlayer(Main::Network::Session* session);
+			void addPlayer(Main::Network::Session* session, std::uint32_t team);
 
 			void muteRoom();
 
@@ -83,8 +80,6 @@ namespace Main
 			const std::string& getPassword() const;
 
 			std::uint16_t getRoomNumber() const;
-
-			void addPlayer(Main::Network::Session* session, std::uint32_t team);
 
 			void updatePlayerInfo(Main::Network::Session* session);
 

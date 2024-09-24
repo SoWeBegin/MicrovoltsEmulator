@@ -20,18 +20,13 @@ namespace Main
 			if (Main::Enums::ITEM_MP == currencyType)
 			{
 				session.setAccountMicroPoints(accountInfo.microPoints - amountToRemove);
-				return;
 			}
 			else if (Main::Enums::ITEM_RT == currencyType)
 			{
 				session.setAccountRockTotens(accountInfo.rockTotens - amountToRemove);
-				return;
 			}
-			// currently coins/coupons aren't handled when buying items (i.e. coin shop is not implemented yet)
-			return;
 		}
 
-		// TODO: Remove code duplication
 		inline void handleBoughtItem(const Common::Network::Packet& request, Main::Network::Session& session)
 		{
 			Common::Network::Packet response;
@@ -43,8 +38,10 @@ namespace Main
 			{
 				response.setMission(request.getMission());
 				Main::Structures::ItemSerialInfo itemSerialInfoToProlong{};
+				Main::Structures::BoughtItemToProlong boughtItemToProlong{};
 				std::vector<Main::Structures::BoughtItemToProlong> itemsToProlong;
 				std::unordered_map<Main::Enums::ItemCurrencyType, std::uint32_t> totalCurrencySpentByType;
+
 				for (std::uint32_t idx = 0; idx < request.getOption(); ++idx)
 				{
 					std::memcpy(&itemSerialInfoToProlong, request.getData() + idx * 8, sizeof(itemSerialInfoToProlong));
@@ -53,7 +50,6 @@ namespace Main
 					const Main::ConstantDatabase::CdbUtil cdb(item->id);
 					const auto amountByCurrencyType = cdb.getItemPrice();
 					totalCurrencySpentByType[amountByCurrencyType->first] += amountByCurrencyType->second;
-					Main::Structures::BoughtItemToProlong boughtItemToProlong{};
 					boughtItemToProlong.serialInfo = itemSerialInfoToProlong;
 					itemsToProlong.push_back(boughtItemToProlong);
 					session.replaceItem(item->serialInfo.itemNumber, Main::Structures::BoughtItemToProlong{}.serialInfo, *(cdb.getItemDuration()));

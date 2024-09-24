@@ -6,7 +6,6 @@
 #include "../../Classes/RoomsManager.h"
 #include "../../Structures/Room/RoomJoinLatestInfo.h"
 #include <Enums/PlayerEnums.h>
-#include "Utils/Logger.h"
 #include "../../Structures/Room/RoomJoinLatestInfo.h"
 
 namespace Main
@@ -16,11 +15,11 @@ namespace Main
 		enum RoomJoinOrder
 		{
 			RoomInfo = 135, // ok
-			RoomLatestEnteredPlayerInfo = 421, // ok
+			RoomLatestEnteredPlayerInfo = 421, // this
 			RoomPlayersInfos = 406,
 			RoomPlayersItems = 303,
-			RoomLatestInfo = 309, // The structure for this handler may be different for CMV, check!
-			RoomPlayersClans = 409,
+			RoomLatestInfo = 309,  // this
+			RoomPlayersClans = 409, // this
 		};
 
 		enum RoomJoinExtra
@@ -38,12 +37,9 @@ namespace Main
 		};
 
 		// N.B GM grade can't enter observer mode at all seemingly (it's literally disabled)
-		// Checked.
 		inline void handleRoomJoin(const Common::Network::Packet& request, Main::Network::Session& session, Main::Classes::RoomsManager& roomsManager,
 			bool roomJoinCheckPassword = false)
 		{
-			Utils::Logger& logger = Utils::Logger::getInstance();
-
 			struct RequestStructure
 			{
 				std::uint16_t roomNumber{};
@@ -52,20 +48,14 @@ namespace Main
 			} requestStructure;
 			std::memcpy(&requestStructure, request.getData(), sizeof(requestStructure));
 
-			std::cout << "ROOM JOIN. ROOM NNUMBER: " << requestStructure.roomNumber << ", UNKNOWN: " << requestStructure.unknown
-				<< ", PASS: " << requestStructure.password << '\n';
 			Common::Network::Packet response;
 			response.setTcpHeader(request.getSession(), Common::Enums::USER_LARGE_ENCRYPTION);
 			response.setOrder(request.getOrder());
 
 			auto foundRoom = roomsManager.getRoomByNumber(requestStructure.roomNumber + 1);
-			const auto& accountInfo = session.getAccountInfo();
 
 			if (foundRoom == std::nullopt)
 			{
-				logger.log("The player " + session.getPlayerInfoAsString() + " attempted to join a room that was deleted. ",
-					Utils::LogType::Warning, "Room::roomJoinHandler");
-
 				response.setExtra(RoomJoinExtra::JOIN_ROOM_IS_DELETED);
 				session.asyncWrite(response);
 				return;
@@ -81,6 +71,7 @@ namespace Main
 				return;
 			}
 
+			const auto& accountInfo = session.getAccountInfo();
 			// 1. Check password - mods/tester/gm can join in rooms with passwords
 			if (accountInfo.playerGrade >= Common::Enums::PlayerGrade::GRADE_MOD && roomInfo.hasPassword)
 			{
@@ -88,9 +79,6 @@ namespace Main
 			}
 			else if (roomSettings.hasPassword && room.getPassword() != std::string{ requestStructure.password })
 			{
-				logger.log("The player " + session.getPlayerInfoAsString() + " attempted to join a room with an incorrect password. "
-					+ room.getRoomInfoAsString(), Utils::LogType::Warning, "Room::roomJoinHandler");
-
 				response.setExtra(RoomJoinExtra::JOIN_INVALID_PASSWORD);
 				session.asyncWrite(response);
 				return;
@@ -102,9 +90,6 @@ namespace Main
 			{
 				if (room.isObserverFull() || !roomSettings.isObserverModeOn)
 				{
-					logger.log("The player " + session.getPlayerInfoAsString() + " attempted to join a room that is full. "
-						+ room.getRoomInfoAsString(), Utils::LogType::Warning, "Room::roomJoinHandler");
-
 					response.setExtra(RoomJoinExtra::JOIN_LOBBY_FULL);
 					session.asyncWrite(response);
 					return;
@@ -118,9 +103,6 @@ namespace Main
 			// 3. Check whether the player was previously kicked from this room
 			if (room.wasPreviouslyKicked(accountInfo.accountID))
 			{
-				logger.log("The player " + session.getPlayerInfoAsString() + " attempted to join a room where they were previously kicked. "
-					+ room.getRoomInfoAsString(), Utils::LogType::Warning, "Room::roomJoinHandler");
-
 				response.setExtra(RoomJoinExtra::JOIN_KICKED_FROM_ROOM);
 				session.asyncWrite(response);
 				return;
@@ -138,22 +120,15 @@ namespace Main
 				}
 			}
 
-			response.setOrder(RoomJoinOrder::RoomInfo);
-			// Extra + Option = uint16_t = Room Number
-			response.setExtra(room.getRoomInfo().roomNumber);
-			response.setOption(0); // room number (unnedeed for now, since max rooms in one server is 30 which is enough for the extra)
-			response.setMission(room.getRoomInfo().hasPassword);
+			response.setCommand(RoomJoinOrder::RoomInfo, room.getRoomInfo().hasPassword, room.getRoomInfo().roomNumber, 0); // Extra + Option = uint16_t = Room Number
 			response.setData(reinterpret_cast<std::uint8_t*>(&roomInfo), sizeof(roomInfo));
 			session.asyncWrite(response);
 
 			// Player infos
-			response.setOrder(RoomJoinOrder::RoomPlayersInfos);
-			response.setExtra(37);
 			auto allPlayers = room.getAllPlayers();
-			response.setOption(allPlayers.size()); // num of players inside the room (before we join)
+			response.setCommand(RoomJoinOrder::RoomPlayersInfos, room.getRoomInfo().hasPassword, 37, allPlayers.size());
 			response.setData(reinterpret_cast<std::uint8_t*>(allPlayers.data()), sizeof(Main::Structures::RoomPlayerInfo) * allPlayers.size());
 			session.asyncWrite(response);
-
 
 			// Player items -- This can be > 1400 (MAX PACKET SIZE) bytes!
 			response.setOrder(RoomJoinOrder::RoomPlayersItems);
@@ -196,30 +171,20 @@ namespace Main
 
 			// Player clan infos
 			// option => again num of players (= num of clans)
-			response.setOrder(RoomJoinOrder::RoomPlayersClans);
-			response.setExtra(37);
 			auto allPlayersClans = room.getPlayersClans();
-			response.setOption(allPlayersClans.size());
-			response.setMission(0); // TODO: check what is mission(1) in IDA
+			response.setCommand(RoomJoinOrder::RoomPlayersClans, 0, 37, allPlayersClans.size());
 			response.setData(reinterpret_cast<std::uint8_t*>(allPlayersClans.data()), sizeof(Main::Structures::PlayerClan) * allPlayersClans.size());
 			session.asyncWrite(response);
 
 			// Success in joining the room
-			response.setOrder(request.getOrder());
+			response.setCommand(request.getOrder(), 0, joinedAsObserver ? RoomJoinExtra::JOIN_OBSERVER_MODE : RoomJoinExtra::JOIN_SUCCESS, 1);
 			response.setData(nullptr, 0);
-			response.setOption(1);
-			response.setMission(0);
 			// extra 0, mission 0 ==> observer mode
 			// extra 0, mission 1 ==> seemingly invisible mode?!
-			response.setExtra(joinedAsObserver ? RoomJoinExtra::JOIN_OBSERVER_MODE : RoomJoinExtra::JOIN_SUCCESS);
 			session.asyncWrite(response);
 
 			// Latest, missing information about the room
-			response.setOrder(RoomJoinOrder::RoomLatestInfo);
-			response.setOption(roomSettings.mode); // mode
-			response.setMission(0);
-			response.setExtra(0);
-			
+			response.setCommand(RoomJoinOrder::RoomLatestInfo, 0, 0, roomSettings.mode);			
 			if (roomSettings.mode == Common::Enums::FreeForAll)
 			{
 				Main::Structures::ModeInfoFFA info;
@@ -268,37 +233,24 @@ namespace Main
 				if (room.isModeTeamBased())
 				{
 					latestEnteredPlayerInfo.team = room.calculateNewPlayerTeam();
-					latestEnteredPlayerInfo.team = Common::Enums::Team::TEAM_ALL; // REMOVE LATER!
 				}
 				else
 				{
 					latestEnteredPlayerInfo.team = Common::Enums::Team::TEAM_ALL;
 				}
 			}			
-			response.setOrder(RoomJoinOrder::RoomLatestEnteredPlayerInfo);
-			response.setExtra(0);
-			response.setMission(0);
-			response.setOption(1);
+			response.setCommand(RoomJoinOrder::RoomLatestEnteredPlayerInfo, 0, 0, 0);
 			response.setData(reinterpret_cast<std::uint8_t*>(&latestEnteredPlayerInfo), sizeof(latestEnteredPlayerInfo));
 			room.broadcastToRoom(response);
 
 			if (joinedAsObserver)
 			{
-				logger.log("The player " + session.getPlayerInfoAsString() + " joined the room as an observer player. "
-					+ room.getRoomInfoAsString(), Utils::LogType::Normal, "Room::roomJoinHandler");
-
 				room.addObserverPlayer(&session);
 			}
 			else
 			{
-				logger.log("The player " + session.getPlayerInfoAsString() + " joined the room normally. "
-					+ room.getRoomInfoAsString(), Utils::LogType::Normal, "Room::roomJoinHandler");
-
 				room.addPlayer(&session, latestEnteredPlayerInfo.team);
 			}
-
-			logger.log("The player " + session.getPlayerInfoAsString() + " has joined a room. "
-				+ room.getRoomInfoAsString(), Utils::LogType::Normal, "Room::roomJoinHandler");
 		}
 	}
 }

@@ -18,7 +18,7 @@ namespace Main
 		struct BoughtItem
 		{
 			std::uint32_t itemId{};
-			std::uint32_t unknown = 0;  // 2==bomb, 3==expired, 0==unlimited, etc.
+			std::uint32_t handlePlayerInvite = 0;  // 2==bomb, 3==expired, 0==unlimited, etc.
 			ItemSerialInfo serialInfo{};
 
 		public:
@@ -36,7 +36,7 @@ namespace Main
 		struct BoughtItemToProlong
 		{
 			ItemSerialInfo serialInfo{};
-			std::uint32_t unknown = 1;  
+			std::uint32_t handlePlayerInvite = 1;  
 
 		public:
 			BoughtItemToProlong()

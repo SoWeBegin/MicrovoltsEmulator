@@ -64,9 +64,8 @@ namespace Main
 			std::discrete_distribution<int> itemDistribution(probabilities.begin(), probabilities.end());
 			static std::random_device rd;
 			static std::mt19937 gen(rd());
-			int randomIndex = itemDistribution(gen);
 
-			return itemProbabilities[randomIndex].first;
+			return itemProbabilities[itemDistribution(gen)].first;
 		}
 
 		inline void removeCurrencyByCapsuleType(Main::Network::Session& session, const Main::Structures::AccountInfo& accountInfo, CapsuleCurrencyType capsuleCurrencyType,
@@ -85,7 +84,7 @@ namespace Main
 		inline void handleCapsuleSpin(const Common::Network::Packet& request, Main::Network::Session& session)
 		{
 			auto response = request;
-			response.setOption(1); // number of items per spin (e.g 2 if we want to add addiitonal coupon)
+			response.setOption(1); // number of items per spin in newer versions
 
 			Main::ConstantDatabase::CdbUtil cdbUtil;
 			const auto& capsuleInfo = cdbUtil.getCapsuleInfoById(request.getOption());
@@ -97,9 +96,7 @@ namespace Main
 			}
 
 			const auto& accountInfo = session.getAccountInfo();
-
-			if (capsuleInfo->gi_type == CapsuleCurrencyType::COINS &&
-				capsuleInfo->gi_type == CapsuleCurrencyType::ROCKTOTENS && accountInfo.rockTotens < capsuleInfo->gi_pay_cash * request.getOption()
+			if (capsuleInfo->gi_type == CapsuleCurrencyType::ROCKTOTENS && accountInfo.rockTotens < capsuleInfo->gi_pay_cash * request.getOption()
 				|| capsuleInfo->gi_type == CapsuleCurrencyType::MICROPOINTS && accountInfo.microPoints < capsuleInfo->gi_pay_point * request.getOption())
 			{
 				response.setExtra(CapsuleSpinExtra::NOT_ENOUGH_CURRENCY);
@@ -134,11 +131,11 @@ namespace Main
 			// Unsure how to handle this for CMV, currently only RT capsules are enabled, the rest are prices = 0
 			// Here I'm assuming that to enable e.g. the MP capsule, we just need to 
 			std::uint32_t price = 0;
-			if (capsuleInfo->gi_type == CapsuleCurrencyType::ROCKTOTENS) // rt
+			if (capsuleInfo->gi_type == CapsuleCurrencyType::ROCKTOTENS) 
 			{
 				price = capsuleInfo->gi_pay_cash;
 			}
-			else if (capsuleInfo->gi_type == CapsuleCurrencyType::MICROPOINTS) // mp
+			else if (capsuleInfo->gi_type == CapsuleCurrencyType::MICROPOINTS) 
 			{
 				price = capsuleInfo->gi_pay_point;
 			} 

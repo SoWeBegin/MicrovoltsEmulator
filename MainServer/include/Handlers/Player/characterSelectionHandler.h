@@ -13,16 +13,14 @@ namespace Main
 	{
 		inline void handleCharacterSelection(const Common::Network::Packet& request, Main::Network::Session& session, Main::Classes::RoomsManager& roomsManager)
 		{
-			const auto selectedCharacter = request.getOption();
-			constexpr std::uint32_t characterAvailable = 1;
+			constexpr bool isCharacterAvailable = true;
+
 			Common::Network::Packet response;
 			response.setTcpHeader(request.getSession(), Common::Enums::USER_LARGE_ENCRYPTION);
-			response.setOrder(request.getOrder());
-			response.setExtra(characterAvailable); 
-			response.setOption(selectedCharacter); 
+			response.setCommand(request.getOrder(), 0, isCharacterAvailable, request.getOption());
 			session.asyncWrite(response);
-			session.setAccountLatestCharacterSelected(selectedCharacter);
 
+			session.setAccountLatestCharacterSelected(request.getOption());
 			Details::broadcastPlayerItems(roomsManager, session, request);
 		}
 	}
