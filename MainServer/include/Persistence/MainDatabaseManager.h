@@ -183,9 +183,9 @@ namespace Main
 					if (query.executeStep())
 					{
 						const std::string mutedUntil = query.getColumn("MutedUntil").getString(); // suspendedUntil uses UTC!
-						auto const time = std::chrono::utc_clock::now();
-						const std::string current_time = std::format("{:%Y-%m-%d %X}", time);
-						muteInfo.isMuted = mutedUntil > current_time;
+						//auto const time = std::chrono::utc_clock::now();
+						//const std::string current_time = std::format("{:%Y-%m-%d %X}", time);
+						muteInfo.isMuted = false;//mutedUntil > current_time;
 						muteInfo.reason = query.getColumn("MuteReason").getString();
 						muteInfo.mutedBy = query.getColumn("MutedBy").getString();
 						muteInfo.mutedUntil = mutedUntil;

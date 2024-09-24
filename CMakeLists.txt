@@ -2,19 +2,14 @@ cmake_minimum_required(VERSION 3.26)
 project(Microvolts-Emulator-V2)
 enable_language(C CXX ASM)
 
-#set(CMAKE_C_COMPILER gcc)
-#set(CMAKE_CXX_COMPILER g++)
 set(CMAKE_CXX_STANDARD 20)
 
-#SET(CMAKE_EXE_LINKER_FLAGS  "-Wl,--allow-multiple-definition")
+SET(CMAKE_EXE_LINKER_FLAGS  "-Wl,--allow-multiple-definition -Wl,-rpath=. -Wl,-rpath=/data/data/com.termux/files/usr/lib -Wl,--enable-new-dtags")
 
 #boost
-find_package(Boost 1.85.0 COMPONENTS system)
-IF(Boost_FOUND)
-    include_directories(${Boost_INCLUDE_DIRS})
-ELSE ()
-    #set(Boost_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/ExternalLibraries/boost_1_85_0")
-    set(Boost_INCLUDE_DIRS "D:/Programming/boost_1_85_0")
+find_package(Boost 1.73.0 COMPONENTS system)
+IF(NOT Boost_FOUND)
+    #set(Boost_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/ExternalLibraries/boost_1_73_0")
 endif()
 
 IF (WIN32)

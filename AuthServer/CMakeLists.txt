@@ -2,8 +2,6 @@ cmake_minimum_required(VERSION 3.26)
 project(Microvolts-Emulator-V2)
 enable_language(C CXX ASM)
 
-#set(CMAKE_C_COMPILER gcc)
-#set(CMAKE_CXX_COMPILER g++)
 set(CMAKE_CXX_STANDARD 20)
 
 include_directories(PUBLIC ${CMAKE_CURRENT_LIST_DIR}/include)
