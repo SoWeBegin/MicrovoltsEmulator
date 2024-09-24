@@ -26,7 +26,7 @@ namespace Cast
 
             const auto selfSessionId = session.getId();
             const auto roomHostId = request.getSession();
-            Main::Structures::UniqueId uniqueId{ selfSessionId, 4, 0 };
+            Main::Structures::UniqueId uniqueId{ (uint32_t)selfSessionId, 4, 0 };
             auto response = request;
             response.setData(reinterpret_cast<std::uint8_t*>(&uniqueId), sizeof(uniqueId));
             roomsManager.playerForwardToHost(roomHostId, selfSessionId, response);

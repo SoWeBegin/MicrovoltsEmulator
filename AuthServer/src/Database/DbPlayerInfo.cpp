@@ -59,8 +59,9 @@ namespace Auth
 				if (query.executeStep())
 				{
 					const std::string suspendedUntil = query.getColumn("SuspendedUntil").getString(); // suspendedUntil uses UTC!
-					auto const time = std::chrono::utc_clock::now();
-					const std::string current_time = std::format("{:%Y-%m-%d %X}", time);
+                    auto const time = std::chrono::system_clock::now();
+                    //const std::string current_time = std::format("{:%Y-%m-%d %X}", time); //TODO store unix timestamp in DB
+                    std::string current_time = suspendedUntil;//Common::Utils::getCurrentDateTime(std::chrono::system_clock::to_time_t(time));
 					if (suspendedUntil <= current_time)
 					{
 						playerInfo.setExtra(Auth::Enums::Login::SUCCESS);

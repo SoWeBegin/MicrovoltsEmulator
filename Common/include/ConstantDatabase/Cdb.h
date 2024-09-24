@@ -61,7 +61,7 @@ namespace Common
 				parse(directory, file_name);
 			}
 
-			constexpr void parse(const std::filesystem::path& directory, const std::string& file_name)
+			void parse(const std::filesystem::path& directory, const std::string& file_name)
 			{
 				const std::filesystem::path file_path = directory / file_name;
 				std::ifstream input{ file_path.string(), std::ios::binary };
@@ -96,7 +96,7 @@ namespace Common
 				m_entry_num = 0;
 			}
 
-			constexpr void publish(const std::filesystem::path& directory, const std::string& file_name) const
+			void publish(const std::filesystem::path& directory, const std::string& file_name) const
 			{
 				const std::filesystem::path file_path = directory / file_name;
 				std::ofstream output{ file_path.string(), std::ios::binary };

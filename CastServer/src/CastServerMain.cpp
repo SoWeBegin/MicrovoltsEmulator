@@ -11,8 +11,10 @@
 
 void printInitialInformation()
 {
-	auto const time = std::chrono::current_zone()->to_local(std::chrono::system_clock::now());
-	auto const time_s = std::format("{:%Y-%m-%d %X}", time);
+    auto const now = std::chrono::system_clock::now();
+    std::time_t now_time_t = std::chrono::system_clock::to_time_t(now);
+    std::tm local_tm = *std::localtime(&now_time_t);
+    auto time_s = std::put_time(&local_tm, "{:%Y-%m-%d %X}");
 	std::cout << "[Info] Cast server initialized on " << time_s << "\n\n";
 
 	std::cout << "[Info] Initializing constant database maps...\n";
@@ -41,7 +43,7 @@ int main()
 
     auto workGuard = asio::make_work_guard(io_context);
     const std::uint32_t numThreads = std::thread::hardware_concurrency();
-    std::vector<std::jthread> threads;
+    std::vector<std::thread> threads;
     for (std::uint32_t i = 0; i < numThreads; ++i)
     {
         threads.emplace_back([&io_context] 
@@ -49,5 +51,8 @@ int main()
             io_context.run(); 
             });
     }
+
+    for (unsigned int i = 0; i < numThreads; ++i)
+        threads[i].join();
 }
 

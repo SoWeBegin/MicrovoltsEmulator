@@ -22,7 +22,7 @@ namespace Cast
             Common::Network::Packet response;
             response.setTcpHeader(request.getSession(), Common::Enums::NO_ENCRYPTION);
             response.setOrder(request.getOrder());
-            Main::Structures::UniqueId uniqueId{ session.getId(), 4, 0};
+            Main::Structures::UniqueId uniqueId{ (uint32_t)session.getId(), 4, 0};
             response.setOption(request.getOption());
             response.setData(reinterpret_cast<std::uint8_t*>(&uniqueId), sizeof(uniqueId));
             roomsManager.broadcastToRoomExceptSelf(session.getId(), response);

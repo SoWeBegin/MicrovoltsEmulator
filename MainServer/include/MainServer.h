@@ -32,11 +32,12 @@ namespace Main
 		std::uint64_t m_timeSinceLastRestart{};
 
 	public:
-		std::vector<std::jthread> threads;
+		std::vector<std::thread> threads;
 
 
 	public:
 		MainServer(ioContext& io_context, std::uint16_t port, std::uint16_t serverId);
+		~MainServer() { for (std::thread &t : threads) t.join(); };
 		void asyncAccept();
 		void initializeAllCommands();
 	};

@@ -17,7 +17,7 @@ namespace Cast
             logger.log("Player is leaving the match (SessionID: " + std::to_string(session.getId())
                 + ", roomNum: " + std::to_string(session.getRoomNumber()), ::Utils::LogType::Info, "handleMatchLeave");
 
-            Main::Structures::UniqueId uniqueId{ selfSessionId, 4, 0 };
+            Main::Structures::UniqueId uniqueId{ (uint32_t)selfSessionId, 4, 0 };
             auto response = request;
             response.setData(reinterpret_cast<std::uint8_t*>(&uniqueId), sizeof(uniqueId));
 

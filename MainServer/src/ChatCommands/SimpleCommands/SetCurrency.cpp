@@ -33,7 +33,7 @@ namespace Main
 			session.setAccountCoins(100);
 
 			const auto& accountInfo = session.getAccountInfo();
-			Message message{ accountInfo.rockTotens, accountInfo.microPoints, accountInfo.coins };
+			Message message{ (uint32_t)accountInfo.rockTotens, (uint32_t)accountInfo.microPoints, (uint32_t)accountInfo.coins };
 			response.setData(reinterpret_cast<std::uint8_t*>(&message), sizeof(message));
 			session.asyncWrite(response);
 
