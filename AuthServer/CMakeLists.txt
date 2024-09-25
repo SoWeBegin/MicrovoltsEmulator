@@ -19,6 +19,7 @@ target_link_libraries(AuthServer
         Common
         SQLiteCpp
         sqlite3
+        ${Boost_LIBRARIES}
 )
 
 if(WIN32)
@@ -26,4 +27,4 @@ if(WIN32)
 endif()
 
 set_property(TARGET AuthServer PROPERTY POSITION_INDEPENDENT_CODE ON)
-set_target_properties(AuthServer PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+set_target_properties(AuthServer PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR})

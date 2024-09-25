@@ -3,7 +3,9 @@
 #include <string>
 #include <format>
 #include <thread>
-#include <asio/execution_context.hpp>
+
+#include <boost/program_options.hpp>
+
 #include "../include/CastServer.h"
 #include "../include/ConstantDatabase/CdbSingleton.h"
 #include "../include/ConstantDatabase/Structures/CdbMapInfo.h"
@@ -16,27 +18,68 @@ void printInitialInformation()
     std::tm local_tm = *std::localtime(&now_time_t);
     auto time_s = std::put_time(&local_tm, "{:%Y-%m-%d %X}");
 	std::cout << "[Info] Cast server initialized on " << time_s << "\n\n";
-
-	std::cout << "[Info] Initializing constant database maps...\n";
-	const std::string cdbItemInfoPath = "../ExternalLibraries/cgd_original/ENG";
-	const std::string cdbMapInfoName = "mapinfo.cdb";
-	using mapInfo = Common::ConstantDatabase::CdbSingleton<Common::ConstantDatabase::CdbMapInfo>;
-	mapInfo::initialize(cdbItemInfoPath, cdbMapInfoName);
-
-	Cast::Utils::initHeightDeaths();
-	std::cout << "[Info] Constant database successfully initialized.\n";
 }
 
+int processCommandLine(int argc, char * argv[], uint16_t & port, std::string & db_path)
+{
+	try
+	{
+		boost::program_options::options_description desc("Program Usage", 1024, 512);
+		desc.add_options()
+		  ("help",     "This help message")
+		  //("host,h",   boost::program_options::value<std::string>(&host)->required(),      "set the host server")
+		  ("port,p",   boost::program_options::value<uint16_t>(&port)->default_value(13006),             "The port CastServer will listen on. Default 13006")
+		  ("database,db", boost::program_options::value<std::string>(&db_path)->default_value("./Database/cgd_original/ENG"), "Path to the game (constant) databases folder. Default ./Database/cgd_original/ENG")
+		;
 
+		boost::program_options::variables_map vm;
+		boost::program_options::store(boost::program_options::parse_command_line(argc, argv, desc), vm);
 
-int main()
+		if (vm.count("help"))
+		{
+			std::cout << desc << "\n";
+			return false;
+		}
+
+		boost::program_options::notify(vm);
+	}
+	catch(boost::program_options::error& e)
+	{
+		std::cerr << "Error: " << e.what() << "\n";
+		return false;
+	}
+	catch(...)
+	{
+		std::cerr << "Unknown error!" << "\n";
+		return false;
+	}
+
+	return true;
+}
+
+int main(int argc, char * argv[])
 {
 #if defined WIN32
     SetConsoleTitleW(L"Microvolts Cast Server");
 #endif
     asio::io_context io_context;
 
-    Cast::CastServer srv(io_context, 13006, 4);
+	uint16_t port;
+	uint16_t server_id = 4;
+	std::string db_path;
+
+	if(!processCommandLine(argc, argv, port, db_path))
+		return 1;
+
+	std::cout << "[Info] Initializing constant database maps...\n";
+	const std::string cdbMapInfoName = "mapinfo.cdb";
+	using mapInfo = Common::ConstantDatabase::CdbSingleton<Common::ConstantDatabase::CdbMapInfo>;
+	mapInfo::initialize(db_path, cdbMapInfoName);
+
+	Cast::Utils::initHeightDeaths();
+	std::cout << "[Info] Constant database successfully initialized.\n";
+
+    Cast::CastServer srv(io_context, port, server_id);
 
     printInitialInformation();
     srv.asyncAccept();
