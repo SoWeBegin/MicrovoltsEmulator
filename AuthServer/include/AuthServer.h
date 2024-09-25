@@ -1,9 +1,7 @@
 #ifndef AUTHENTICATION_SERVER_H
 #define AUTHENTICATION_SERVER_H
 
-
 #include <optional>
-#include <memory>
 
 #include <asio.hpp>
 
@@ -25,7 +23,7 @@ namespace Auth
 		Auth::Persistence::PersistentDatabase m_database;
 
 	public:
-		AuthServer(ioContext& io_context, std::uint16_t port);
+		AuthServer(ioContext& io_context, const std::string & path, std::uint16_t port);
 		void asyncAccept();
 	};
 }

@@ -30,10 +30,13 @@ The instructions to build, compile and finally start the emulator will not be sh
 We don't want people to host their own servers without having the necessary knowledge on how to solve possible new issues.
 The goal here is to make the game better. Not to host multiple identical servers for no reason.
 
-To build on Linux, or on Windows with MinGW or Clang you have to install Cmake and boost first. The Cmake function `find_package`
-should work on linux most of the time, although on windows it might be better to point manually to the boost installation.
+To build on any other configuration (e.g. Linux + GCC, Windows + MinGW or Android + Clang) you have to install CMake and
+Boost first. The instructions to do so differ from platform to platform, and it's not the subject of this readme. The CMake
+function `find_package` should work on Linux most of the time, although for some OS/target combinations it might be better
+to point manually to the boost installation.
+Every other dependency is downloaded as a git submodule. To properly build with CMake you have to `git clone --recursive`.
 
-## Dependencies
+## Dependencies - Visual Studio
 Most dependencies are already provided inside the `vcpkg.json` file. Instructions: </br>
 - Open your terminal and `cd <YourProjectPath>/ExternalLibraries`
 - then, `git clone https://github.com/microsoft/vcpkg.git`
@@ -43,6 +46,17 @@ Most dependencies are already provided inside the `vcpkg.json` file. Instruction
 - on command prompt: `vcpkg install` (or `.\vcpkg install`)
 - open the project on visual studio. For each project (MainServer, CastServer, AuthServer, Common): Project properties => Release => Configuration properties => vcpkg => In "Installed Directory", add the path to the installed directory of vcpkg (example: `..\ExternalLibraries\vcpkg\vcpkg_installed`)
 - N.B only `release` mode has all relative (necessary) paths. If you want to use `debug` mode, you'll need to copy paste the paths from the `release` one.
+
+## Dependencies - CMake
+LibBoost:
+- On Windows download the library, add the root to path and CMake will find it most of the time
+- On Linux, `sudo apt-install`, `sudo pacman -S` or similar should do the trick
+- For Android, install the Android NDK, download and compile `Boost for Android` from `https://github.com/moritz-wundke/Boost-for-Android`
+and copy the `include` and `lib` folders to the NDK toolchain. On android one could use the Boost version from Termux
+SQLiteCpp, DirectXMath and Asio
+- They are contained as git submodules so make sure to clone this repo with `git clone --recursive` to download them as well.
+- If you want specific versions, you can download them manually. Look inside `.gitmodules` or change the paths in `CMakeLists.txt` to know where to place them.
+- `sal.h`, required by `DirectXMath` is contained and distributed within this repo
 
 ## Client Version
 The emulator is targeted for the client version: ENG_1.1.1.158 (Surge). (Constant database password: `!dptmzpdl@xmfkdlvhtm@goqm!`) </br>

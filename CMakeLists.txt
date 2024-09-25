@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD 20)
 SET(CMAKE_EXE_LINKER_FLAGS  "-Wl,--allow-multiple-definition -Wl,-rpath=. -Wl,-rpath=/data/data/com.termux/files/usr/lib -Wl,--enable-new-dtags")
 
 #boost
-find_package(Boost 1.73.0 COMPONENTS system)
+find_package(Boost 1.73.0 COMPONENTS system program_options)
 IF(NOT Boost_FOUND)
     #set(Boost_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/ExternalLibraries/boost_1_73_0")
 endif()
@@ -29,7 +29,7 @@ include_directories(PUBLIC ${Boost_INCLUDE_DIRS})
 include_directories(PUBLIC ${CMAKE_SOURCE_DIR}/ExternalLibraries)
 
 # COMMON LIBRARY
-include_directories(PUBLIC ${CMAKE_SOURCE_DIR}/ExternalLibraries/asio-1.30.2/include)
+include_directories(PUBLIC ${CMAKE_SOURCE_DIR}/ExternalLibraries/asio/asio/include)
 add_subdirectory(${CMAKE_SOURCE_DIR}/SQLiteCpp)
 
 add_subdirectory(Common)

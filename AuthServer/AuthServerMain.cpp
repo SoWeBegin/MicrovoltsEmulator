@@ -1,7 +1,7 @@
 #include <iostream>
 #include <chrono>
-#include <format>
-#include <asio/execution_context.hpp>
+
+#include <boost/program_options.hpp>
 #include "include/AuthServer.h"
 
 void printInitialInformation()
@@ -15,13 +15,60 @@ void printInitialInformation()
     std::cout << "Auth server initialized on " << time_s << "\n\n";
 }
 
-int main()
+int processCommandLine(int argc, char * argv[], uint16_t & port, std::string & db_path)
+{
+	try
+	{
+		boost::program_options::options_description desc("Program Usage", 1024, 512);
+		desc.add_options()
+		  ("help",     "This help message")
+		  //("host,h",   boost::program_options::value<std::string>(&host)->required(),      "set the host server")
+		  ("port,p",   boost::program_options::value<uint16_t>(&port)->default_value(13000),             "The port AuthServer will listen on. Default 13000")
+		  ("database,db", boost::program_options::value<std::string>(&db_path)->default_value("./Database/GameDatabase.db"), "Path to the users database. Default ./Database/GameDatabase.db")
+		;
+
+		boost::program_options::variables_map vm;
+		boost::program_options::store(boost::program_options::parse_command_line(argc, argv, desc), vm);
+
+		if (vm.count("help"))
+		{
+			std::cout << desc << "\n";
+			return false;
+		}
+
+		// There must be an easy way to handle the relationship between the
+		// option "help" and "host"-"port"-"config"
+		// Yes, the magic is putting the po::notify after "help" option check
+		boost::program_options::notify(vm);
+	}
+	catch(boost::program_options::error& e)
+	{
+		std::cerr << "Error: " << e.what() << "\n";
+		return false;
+	}
+	catch(...)
+	{
+		std::cerr << "Unknown error!" << "\n";
+		return false;
+	}
+
+	return true;
+}
+
+int main(int argc, char * argv[])
 {
 #ifdef WIN32
 	SetConsoleTitleW(L"Microvolts Auth Server");
 #endif
+
+	uint16_t port;
+	std::string db_path;
+
+	if(!processCommandLine(argc, argv, port, db_path))
+		return 1;
+
 	asio::io_context io_context;
-	Auth::AuthServer srv(io_context, 13000);
+	Auth::AuthServer srv(io_context, db_path, port);
 
 	printInitialInformation();
 
