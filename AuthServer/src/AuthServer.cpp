@@ -1,10 +1,8 @@
 #include "../include/AuthServer.h"
 #include "../include/Network/AuthSession.h"
-#include "../include/Network/Session.h"
 #include "../include/Handlers/AuthAllHandlers.h"
 #include "../include/Structures/AuthConnection.h"
-#include "../include/Structures/AuthAccountInfo.h"
-#include "../include/Player/AuthPlayerManager.h"
+
 
 namespace Auth
 {

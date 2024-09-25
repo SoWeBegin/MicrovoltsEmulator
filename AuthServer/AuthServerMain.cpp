@@ -4,7 +4,7 @@
 #include <boost/program_options.hpp>
 #include "include/AuthServer.h"
 
-void printInitialInformation()
+void printInitialInformation()  //TODO move this in common
 {
     //auto const time = std::chrono::current_zone()->to_local(std::chrono::system_clock::now());
     //auto const time_s = std::format("{:%Y-%m-%d %X}", time);
@@ -15,11 +15,12 @@ void printInitialInformation()
     std::cout << "Auth server initialized on " << time_s << "\n\n";
 }
 
+//TODO this requires linking agains some boost shared lib, consider replacing with argparse
 int processCommandLine(int argc, char * argv[], uint16_t & port, std::string & db_path)
 {
 	try
 	{
-		boost::program_options::options_description desc("Program Usage", 1024, 512);
+		boost::program_options::options_description desc("Auth server usage", 1024, 512);
 		desc.add_options()
 		  ("help",     "This help message")
 		  //("host,h",   boost::program_options::value<std::string>(&host)->required(),      "set the host server")

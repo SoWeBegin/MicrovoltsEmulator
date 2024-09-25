@@ -1,7 +1,6 @@
 #include <iostream>
 #include <chrono>
 #include <string>
-#include <format>
 #include <thread>
 
 #include <boost/program_options.hpp>
@@ -20,16 +19,16 @@ void printInitialInformation()
 	std::cout << "[Info] Cast server initialized on " << time_s << "\n\n";
 }
 
-int processCommandLine(int argc, char * argv[], uint16_t & port, std::string & db_path)
+int processCommandLine(int argc, char * argv[], uint16_t & port, std::string & cgd_path)
 {
 	try
 	{
-		boost::program_options::options_description desc("Program Usage", 1024, 512);
+		boost::program_options::options_description desc("Cast server usage", 1024, 512);
 		desc.add_options()
 		  ("help",     "This help message")
 		  //("host,h",   boost::program_options::value<std::string>(&host)->required(),      "set the host server")
 		  ("port,p",   boost::program_options::value<uint16_t>(&port)->default_value(13006),             "The port CastServer will listen on. Default 13006")
-		  ("database,db", boost::program_options::value<std::string>(&db_path)->default_value("./Database/cgd_original/ENG"), "Path to the game (constant) databases folder. Default ./Database/cgd_original/ENG")
+		  ("cgd", boost::program_options::value<std::string>(&cgd_path)->default_value("./Database/cgd_original/ENG"), "Path to the game (constant) databases folder. Default ./Database/cgd_original/ENG")
 		;
 
 		boost::program_options::variables_map vm;
@@ -66,15 +65,15 @@ int main(int argc, char * argv[])
 
 	uint16_t port;
 	uint16_t server_id = 4;
-	std::string db_path;
+	std::string cgd_path;
 
-	if(!processCommandLine(argc, argv, port, db_path))
+	if(!processCommandLine(argc, argv, port, cgd_path))
 		return 1;
 
 	std::cout << "[Info] Initializing constant database maps...\n";
 	const std::string cdbMapInfoName = "mapinfo.cdb";
 	using mapInfo = Common::ConstantDatabase::CdbSingleton<Common::ConstantDatabase::CdbMapInfo>;
-	mapInfo::initialize(db_path, cdbMapInfoName);
+	mapInfo::initialize(cgd_path, cdbMapInfoName);
 
 	Cast::Utils::initHeightDeaths();
 	std::cout << "[Info] Constant database successfully initialized.\n";

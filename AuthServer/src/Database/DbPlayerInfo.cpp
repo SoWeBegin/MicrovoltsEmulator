@@ -51,23 +51,20 @@ namespace Auth
 			try
 			{
 				SQLite::Statement query(db,
-					"SELECT Users.*, Clans.Clanname, Clans.ClanFrontIcon, Clans.ClanBackIcon FROM Users LEFT JOIN Clans ON Users.ClanID = Clans.ClanId WHERE  Username=? AND Password=?");
+					"SELECT Users.*, (DATE(Users.SuspendedUntil) >= DATE('now')) AS is_banned, Clans.Clanname, Clans.ClanFrontIcon, Clans.ClanBackIcon FROM Users LEFT JOIN Clans ON Users.ClanID = Clans.ClanId WHERE  Username=? AND Password=?");
 
 				query.bind(1, username);
 				query.bind(2, password);
 
 				if (query.executeStep())
 				{
-					const std::string suspendedUntil = query.getColumn("SuspendedUntil").getString(); // suspendedUntil uses UTC!
-                    auto const time = std::chrono::system_clock::now();
-                    //const std::string current_time = std::format("{:%Y-%m-%d %X}", time); //TODO store unix timestamp in DB
-                    std::string current_time = suspendedUntil;//Common::Utils::getCurrentDateTime(std::chrono::system_clock::to_time_t(time));
-					if (suspendedUntil <= current_time)
+					const int isBanned = query.getColumn("IsBanned").getInt();
+                    if (isBanned == 0)
 					{
 						playerInfo.setExtra(Auth::Enums::Login::SUCCESS);
 						playerInfoStructure.accountId = static_cast<std::uint32_t>(query.getColumn("AccountID").getInt());
-						strncpy(playerInfoStructure.playerName, query.getColumn("Nickname").getString().c_str(), sizeof(playerInfoStructure.playerName));
-						strncpy(playerInfoStructure.clanName, query.getColumn("Clanname").getString().c_str(), sizeof(playerInfoStructure.clanName));
+						strncpy(playerInfoStructure.playerName, query.getColumn("Nickname").getText(), sizeof(playerInfoStructure.playerName));
+						strncpy(playerInfoStructure.clanName, query.getColumn("Clanname").getText(), sizeof(playerInfoStructure.clanName));
 						playerInfo.setOption(static_cast<std::uint32_t>(query.getColumn("Grade").getInt()));
 						playerInfoStructure.level = static_cast<std::uint32_t>(query.getColumn("Level").getInt()) + 1;
 						playerInfoStructure.exp = static_cast<std::uint32_t>(query.getColumn("Experience").getInt());
