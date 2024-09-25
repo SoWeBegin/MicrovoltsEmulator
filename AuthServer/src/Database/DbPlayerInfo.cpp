@@ -51,7 +51,7 @@ namespace Auth
 			try
 			{
 				SQLite::Statement query(db,
-					"SELECT Users.*, (DATE(Users.SuspendedUntil) >= DATE('now')) AS is_banned, Clans.Clanname, Clans.ClanFrontIcon, Clans.ClanBackIcon FROM Users LEFT JOIN Clans ON Users.ClanID = Clans.ClanId WHERE  Username=? AND Password=?");
+					"SELECT Users.*, (DATE(Users.SuspendedUntil) >= DATE('now')) AS IsBanned, Clans.Clanname, Clans.ClanFrontIcon, Clans.ClanBackIcon FROM Users LEFT JOIN Clans ON Users.ClanID = Clans.ClanId WHERE  Username=? AND Password=?");
 
 				query.bind(1, username);
 				query.bind(2, password);
