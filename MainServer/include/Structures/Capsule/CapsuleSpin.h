@@ -13,7 +13,7 @@ namespace Main
 		struct CapsuleSpin
 		{
 			std::uint32_t winItemId{};
-			std::uint32_t unknown1{0}; // was 1 originally, try to change this and check what it does
+			std::uint32_t mpAmount{0};
 			Main::Structures::ItemSerialInfo itemSerialInfo{};
 
 			CapsuleSpin()

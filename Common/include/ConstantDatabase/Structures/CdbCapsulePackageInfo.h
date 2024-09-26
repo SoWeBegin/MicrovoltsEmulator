@@ -12,7 +12,7 @@ namespace Common
 		struct CdbCapsulePackageInfo
 		{
 			int pi_id;
-			int pi_type;   // type 0 = Don't use, type 1 = non-rare, type 2 = unlimited
+			int pi_type;   // type 0 = Don't use (use only for lucky spins), type 1 = non-rare, type 2 = unlimited
 			int pi_itemid; // useless
 			int pi_group;
 			int pi_prob;   // probability to win item

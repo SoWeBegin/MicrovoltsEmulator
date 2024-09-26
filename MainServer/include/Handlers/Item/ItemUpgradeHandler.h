@@ -109,11 +109,11 @@ namespace Main
 		}
 
 		inline void handleGeneralItem(const Common::Network::Packet& request, Main::Network::Session& session, Main::Persistence::PersistentDatabase& db,
-			const std::unordered_map<std::uint32_t, std::unique_ptr<Main::Box::IBox>>& m_boxes)
+			const std::unordered_map<std::uint32_t, std::unique_ptr<Main::Box::IBox>>& m_boxes, Classes::CapsuleManager capsuleManager, Network::SessionsManager sessionsManager)
 		{
 			if (request.getMission() == 2) // capsule spin
 			{
-				Main::Handlers::handleCapsuleSpin(request, session);
+				Main::Handlers::handleCapsuleSpin(request, session, capsuleManager, sessionsManager);
 			}
 			else
 			{

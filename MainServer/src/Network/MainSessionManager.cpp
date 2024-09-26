@@ -189,5 +189,35 @@ namespace Main
 			}
 			return false;
 		}
+
+		Common::Network::Packet SessionsManager::prepareMessage(std::string message) const
+		{
+			Common::Network::Packet response;
+			response.setOrder(316);
+			response.setExtra(1);
+			std::string m_confirmationMessage{ std::string(16, '0') };
+			m_confirmationMessage += message;
+			response.setData(reinterpret_cast<std::uint8_t*>(m_confirmationMessage.data()), m_confirmationMessage.size());
+			return response;
+		}
+
+		void SessionsManager::broadcastMessage(std::string message) const
+		{
+			auto response = prepareMessage(message);
+			for (auto& currentSession : m_sessionsVector)
+			{
+				currentSession->asyncWrite(response);
+			}
+		}
+
+		void SessionsManager::broadcastMessageExceptSelf(std::size_t selfSessionId, std::string message) const
+		{
+			auto response = prepareMessage(message);
+			for (auto& currentSession : m_sessionsVector)
+			{
+				if (currentSession->getId() == selfSessionId) continue;
+				currentSession->asyncWrite(response);
+			}
+		}
 	};
 }

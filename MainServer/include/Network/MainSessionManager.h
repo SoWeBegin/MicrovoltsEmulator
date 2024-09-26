@@ -17,6 +17,7 @@ namespace Main
 			std::unordered_map<std::uint64_t, Main::Network::Session*> m_sessionsBySessionId{};
 			std::vector<Main::Network::Session*> m_sessionsVector{};
 			Main::Classes::RoomsManager* roomsManager;
+			Common::Network::Packet prepareMessage(std::string message) const;
 
 		public:
 			void setRoomsManager(Main::Classes::RoomsManager* roomsManager);
@@ -46,6 +47,9 @@ namespace Main
 			std::uint32_t getTotalSessions() const;
 
 			bool sendTo(std::size_t sessionId, const Common::Network::Packet& packet);
+
+			void broadcastMessage(std::string message) const;
+			void broadcastMessageExceptSelf(std::size_t selfSessionId, std::string message) const;
 
 			Main::Classes::RoomsManager* getRoomsManager()
 			{

@@ -58,6 +58,7 @@ namespace Main
 		, m_serverId{ serverId }
 		, m_database{ "../ExternalLibraries/Database/GameDatabase.db" }
 		, m_scheduler{ 5, m_database }
+		, m_capsuleManager { m_scheduler, m_database }
 	{
 		const auto durationSinceEpoch = std::chrono::system_clock::now().time_since_epoch();
 		m_timeSinceLastRestart = static_cast<std::uint64_t>(duration_cast<std::chrono::milliseconds>(durationSinceEpoch).count());
@@ -106,8 +107,9 @@ namespace Main
 		Common::Network::Session::addCallback<Main::Network::Session>(74, [&](const Common::Network::Packet& request,
 			Main::Network::Session& session) { Main::Handlers::handleCharacterSelection(request, session, m_roomsManager); });
 
-		//Common::Network::Session::addCallback<Main::Network::Session>(83, [&](const Common::Network::Packet& request,
-			//Main::Network::Session& session) { Main::Handlers::handleCapsuleReq(request, session, m_roomsManager); });
+		// OK
+		Common::Network::Session::addCallback<Main::Network::Session>(83, [&](const Common::Network::Packet& request,
+			Main::Network::Session& session) { Main::Handlers::handleCapsuleReq(request, session, m_capsuleManager); });
 
 		// OK
 		Common::Network::Session::addCallback<Main::Network::Session>(84, [&](const Common::Network::Packet& request,
@@ -140,7 +142,7 @@ namespace Main
 		Common::Network::Session::addCallback<Main::Network::Session>(97, Main::Handlers::handleItemUpgrade);
 
 		Common::Network::Session::addCallback<Main::Network::Session>(98, [&](const Common::Network::Packet& request,
-			Main::Network::Session& session) { Main::Handlers::handleGeneralItem(request, session, m_database, m_boxes); });
+			Main::Network::Session& session) { Main::Handlers::handleGeneralItem(request, session, m_database, m_boxes, m_capsuleManager, m_sessionsManager); });
 
 
 		Common::Network::Session::addCallback<Main::Network::Session>(99, Main::Handlers::handleMailboxDelete);

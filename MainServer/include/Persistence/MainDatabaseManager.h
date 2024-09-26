@@ -1532,6 +1532,73 @@ namespace Main
 				}
 			}
 
+			void updatePlayerLuckyPoints(std::uint32_t accountID, std::uint32_t luckyPoints)
+			{
+				try
+				{
+					std::string updateLevelQuery = "UPDATE Users SET LuckyPoints = ? WHERE AccountID = ?";
+					SQLite::Transaction transaction(db);
+					SQLite::Statement query(db, updateLevelQuery);
+					query.bind(1, luckyPoints);
+					query.bind(2, accountID);
+
+					if (!query.exec())
+					{
+						std::cerr << "[Main::Database::updatePlayerLuckyPoints] Error executing query: " << query.getExpandedSQL() << '\n';
+						std::cerr << "[Main::Database::updatePlayerLuckyPoints] Error message: " << query.getErrorMsg() << '\n';
+						return;
+					}
+
+					transaction.commit();
+				}
+				catch (const std::exception& e)
+				{
+					std::cerr << "[Main::Database::updatePlayerLuckyPoints] SQLite exception: " << e.what() << '\n';
+				}
+			}
+
+			uint32_t getCapsuleJackpot()
+			{
+				uint32_t jackpot = 0;
+				try
+				{
+					SQLite::Statement query(db, "SELECT Value FROM GameParameters WHERE Key = \"Jackpot\"");
+					if (query.executeStep())
+					{
+						jackpot = static_cast<std::uint32_t>(query.getColumn("Value").getInt());
+					}
+				}
+				catch (const std::exception& e)
+				{
+					std::cerr << "[Main::Database::getCapsuleJackpot] SQLite exception: " << e.what() << '\n';
+				}
+
+				return jackpot;
+			}
+
+			void updateCapsuleJackpot(uint32_t jackpotValue)
+			{
+				try
+				{
+					std::string updateJackpotQuery("UPDATE GameParameters SET Value = ? WHERE Key = \"Jackpot\"");
+					SQLite::Transaction transaction(db);
+					SQLite::Statement query(db, updateJackpotQuery);
+					query.bind(1, jackpotValue);
+
+					if (!query.exec())
+					{
+						std::cerr << "[Main::Database::updateCapsuleJackpot] Error executing query: " << query.getExpandedSQL() << '\n';
+						std::cerr << "[Main::Database::updateCapsuleJackpot] Error message: " << query.getErrorMsg() << '\n';
+						return;
+					}
+
+					transaction.commit();
+				}
+				catch (const std::exception& e)
+				{
+					std::cerr << "[Main::Database::updateCapsuleJackpot] SQLite exception: " << e.what() << '\n';
+				}
+			}
 		};
 	}
 }
