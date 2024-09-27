@@ -1,0 +1,134 @@
+{
+  "name": "microvolts-emulator",
+  "version": "1.0.0",
+  "builtin-baseline": "4e08971f3ddc13018ca858a692efe92d3b6b9fce",
+  "dependencies": [
+    {
+      "name": "boost-assert",
+      "version>=": "1.82.0#2"
+    },
+    {
+      "name": "cryptopp",
+      "version>=": "8.2.0-2#0",
+      "features": [ "pem-pack" ]
+    },
+    {
+      "name": "boost-build",
+      "version>=": "1.82.0#2"
+    },
+    {
+      "name": "boost-config",
+      "version>=": "1.82.0#2"
+    },
+    {
+      "name": "boost-container-hash",
+      "version>=": "1.82.0#2"
+    },
+    {
+      "name": "boost-container",
+      "version>=": "1.82.0#2"
+    },
+    {
+      "name": "boost-core",
+      "version>=": "1.82.0#2"
+    },
+    {
+      "name": "boost-describe",
+      "version>=": "1.82.0#2"
+    },
+    {
+      "name": "boost-interprocess",
+      "version>=": "1.82.0#2"
+    },
+    {
+      "name": "boost-intrusive",
+      "version>=": "1.82.0#2"
+    },
+    {
+      "name": "boost-move",
+      "version>=": "1.82.0#2"
+    },
+    {
+      "name": "boost-mp11",
+      "version>=": "1.82.0#2"
+    },
+    {
+      "name": "boost-predef",
+      "version>=": "1.82.0#2"
+    },
+    {
+      "name": "asio",
+      "version>=": "1.24.0"
+    },
+    {
+      "name": "boost-preprocessor",
+      "version>=": "1.82.0#2"
+    },
+    {
+      "name": "boost-static-assert",
+      "version>=": "1.82.0#2"
+    },
+    {
+      "name": "boost-throw-exception",
+      "version>=": "1.82.0#2"
+    },
+    {
+      "name": "boost-tuple",
+      "version>=": "1.82.0#2"
+    },
+    {
+      "name": "boost-type-traits",
+      "version>=": "1.82.0#2"
+    },
+    {
+      "name": "boost-uninstall",
+      "version>=": "1.82.0#2"
+    },
+    {
+      "name": "boost-unordered",
+      "version>=": "1.82.0#2"
+    },
+    {
+      "name": "boost-vcpkg-helpers",
+      "version>=": "1.82.0#2"
+    },
+    {
+      "name": "boost-winapi",
+      "version>=": "1.82.0#2"
+    },
+    {
+      "name": "range-v3",
+      "version>=": "0.12.0#1"
+    },
+    {
+      "name": "sqlite3",
+      "version>=": "3.42.0#1"
+    },
+    {
+      "name": "sqlitecpp",
+      "version>=": "3.3.0"
+    },
+    {
+      "name": "vcpkg-cmake-config",
+      "version>=": "2022-02-06#1"
+    },
+    {
+      "name": "vcpkg-cmake-get-vars",
+      "version>=": "2023-03-02"
+    },
+    {
+      "name": "vcpkg-cmake",
+      "version>=": "2023-05-04"
+    }
+  ],
+  "overrides": [
+    {
+      "name": "range-v3-vs2015",
+      "version": "20151130-vcpkg5#1"
+    },
+    {
+      "name": "cryptopp",
+      "version": "8.9.0"
+    }
+  ]
+}
