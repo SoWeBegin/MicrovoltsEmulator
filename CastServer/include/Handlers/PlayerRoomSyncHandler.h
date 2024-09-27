@@ -16,14 +16,9 @@ namespace Cast
         // 2. they don't respawn at all.
         inline void handlePlayerSyncWithRoom(const Common::Network::Packet& request, Cast::Network::Session& session, Cast::Classes::RoomsManager& roomsManager)
         {
-            auto& logger = ::Utils::Logger::getInstance();
-            logger.log("Getting player sync room info", ::Utils::LogType::Info, "handlePlayerSyncWithRoom");
-
             const auto receiverSessionId = request.getSession();
             const auto hostSessionId = session.getId();
             roomsManager.hostForwardToPlayer(hostSessionId, receiverSessionId, const_cast<Common::Network::Packet&>(request));
-
-           // roomsManager.printRoomInfo(session.getRoomId(), "After handlePlayerSyncWithRoom");
         }
     }
 }

@@ -17,6 +17,7 @@
 #include <Enums/PlayerEnums.h>
 #include <Utils/Logger.h>
 #include <range/v3/all.hpp>
+#include "../../include/Utilities.h"
 
 namespace Main
 {
@@ -27,13 +28,11 @@ namespace Main
 		{
 			const auto pair = std::pair{ player, session };
 			m_players.push_back(pair);
-			m_settings = settings;
-
+			m_playerSessionIdToVecIdx[session->getId()] = m_players.size() - 1;
 			m_isTeamBalanceOn = false; // For now, team balance isn't supported as it causes issues e.g. team bug.
-			//m_isTeamBalanceOn = isModeTeamBased() ? true : false; // Team balance is by default on for team-based modes
 		}
 
-		void Room::addPlayer(Main::Network::Session* session, std::uint32_t team)
+		Main::Structures::RoomPlayerInfo Room::createRoomPlayerInfo(Main::Network::Session* session, std::uint32_t team) const
 		{
 			const auto& accountInfo = session->getAccountInfo();
 			Main::Structures::RoomPlayerInfo roomPlayerInfo;
@@ -41,42 +40,36 @@ namespace Main
 			roomPlayerInfo.level = accountInfo.playerLevel;
 			roomPlayerInfo.ping = session->getPing();
 			std::memcpy(roomPlayerInfo.playerName, accountInfo.nickname, 16);
-			roomPlayerInfo.state = Common::Enums::STATE_WAITING;
 			roomPlayerInfo.uniqueId = accountInfo.uniqueId;
 			roomPlayerInfo.team = team;
+			roomPlayerInfo.state = Common::Enums::STATE_WAITING;
+			return roomPlayerInfo;
+		}
 
-			m_players.push_back(std::pair{ roomPlayerInfo, session });
+		void Room::addPlayer(Main::Network::Session* session, std::uint32_t team)
+		{
+			auto roomPlayerInfo = createRoomPlayerInfo(session, team);
+			m_players.emplace_back(roomPlayerInfo, session);
+			m_playerSessionIdToVecIdx[session->getId()] = m_players.size() - 1;
 			session->setRoomNumber(m_number);
 		}
 
 		void Room::addObserverPlayer(Main::Network::Session* session)
 		{
-			const auto& accountInfo = session->getAccountInfo();
-			Main::Structures::RoomPlayerInfo roomPlayerInfo;
-			roomPlayerInfo.ping = session->getPing();
-			roomPlayerInfo.character = accountInfo.latestSelectedCharacter;
-			roomPlayerInfo.level = accountInfo.playerLevel;
-			std::memcpy(roomPlayerInfo.playerName, accountInfo.nickname, 16);
-			roomPlayerInfo.uniqueId = accountInfo.uniqueId;
-			roomPlayerInfo.team = Common::Enums::Team::TEAM_OBSERVER;
-			roomPlayerInfo.state = Common::Enums::STATE_WAITING;
-
-			m_observerPlayers.push_back(std::pair{ roomPlayerInfo, session });
+			auto roomPlayerInfo = createRoomPlayerInfo(session, Common::Enums::Team::TEAM_OBSERVER);
+			m_observerPlayers.emplace_back(roomPlayerInfo, session);
+			m_obsPlayerSessionIdToVecIdx[session->getId()] = m_observerPlayers.size() - 1;
 			session->setRoomNumber(m_number);
-		}
-
-		void Room::setTick(std::uint64_t tick)
-		{
-			m_tick = tick;
 		}
 
 		std::uint32_t Room::getPlayerIdx(std::uint64_t playerId) const
 		{
-			for (std::uint32_t idx = 0; const auto& [roomInfo, session] : m_players)
+			auto indexIter = m_playerSessionIdToVecIdx.find(playerId);
+			if (indexIter != m_playerSessionIdToVecIdx.end())
 			{
-				if (session->getId() == playerId) return idx;
-				++idx;
+				return indexIter->second;
 			}
+			return -1;
 		}
 
 		void Room::setPassword(const std::string& password)
@@ -96,15 +89,12 @@ namespace Main
 
 		void Room::updatePlayerInfo(Main::Network::Session* session) 
 		{
-			for (auto& [roomInfo, playerSession] : ranges::views::concat(m_players, m_observerPlayers))
+			auto indexIter = m_playerSessionIdToVecIdx.find(session->getId());
+			if (indexIter != m_playerSessionIdToVecIdx.end())
 			{
-				if (playerSession->getId() == session->getId())
-				{
-					const auto& accountInfo = session->getAccountInfo();
-					roomInfo.character = accountInfo.latestSelectedCharacter;
-					roomInfo.level = accountInfo.playerLevel;
-					break;
-				}
+				const auto& accountInfo = session->getAccountInfo();
+				m_players[indexIter->second].first.character = accountInfo.latestSelectedCharacter;
+				m_players[indexIter->second].first.level = accountInfo.playerLevel;
 			}
 		}
 
@@ -152,6 +142,8 @@ namespace Main
 
 			removePlayer(m_players);
 			removePlayer(m_observerPlayers);
+			m_obsPlayerSessionIdToVecIdx.clear();
+			m_playerSessionIdToVecIdx.clear();
 		}
 
 		// Returns the index of the player with the best ms, and if no player is found that meets the requirements, -1 is returned to signal that.
@@ -233,6 +225,9 @@ namespace Main
 					hostChange.setExtra(Common::Enums::CHANGE_HOST_SUCCESS);
 					broadcastToRoom(hostChange);
 
+					// Unmap original host
+					m_playerSessionIdToVecIdx.erase(originalHostSessionId);
+
 					// Leave match + room packets.
 					m_players[bestMsPlayerIdxInMatch].second->asyncWrite(removePlayerFromRoomServerRequest);
 					m_players[bestMsPlayerIdxInMatch].second->leaveRoom();
@@ -276,6 +271,9 @@ namespace Main
 						+ ", idx of new host: " + std::to_string(bestMsIndexPlayerOutsideMatch),
 						Utils::LogType::Normal, "Room::removeHostFromMatch");
 
+					// Unmap original host
+					m_playerSessionIdToVecIdx.erase(originalHostSessionId);
+
 					// If a new match-host has been taken, notify whole room about it.
 					hostChange.setOption(bestMsIndexPlayerOutsideMatch);
 					hostChange.setExtra(Common::Enums::CHANGE_HOST_SUCCESS);
@@ -310,59 +308,6 @@ namespace Main
 					return true;
 				}
 			}
-			else // If the host was alone in the whole room (e.g. SquareMode, AI, BossBattle, and none outside the match), remove it from the room and close it.
-			{
-				logger.log("The host is leaving and no other host can be picked up. Leaving the room and closing it...",
-					Utils::LogType::Normal, "Room::removeHostFromMatch");
-
-				m_players[0].second->asyncWrite(removePlayerFromRoomServerRequest);
-				m_players[0].second->leaveRoom();
-				m_players.clear();
-
-				for (auto& [unused, obsSession] : m_observerPlayers)
-				{
-					obsSession->asyncWrite(removePlayerFromRoomServerRequest);
-					obsSession->leaveRoom();
-				}
-				m_observerPlayers.clear();
-				m_hasMatchStarted = false;
-
-				logger.log(getRoomInfoAsString(), Utils::LogType::Normal, "Room::removeHostFromMatch");
-				return true;
-			}
-		}
-
-		bool Room::changeHostByNickname(const std::string& newHostNickname)
-		{
-			// find player index inside the room through to their nickname
-			std::uint32_t targetIndex = 0;
-			std::uint32_t currentIndex = 0;
-			std::uint32_t sessionId = 0;
-			for (const auto& [roomInfo, session] : m_players)
-			{
-				if (std::strncmp(roomInfo.playerName, newHostNickname.c_str(), sizeof(roomInfo.playerName)) == 0)
-				{
-					targetIndex = currentIndex;
-					sessionId = roomInfo.uniqueId.session;
-					break;
-				}
-				else
-				{
-					++currentIndex;
-				}
-			}
-			if (currentIndex >= m_players.size()) return false; // player with target nickname not found
-			if (changeHost(targetIndex))
-			{
-				Common::Network::Packet hostChange;
-				hostChange.setTcpHeader(sessionId, Common::Enums::USER_LARGE_ENCRYPTION);
-				hostChange.setOrder(124);
-				hostChange.setOption(targetIndex);
-				hostChange.setExtra(Common::Enums::CHANGE_HOST_SUCCESS);
-				broadcastToRoom(hostChange);
-				return true;
-			}
-			return false;
 		}
 
 		// Returns true if the room must be also be closed (e.g. due to host-switch errors, or because no other player is inside the room), false otherwise.
@@ -374,6 +319,7 @@ namespace Main
 			removePlayerFromRoomServerRequest.setTcpHeader(session->getId(), Common::Enums::USER_LARGE_ENCRYPTION);
 			removePlayerFromRoomServerRequest.setOrder(137);
 			removePlayerFromRoomServerRequest.setExtra(extra);
+			std::uint32_t originalSessionId = session->getId();
 
 			auto playerIter = std::find_if(m_players.begin(), m_players.end(), [session](const auto& currentSession) { return currentSession.second == session; });
 
@@ -431,6 +377,9 @@ namespace Main
 				Main::Handlers::notifyRoomPlayerLeaves(playerIter->second->getAccountInfo().uniqueId, *this);
 				m_players.erase(playerIter);
 
+				// unmap original host
+				m_playerSessionIdToVecIdx.erase(originalSessionId);
+
 				logger.log("Removed player from room. " + playerIter->second->getPlayerInfoAsString(),
 					Utils::LogType::Normal, "Room::removePlayer");
 				logger.log(getRoomInfoAsString(), Utils::LogType::Normal, "Room::removePlayer");
@@ -449,6 +398,7 @@ namespace Main
 				observerIter->second->leaveRoom();
 				Main::Handlers::notifyRoomPlayerLeaves(observerIter->second->getAccountInfo().uniqueId, *this);
 				m_observerPlayers.erase(observerIter);
+				m_obsPlayerSessionIdToVecIdx.erase(originalSessionId);
 			}
 			return false;
 		}
@@ -494,7 +444,6 @@ namespace Main
 			return m_settings;
 		}
 
-		// Specific setting is missing here!
 		Main::Structures::RoomJoin Room::getRoomJoinInfo() const
 		{
 			Main::Structures::RoomJoin roomJoinInfo;
@@ -558,6 +507,8 @@ namespace Main
 			}
 			m_players.clear();
 			m_observerPlayers.clear();
+			m_obsPlayerSessionIdToVecIdx.clear();
+			m_playerSessionIdToVecIdx.clear();
 		}
 
 		// Broadcasts to whole room (room + match)
@@ -569,8 +520,6 @@ namespace Main
 				session->asyncWrite(packet);
 			}
 		}
-
-
 
 		void Room::broadcastToRoomExceptSelf(Common::Network::Packet& packet, const Main::Structures::UniqueId& uniqueId)
 		{
@@ -584,21 +533,17 @@ namespace Main
 
 		void Room::broadcastToTeamExceptSelf(Common::Network::Packet& packet, const Main::Structures::UniqueId& uniqueId, bool checkInsideMatch)
 		{
-			Common::Enums::Team targetTeam = Common::Enums::Team::TEAM_ALL;
-			for (const auto& [roomInfo, session] : m_players)
+			auto indexIter = m_playerSessionIdToVecIdx.find(uniqueId.session);
+			if (indexIter != m_playerSessionIdToVecIdx.end())
 			{
-				if (roomInfo.uniqueId == uniqueId)
+				Common::Enums::Team targetTeam = static_cast<Common::Enums::Team>(m_players[indexIter->second].first.team);
+				for (auto& [roomInfo, session] : m_players)
 				{
-					targetTeam = static_cast<Common::Enums::Team>(roomInfo.team);
-					break;
-				}
-			}
-			for (auto& [roomInfo, session] : m_players)
-			{
-				if (roomInfo.uniqueId != uniqueId && roomInfo.team == targetTeam && ((checkInsideMatch && session->isInMatch()) || (!checkInsideMatch && !session->isInMatch())))
-				{
-					packet.setTcpHeader(session->getSessionId(), Common::Enums::USER_LARGE_ENCRYPTION);
-					session->asyncWrite(packet);
+					if (roomInfo.uniqueId != uniqueId && roomInfo.team == targetTeam && ((checkInsideMatch && session->isInMatch()) || (!checkInsideMatch && !session->isInMatch())))
+					{
+						packet.setTcpHeader(session->getSessionId(), Common::Enums::USER_LARGE_ENCRYPTION);
+						session->asyncWrite(packet);
+					}
 				}
 			}
 		}
@@ -612,16 +557,18 @@ namespace Main
 			else
 			{
 				bool broadcastOnlyToObs = false;
+				auto indexIter = m_obsPlayerSessionIdToVecIdx.find(uniqueId.session);
+				if (indexIter != m_obsPlayerSessionIdToVecIdx.end())
+				{
+					// >= MOD grade messages are broadcast to whole room, even outside observer
+					if (m_observerPlayers[indexIter->second].second->getAccountInfo().playerGrade < Common::Enums::GRADE_MOD) 
+					{
+						broadcastOnlyToObs = true;
+					}
+				}
 				for (auto& [roomInfo, session] : m_observerPlayers)
 				{
-					if (roomInfo.uniqueId == uniqueId)
-					{
-						if (session->getAccountInfo().playerGrade < Common::Enums::GRADE_MOD) // >= MOD grade messages are broadcast to whole room, even outside observer
-						{
-							broadcastOnlyToObs = true;
-						}
-						continue;
-					}
+					if (roomInfo.uniqueId == uniqueId) continue;
 					if (session->isInMatch())
 					{
 						packet.setTcpHeader(session->getSessionId(), Common::Enums::USER_LARGE_ENCRYPTION);
@@ -680,23 +627,22 @@ namespace Main
 		// this is used by both (!) manual AND automatic host-changes
 		bool Room::changeHost(std::size_t newHostIdx)
 		{
-			Utils::Logger& logger = Utils::Logger::getInstance();
-
 			if (newHostIdx >= m_players.size())
 			{
-				logger.log("The newHostIdx is not found inside m_players! (newHostIdx: " + std::to_string(newHostIdx) + ", m_players.size(): " + std::to_string(m_players.size()),
-					Utils::LogType::Normal, "Room::changeHost");
 				return false;
 			}
 			std::swap(m_players[0], m_players[newHostIdx]); 
+			m_playerSessionIdToVecIdx[m_players[0].second->getId()] = 0; // map the new host
+			m_playerSessionIdToVecIdx[m_players[newHostIdx].second->getId()] = newHostIdx;
 			return true;
 		}
 
 		Main::Network::Session* Room::getPlayer(const Main::Structures::UniqueId& uniqueId)
 		{
-			for (auto& [roomInfo, session] : m_players)
+			auto indexIter = m_playerSessionIdToVecIdx.find(uniqueId.session);
+			if (indexIter != m_playerSessionIdToVecIdx.end())
 			{
-				if (roomInfo.uniqueId == uniqueId) return session;
+				return m_players[indexIter->second].second;
 			}
 			return nullptr;
 		}
@@ -717,69 +663,61 @@ namespace Main
 		}
 
 		// Returns new team for this player, to notify the client. Nullopt for failure.
-		std::optional<std::uint32_t> Room::changePlayerTeam(const Main::Structures::UniqueId& uniqueId, std::uint32_t newTeam)
-		{
-			Utils::Logger& logger = Utils::Logger::getInstance();
-
-			for (auto it = m_players.begin(); it != m_players.end(); ++it)
+		std::optional<std::uint32_t> Room::changePlayerTeam(const Main::Structures::UniqueId& uniqueId, std::uint32_t newTeam) {
+			auto playerIt = m_playerSessionIdToVecIdx.find(uniqueId.session);
+			if (playerIt != m_playerSessionIdToVecIdx.end()) 
 			{
-				if (it->first.uniqueId == uniqueId)
+				auto index = playerIt->second; 
+				if (newTeam == Common::Enums::TEAM_OBSERVER) 
 				{
-					if (newTeam == Common::Enums::TEAM_OBSERVER)
-					{
-						if (m_observerPlayers.size() >= 10) return std::nullopt;
-						auto playerInfo = std::move(*it);
-						playerInfo.first.team = Common::Enums::TEAM_OBSERVER;
-						m_observerPlayers.push_back(std::move(playerInfo));
-						m_players.erase(it);
+					if (m_observerPlayers.size() >= 10) return std::nullopt;
+					auto playerInfo = std::move(m_players[index]);
+					playerInfo.first.team = Common::Enums::TEAM_OBSERVER;
+					m_observerPlayers.push_back(std::move(playerInfo));
+					m_players.erase(m_players.begin() + index); 
+					m_playerSessionIdToVecIdx.erase(uniqueId.session); 
+					m_obsPlayerSessionIdToVecIdx[uniqueId.session] = m_observerPlayers.size() - 1;
+				}
+				else if (newTeam == Common::Enums::TEAM_ZOMBIE) 
+				{
+					m_players[index].first.team = newTeam; 
+				}
+				else 
+				{
+					m_players[index].first.team = m_players[index].first.team == Common::Enums::TEAM_BLUE ? Common::Enums::TEAM_RED : Common::Enums::TEAM_BLUE;
+				}
+				return newTeam;
+			}
 
-						logger.log("The player " + playerInfo.second->getPlayerInfoAsString() + " changed team from Player to Observer",
-							Utils::LogType::Normal, "Room::switchPlayerTeam");
-					}
-					else if (newTeam == Common::Enums::TEAM_ZOMBIE)
+			auto observerIt = m_obsPlayerSessionIdToVecIdx.find(uniqueId.session);
+			if (observerIt != m_obsPlayerSessionIdToVecIdx.end())
+			{
+				auto index = observerIt->second; 
+				if (newTeam == Common::Enums::TEAM_ALL || newTeam == Common::Enums::TEAM_RED || newTeam == Common::Enums::TEAM_BLUE) 
+				{
+					if (m_players.size() >= m_settings.playersPerTeam * 2) 
 					{
-						it->first.team = newTeam;
+						return std::nullopt;
 					}
-					else
+					else if (isModeTeamBased())
 					{
-						it->first.team = it->first.team == Common::Enums::TEAM_BLUE ? Common::Enums::TEAM_RED : Common::Enums::TEAM_BLUE;
+						m_observerPlayers[index].first.team = calculateNewPlayerTeam();
 					}
-					logger.log("The player " + it->second->getPlayerInfoAsString() + " changed team to: " + std::to_string(it->first.team),
-						Utils::LogType::Normal, "Room::switchPlayerTeam");
-
+					else 
+					{
+						m_observerPlayers[index].first.team = Common::Enums::TEAM_ALL;
+					}
+					auto playerInfo = std::move(m_observerPlayers[index]);
+					std::uint32_t newTeam = playerInfo.first.team;
+					m_players.push_back(std::move(playerInfo));
+					m_observerPlayers.erase(m_observerPlayers.begin() + index);
+					m_obsPlayerSessionIdToVecIdx.erase(uniqueId.session); 
+					m_playerSessionIdToVecIdx[uniqueId.session] = m_players.size() - 1;
 					return newTeam;
 				}
+				return std::nullopt; // Observer player cannot change to another team other than the first if...
 			}
-			for (auto it = m_observerPlayers.begin(); it != m_observerPlayers.end(); ++it)
-			{
-				if (it->first.uniqueId == uniqueId)
-				{
-					if (newTeam == Common::Enums::TEAM_ALL || newTeam == Common::Enums::TEAM_RED || newTeam == Common::Enums::TEAM_BLUE)
-					{
-						if (m_players.size() >= m_settings.playersPerTeam * 2)
-						{
-							logger.log("Could not switch from ObserverTeam => PlayerTeam because there are too many players in the room",
-								Utils::LogType::Warning, "Room::switchPlayerTeam");
-							return std::nullopt;
-						}
-						else if (isModeTeamBased())
-						{
-							it->first.team = calculateNewPlayerTeam();
-						}
-						else
-						{
-							it->first.team = Common::Enums::TEAM_ALL;
-						}
-						auto playerInfo = std::move(*it);
-						std::uint32_t newTeam = playerInfo.first.team;
-						m_players.push_back(std::move(playerInfo));
-						m_observerPlayers.erase(it);
-
-						return newTeam;
-					}
-					return std::nullopt; // Makes no sense: observer player cannot change to another team other than the first if... 
-				}
-			}
+			return std::nullopt; 
 		}
 
 		bool Room::isModeTeamBased() const
@@ -793,16 +731,10 @@ namespace Main
 		// Called when non-team-based mode changed to team-based-mode, and thus all teams go from '0' to either '1' or '2'.
 		void Room::updatePlayersTeamToTeamBased()
 		{
-			Utils::Logger& logger = Utils::Logger::getInstance();
-
 			for (std::size_t i = 0; auto& [roomPlayerInfo, session] : m_players)
 			{
 				roomPlayerInfo.team = (i % 2 == 0) ? Common::Enums::TEAM_BLUE : Common::Enums::TEAM_RED;
 				++i;
-
-				logger.log(std::string(session->getAccountInfo().nickname) + " new team: " +
-					(roomPlayerInfo.team == Common::Enums::TEAM_BLUE ? "TEAM_BLUE" : "TEAM_RED"),
-					::Utils::LogType::Info, "Room::updatePlayersTeam");
 			}
 		}
 
@@ -824,10 +756,6 @@ namespace Main
 				if (playerInfo.team == Common::Enums::Team::TEAM_BLUE) ++totalBlueTeam;
 				else if (playerInfo.team == Common::Enums::Team::TEAM_RED) ++totalRedTeam;
 			}
-			Utils::Logger& logger = Utils::Logger::getInstance();
-			logger.log("Total BLUE team: " + std::to_string(totalBlueTeam) + ", Total RED team: " + std::to_string(totalRedTeam),
-				Utils::LogType::Normal, "Room::calculateNewPlayerTeam");
-
 			if (totalRedTeam >= totalBlueTeam) return Common::Enums::TEAM_BLUE;
 			return Common::Enums::TEAM_RED;
 		}
@@ -854,43 +782,36 @@ namespace Main
 			return static_cast<std::uint32_t>(m_players.size()) >= maxPossiblePlayers;
 		}
 
-		void Room::setStateFor(const Main::Structures::UniqueId& uniqueId, const Common::Enums::PlayerState& playerState)
+		void Room::setStateFor(const Main::Structures::UniqueId& uniqueId, const Common::Enums::PlayerState& playerState) 
 		{
-			for (auto& [roomInfo, session] : ranges::views::concat(m_players, m_observerPlayers))
+			auto playerIt = m_playerSessionIdToVecIdx.find(uniqueId.session);
+			if (playerIt != m_playerSessionIdToVecIdx.end())
 			{
-				if (roomInfo.uniqueId == uniqueId)
-				{
-					roomInfo.state = playerState;
-					session->setPlayerState(playerState);
+				auto index = playerIt->second;
+				m_players[index].first.state = playerState; 
+				m_players[index].second->setPlayerState(playerState); 
+			}
 
-					return;
-				}
+			auto observerIt = m_obsPlayerSessionIdToVecIdx.find(uniqueId.session);
+			if (observerIt != m_obsPlayerSessionIdToVecIdx.end())
+			{
+				auto index = observerIt->second; 
+				m_observerPlayers[index].first.state = playerState; 
+				m_observerPlayers[index].second->setPlayerState(playerState); 
 			}
 		}
 
 		void Room::startMatch(const Main::Structures::UniqueId& uniqueId)
 		{
-			auto allPlayers = ranges::views::concat(m_players, m_observerPlayers);
-
 			if (m_hasMatchStarted)
 			{
-				for (auto& [roomInfo, session] : allPlayers)
+				for (auto& [roomInfo, session] : ranges::views::concat(m_players, m_observerPlayers))
 				{
 					if (roomInfo.uniqueId == uniqueId)
 					{
-						roomInfo.state = 2;
-						session->setIsInMatch(true);
-
-						Common::Network::Packet response;
-						response.setTcpHeader(session->getId(), Common::Enums::USER_LARGE_ENCRYPTION);
-
-						/*
-						response.setOrder(312);
-						response.setOption(2);
-						response.setData(reinterpret_cast<std::uint8_t*>(&roomInfo.uniqueId), sizeof(uniqueId));
-						session->asyncWrite(response);
+						Main::Details::sendPlayerState(*session, uniqueId);
 						setStateFor(uniqueId, static_cast<Common::Enums::PlayerState>(2));
-						*/
+						session->setIsInMatch(true);
 						return;
 					}
 				}
@@ -899,12 +820,12 @@ namespace Main
 			{
 				m_players[0].first.state = Common::Enums::STATE_PLAYING;
 				m_players[0].second->setIsInMatch(true);
-
-				for (auto& [roomInfo, session] : allPlayers)
+				for (auto& [roomInfo, session] : ranges::views::concat(m_players, m_observerPlayers))
 				{
 					if (roomInfo.state == Common::Enums::STATE_READY)
 					{
-						roomInfo.state = 2;
+						Main::Details::sendPlayerState(*session, uniqueId);
+						setStateFor(uniqueId, static_cast<Common::Enums::PlayerState>(2));
 						session->setIsInMatch(true);
 					}
 				}
@@ -992,7 +913,6 @@ namespace Main
 			{
 				m_settings.hasPassword = true;
 			}
-			std::cout << "Password set: " << newPassword << '\n';
 			m_password = newPassword;
 		}
 
@@ -1009,13 +929,17 @@ namespace Main
 
 		void Room::sendTo(const Main::Structures::UniqueId& uniqueId, const Common::Network::Packet& packet)
 		{
-			for (auto& [roomInfo, session] : ranges::views::concat(m_players, m_observerPlayers))
+			auto playerIter = m_playerSessionIdToVecIdx.find(uniqueId.session);
+			if (playerIter != m_playerSessionIdToVecIdx.end())
 			{
-				if (roomInfo.uniqueId == uniqueId)
-				{
-					session->asyncWrite(packet);
-					return;
-				}
+				m_players[playerIter->second].second->asyncWrite(packet);
+				return;
+			}
+
+			auto observerIter = m_obsPlayerSessionIdToVecIdx.find(uniqueId.session);
+			if (observerIter != m_obsPlayerSessionIdToVecIdx.end())
+			{
+				m_observerPlayers[observerIter->second].second->asyncWrite(packet);
 			}
 		}
 
@@ -1026,7 +950,6 @@ namespace Main
 			{
 				if (roomInfo.uniqueId == uniqueId)
 				{
-					std::cout << "storeEndMatchStatsFor: UniqueID found\n";
 					Main::Enums::MatchEnd matchEnd;
 					if (redScore == blueScore)
 					{
@@ -1049,12 +972,16 @@ namespace Main
 
 		Main::Network::Session::AccountInfo Room::getAccountInfoFor(const Main::Structures::UniqueId& uniqueId) const
 		{
-			for (auto& [roomInfo, session] : ranges::views::concat(m_players, m_observerPlayers))
+			auto playerIter = m_playerSessionIdToVecIdx.find(uniqueId.session);
+			if (playerIter != m_playerSessionIdToVecIdx.end())
 			{
-				if (roomInfo.uniqueId == uniqueId)
-				{
-					return session->getAccountInfo();
-				}
+				return m_players[playerIter->second].second->getAccountInfo();
+			}
+
+			auto observerIter = m_obsPlayerSessionIdToVecIdx.find(uniqueId.session);
+			if (observerIter != m_obsPlayerSessionIdToVecIdx.end())
+			{
+				return m_observerPlayers[observerIter->second].second->getAccountInfo();
 			}
 		}
 	}

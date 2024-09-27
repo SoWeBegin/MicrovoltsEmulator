@@ -5,7 +5,7 @@
 #include "../../../include/Structures/AccountInfo/MainAccountInfo.h"
 #include "Network/Packet.h"
 #include "../../../include/Classes/RoomsManager.h"
-#include "../../Structures/ClientData/PingData.h"
+#include "../../Structures/ClientData/Structures.h"
 
 namespace Main
 {
@@ -16,11 +16,9 @@ namespace Main
 		{
 			if (request.getMission() == 1)
 			{
-				session.setPing(pingData.ping);
-				const std::uint16_t roomNumber = session.getRoomNumber();
-
-				if (roomNumber)
+				if (Main::Classes::Room* room = roomsManager.getRoomByNumber(session.getRoomNumber()))
 				{
+					session.setPing(pingData.ping);
 					struct Resp
 					{
 						Main::ClientData::Ping clientData;
@@ -32,11 +30,7 @@ namespace Main
 					response.setTcpHeader(request.getSession(), Common::Enums::USER_LARGE_ENCRYPTION);
 					response.setCommand(request.getOrder() + 1, request.getMission() + 1, 0, request.getOption());
 					response.setData(reinterpret_cast<std::uint8_t*>(&resp), sizeof(resp));
-
-					auto roomFound = roomsManager.getRoomByNumber(roomNumber);
-					if (roomFound == std::nullopt) return;
-					auto& room = roomFound->get();
-					room.broadcastToRoomExceptSelf(response, resp.uniqueId);
+					room->broadcastToRoomExceptSelf(response, resp.uniqueId);
 				}
 			}
 		}

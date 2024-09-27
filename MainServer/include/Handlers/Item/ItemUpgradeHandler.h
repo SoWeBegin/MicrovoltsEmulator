@@ -10,6 +10,7 @@
 #include "../../Utilities.h"
 #include "../../Boxes/BoxBase.h"
 #include "../CapsuleSpinHandler.h"
+#include "../../Structures/ClientData/Structures.h"
 
 namespace Main
 {
@@ -31,7 +32,7 @@ namespace Main
 			RESET_REQUEST = 55
 		};
 
-		inline void handleItemUpgrade(const Common::Network::Packet& request, Main::Network::Session& session)
+		inline void handleItemUpgrade(const Common::Network::Packet& request, Main::Network::Session& session, const Main::ClientData::ItemUpgrade& itemUpgradeData)
 		{
 			Common::Network::Packet response;
 			response.setTcpHeader(request.getSession(), Common::Enums::USER_LARGE_ENCRYPTION);
@@ -41,23 +42,16 @@ namespace Main
 
 			if (request.getExtra() == ItemClientExtra::ADD_ENERGY_REQUEST) 
 			{
-				std::uint32_t usedEnergy;
-				Main::Structures::ItemSerialInfo itemSerialInfo{};
-				std::memcpy(&usedEnergy, request.getData() + 8, sizeof(std::uint32_t));
-				std::memcpy(&itemSerialInfo, request.getData(), sizeof(itemSerialInfo));
-
-				if (usedEnergy > accountInfo.battery) return; // security check, client already prevents this
+				if (itemUpgradeData.usedEnergy > accountInfo.battery) return; // security check, client already prevents this
 				response.setExtra(ItemUpgradeExtra::ENERGY_ADD);
-				response.setData(reinterpret_cast<std::uint8_t*>(const_cast<std::uint8_t*>(request.getData())), sizeof(usedEnergy) + sizeof(Main::Structures::ItemSerialInfo));
-				if (!session.addEnergyToItem(itemSerialInfo, usedEnergy)) return;
+				response.setData(reinterpret_cast<std::uint8_t*>(const_cast<std::uint8_t*>(request.getData())), sizeof(itemUpgradeData.usedEnergy) + sizeof(Main::Structures::ItemSerialInfo));
+				if (!session.addEnergyToItem(itemUpgradeData.serialInfo, itemUpgradeData.usedEnergy)) return;
 				session.asyncWrite(response);
 			}
 			else if (request.getExtra() == ItemClientExtra::UPGRADE_REQUEST) 
 			{
-				Main::Structures::ItemSerialInfo itemSerialInfo{};
-				std::memcpy(&itemSerialInfo, request.getData(), sizeof(itemSerialInfo));
 				std::array<std::uint8_t, 72> unused{};
-				auto found = session.findItemBySerialInfo(itemSerialInfo);
+				auto found = session.findItemBySerialInfo(itemUpgradeData.serialInfo);
 				if (found == std::nullopt) return;
 
 				Main::ConstantDatabase::CdbUtil cdbCurrentId(found->id);
@@ -85,8 +79,8 @@ namespace Main
 					response.setExtra(ItemUpgradeExtra::UPGRADE_FAIL); 
 					response.setData(unused.data(), unused.size());
 					session.asyncWrite(response);
-					session.deleteItem(itemSerialInfo);
-					session.spawnItem(found->id, itemSerialInfo); // spawn new item with correct energy (=reset energy)
+					session.deleteItem(itemUpgradeData.serialInfo);
+					session.spawnItem(found->id, itemUpgradeData.serialInfo); // spawn new item with correct energy (=reset energy)
 					return;
 				}
 				response.setExtra(ItemUpgradeExtra::UPGRADE_SUCCESS);
@@ -94,8 +88,8 @@ namespace Main
 				session.asyncWrite(response);
 				
 				// Delete the old item, respawn new (upgraded) one
-				session.deleteItem(itemSerialInfo);
-				session.spawnItem(found->id + toAdd, itemSerialInfo);
+				session.deleteItem(itemUpgradeData.serialInfo);
+				session.spawnItem(found->id + toAdd, itemUpgradeData.serialInfo);
 				session.setAccountMicroPoints(accountInfo.microPoints - *mpNeededForUpgrade);
 				session.sendCurrency();
 			}

@@ -18,8 +18,6 @@ namespace Cast
         */
         inline void handleRoomTickSyncRequest(const Common::Network::Packet& request, Cast::Network::Session& session, Cast::Classes::RoomsManager& roomsManager)
         {
-            std::cout << "Player: " << session.getId() << " asking Tick Request to: " << request.getSession() << '\n';
-
             const auto roomHostSessionId = request.getSession();
             const auto selfSessionId = session.getId();
 

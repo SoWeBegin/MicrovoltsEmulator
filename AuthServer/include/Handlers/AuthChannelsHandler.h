@@ -37,7 +37,6 @@ namespace Auth
 
                 if (ec)
                 {
-                    std::cerr << "Error during read: " << ec.message() << std::endl;
                     asio::error_code ec;
                     socket.shutdown(asio::ip::tcp::socket::shutdown_both, ec);
                     socket.close();
@@ -51,7 +50,6 @@ namespace Auth
                 auto [ptr, ecc] = std::from_chars(response.data(), response.data() + response.size(), playerCount);
                 if (ecc != std::errc{})
                 {
-                    std::cerr << "Conversion error\n";
                     asio::error_code ec;
                     socket.shutdown(asio::ip::tcp::socket::shutdown_both, ec);
                     socket.close();
@@ -62,7 +60,6 @@ namespace Auth
             }
             catch (const std::exception& e)
             {
-                std::cerr << "Exception: " << e.what() << std::endl;
                 asio::error_code ec;
                 socket.shutdown(asio::ip::tcp::socket::shutdown_both, ec);
                 socket.close();

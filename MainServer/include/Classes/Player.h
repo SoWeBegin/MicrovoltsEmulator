@@ -46,7 +46,6 @@ namespace Main
 			std::string m_mutedBy;
 			std::string m_muteReason;
 			std::string m_mutedUntil;
-			bool m_isInLobby{ true };
 
 			// Mailbox specific
 			std::vector<Mailbox> m_mailboxReceived{};
@@ -71,7 +70,6 @@ namespace Main
 			const char* const getPlayerName() const;
 			void setAccountRockTotens(std::uint32_t rt);
 			void setAccountMicroPoints(std::uint32_t mp);
-			void setAccountCoins(std::uint16_t coins);
 			void setAccountLatestCharacterSelected(std::uint16_t latestCharacterSelected);
 			void setLevel(std::uint16_t level);
 			void setPlayerName(const char* playerName);
@@ -83,7 +81,6 @@ namespace Main
 			std::uint32_t getLuckyPoints() const;
 			void setPing(std::uint16_t ping);
 			std::uint16_t getPing() const;
-			void setIsInLobby(bool val);
 			bool isInLobby() const;
 			void mute(const std::string& reason, const std::string& mutedBy, const std::string& mutedUntil);
 			void unmute();
@@ -155,8 +152,7 @@ namespace Main
 
 			std::string getPlayerInfoAsString() const
 			{
-				return "(PlayerName: " + std::string(m_accountInfo.nickname) + ", RoomNumber: " + std::to_string(m_roomNumber) + ", IsInMatch : " + std::to_string(m_isInMatch)
-					+ ", IsInLobby: " + std::to_string(m_isInLobby) + ")";
+				return "(PlayerName: " + std::string(m_accountInfo.nickname) + ", RoomNumber: " + std::to_string(m_roomNumber) + ", IsInMatch : " + std::to_string(m_isInMatch) + "\n";
 			}
 		};
 	}

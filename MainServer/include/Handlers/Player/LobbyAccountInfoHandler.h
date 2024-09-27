@@ -14,10 +14,8 @@ namespace Main
 	namespace Handlers
 	{
 		inline void handleLobbyAccountInfo(const Common::Network::Packet& request, Main::Network::Session& session, Main::Network::SessionsManager& sessionsManager, 
-			std::uint32_t serverId)
+			std::uint32_t serverId, const Main::Structures::UniqueId& uniqueId)
 		{
-			Main::Structures::UniqueId uniqueId;
-			std::memcpy(&uniqueId, request.getData(), sizeof(Main::Structures::UniqueId));
 			auto* targetSession = sessionsManager.getSessionBySessionId(uniqueId.session);
 			if (!targetSession) return;
 

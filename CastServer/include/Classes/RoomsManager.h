@@ -17,7 +17,6 @@ namespace Cast
 		public:
 			void addRoom(std::shared_ptr<Cast::Classes::Room> room, std::uint64_t playerId);
 		
-			// Debug
 			void printRoomInfo(std::uint64_t sessionId, const std::string& furtherInfo)
 			{
 			}
@@ -33,8 +32,6 @@ namespace Cast
 			void hostForwardToPlayer(std::uint64_t hostSessionId, std::uint64_t receiverSessionId, Common::Network::Packet& packet, bool useHostSessionIdInTcpHeader = true);
 
 			void setMapFor(std::uint64_t playerId, std::uint32_t map);
-
-			void setModeFor(std::uint64_t hostId, std::uint32_t mode);
 
 			void endMatch(std::uint64_t hostId);
 

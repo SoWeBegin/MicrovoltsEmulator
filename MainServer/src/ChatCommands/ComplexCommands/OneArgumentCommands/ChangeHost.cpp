@@ -21,16 +21,13 @@ namespace Main
 				return;
 			}
 
-			auto foundRoom = roomsManager.getRoomByNumber(session.getRoomNumber());
-			if (foundRoom == std::nullopt)
+			if (Main::Classes::Room* room = roomsManager.getRoomByNumber(session.getRoomNumber()))
 			{
-				this->m_confirmationMessage += "error: room not found";
+				this->m_confirmationMessage += "command under maintenance";
 				sendConfirmation(response, session);
-			}
-			else
-			{
-				auto& room = foundRoom.value().get();
-				const bool changed = room.changeHostByNickname(m_value);
+				return;
+
+				const bool changed = false; //room->changeHostByNickname(m_value);
 				if (!changed)
 				{
 					this->m_confirmationMessage += "error";
@@ -41,6 +38,11 @@ namespace Main
 					this->m_confirmationMessage += "success";
 					sendConfirmation(response, session);
 				}
+			}
+			else
+			{
+				this->m_confirmationMessage += "error: room not found";
+				sendConfirmation(response, session);
 			}
 		}
 

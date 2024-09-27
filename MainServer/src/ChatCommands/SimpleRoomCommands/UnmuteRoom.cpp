@@ -21,17 +21,14 @@ namespace Main
 
 		void UnmuteRoom::execute(Main::Network::Session& session, Main::Classes::RoomsManager& roomsManager, std::size_t roomNumber, Common::Network::Packet& response)
 		{
-			this->m_confirmationMessage += "success";
-
-			auto foundRoom = roomsManager.getRoomByNumber(roomNumber);
-			if (foundRoom == std::nullopt)
+			if (Main::Classes::Room* room = roomsManager.getRoomByNumber(roomNumber))
 			{
-				this->m_confirmationMessage += "error";
+				room->unmuteRoom();
+				this->m_confirmationMessage += "success";
 			}
 			else
 			{
-				auto& room = foundRoom.value().get();
-				room.unmuteRoom();
+				this->m_confirmationMessage += "error";
 			}
 			sendConfirmation(response, session);
 		}

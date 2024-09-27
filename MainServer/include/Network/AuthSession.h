@@ -46,10 +46,6 @@ namespace Main
                                 disconnectPlayerIfOnline(request.substr(17));
                             }
                         }
-                        else
-                        {
-                            std::cerr << "Error during read: " << ec.message() << std::endl;
-                        }
                     });
             }
 
@@ -61,10 +57,6 @@ namespace Main
                 asio::async_write(m_socket, asio::buffer(totalPlayersOnline),
                     [this, self](asio::error_code ec, std::size_t length) 
                     {
-                        if (ec)
-                        {
-                            std::cerr << "Error during write: " << ec.message() << std::endl;
-                        }
                     });
             }
 
@@ -81,10 +73,6 @@ namespace Main
                     asio::async_write(m_socket, asio::buffer("Invalid account ID\n"),
                         [this, self](asio::error_code ec, std::size_t length)
                         {
-                            if (ec)
-                            {
-                                std::cerr << "Error during write: " << ec.message() << std::endl;
-                            }
                         });
                     response = "not_removed"; 
                 }
@@ -103,10 +91,6 @@ namespace Main
                 asio::async_write(m_socket, asio::buffer(response),
                     [this, self](asio::error_code ec, std::size_t length)
                     {
-                        if (ec)
-                        {
-                            std::cerr << "Error during write: " << ec.message() << std::endl;
-                        }
                     });
             }
         };

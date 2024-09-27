@@ -9,11 +9,9 @@ namespace Main
 {
 	namespace Handlers
 	{
-		inline void handleReadMailbox(const Common::Network::Packet& request, Main::Network::Session& session, Main::Persistence::PersistentDatabase& database)
+		inline void handleReadMailbox(const Common::Network::Packet& request, Main::Network::Session& session, Main::Persistence::PersistentDatabase& database,
+			std::uint32_t timestamp)
 		{
-			std::uint32_t timestamp;
-			std::memcpy(&timestamp, request.getData() + 4, sizeof(timestamp));
-
 			if (request.getExtra() == Main::Enums::MailboxExtra::MAILBOX_HAS_BEEN_READ)
 			{
 				database.updateReadMailbox(session.getAccountInfo().accountID, timestamp);

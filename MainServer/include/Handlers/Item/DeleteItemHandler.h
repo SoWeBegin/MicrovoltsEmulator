@@ -9,10 +9,8 @@ namespace Main
 {
 	namespace Handlers
 	{
-		inline void handleItemDelete(const Common::Network::Packet& request, Main::Network::Session& session)
+		inline void handleItemDelete(const Common::Network::Packet& request, Main::Network::Session& session, const Main::Structures::ItemSerialInfo& itemSerialInfoToDelete)
 		{
-			Main::Structures::ItemSerialInfo itemSerialInfoToDelete{};
-			std::memcpy(&itemSerialInfoToDelete, request.getData(), sizeof(itemSerialInfoToDelete));
 			session.deleteItem(itemSerialInfoToDelete);
 		}
 	}

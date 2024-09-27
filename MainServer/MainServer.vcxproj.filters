@@ -133,7 +133,7 @@
     <ClInclude Include="include\Boxes\MpBox.h" />
     <ClInclude Include="include\Network\AuthSession.h" />
     <ClInclude Include="include\Handlers\CapsuleReqHandler.h" />
-    <ClInclude Include="include\Structures\ClientData\PingData.h" />
+    <ClInclude Include="include\Structures\ClientData\Structures.h" />
     <ClInclude Include="include\Handlers\Item\ItemAndCapsuleHandler.h" />
   </ItemGroup>
 </Project>

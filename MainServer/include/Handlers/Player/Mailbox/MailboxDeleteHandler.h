@@ -10,11 +10,8 @@ namespace Main
 	namespace Handlers
 	{
 		// TODO: Implement "mass" mailbox delete (= deleting multiple mailboxes at once), unsure if required by the client
-		inline void handleMailboxDelete(const Common::Network::Packet& request, Main::Network::Session& session)
-		{
-			std::uint32_t timestamp;
-			std::memcpy(&timestamp, request.getData() + 4, sizeof(timestamp));
-			
+		inline void handleMailboxDelete(const Common::Network::Packet& request, Main::Network::Session& session, std::uint32_t timestamp)
+		{			
 			if (request.getMission() == Main::Enums::MailboxMission::MISSION_MAILBOX_RECEIVED)
 			{
 				session.deleteReceivedMailbox(timestamp);

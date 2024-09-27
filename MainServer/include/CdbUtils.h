@@ -63,7 +63,6 @@ namespace Main
 			{
 				const auto mapInfoMap = cdbMapInfo::getInstance().getEntry(itemId);
 				if (mapInfoMap == std::nullopt) return std::nullopt;
-				std::cout << "Name: " << mapInfoMap.value().mi_name << ", height: " << mapInfoMap.value().mi_death_height << '\n';
 				return mapInfoMap.value().mi_death_height;
 			}
 
@@ -85,6 +84,16 @@ namespace Main
 					return getDurabilityInternal(cdbWeapons::getInstance());
 				}
 				return itemDurability;
+			}
+
+			std::optional<std::uint16_t> getItemRefundPrice() const
+			{
+				const auto refundValue = getRefundValue(cdbItems::getInstance());
+				if (refundValue == std::nullopt)
+				{
+					return getRefundValue(cdbWeapons::getInstance());
+				}
+				return refundValue;
 			}
 
 			std::optional<Common::ConstantDatabase::CdbRewardInfo> getRewardInfoForMode(std::uint32_t mode) const
@@ -167,25 +176,6 @@ namespace Main
 				return entry->ui_parentid;
 			}
 
-			/*
-			std::vector<Main::Structures::CapsuleList> getCapsuleItems(std::uint32_t maxItems)
-			{	
-				m_maxCapsuleItems = maxItems;
-				//auto entries = cdbCapsuleInfos::getInstance().getEntries();
-				auto entries = cdbCapsulePackageInfos::getInstance().getEntries();
-				std::vector<Main::Structures::CapsuleList> ret;
-				for (std::size_t total = 0; const auto& [id, capsuleInfoStruct] : entries)
-				{
-					std::cout << "CapsuleID: " << capsuleInfoStruct.gi_id << '\n';
-					if (total >= maxItems) break;
-					//ret.push_back(Main::Structures::CapsuleList{ static_cast<std::uint32_t>(capsuleInfoStruct.gi_id), static_cast<std::uint32_t>(capsuleInfoStruct.gi_price) });
-					ret.push_back(Main::Structures::CapsuleList{ static_cast<std::uint32_t>(capsuleInfoStruct.gi_id) });
-					++total;
-				}
-				return ret;
-			}*/
-
-		
 			std::optional<Common::ConstantDatabase::CdbCapsuleInfo> getCapsuleInfoById(std::uint32_t gi_id) const
 			{
 				const auto& entries = cdbCapsuleInfos::getInstance().getEntries();
@@ -206,8 +196,6 @@ namespace Main
 				for (std::size_t total = 0; const auto & [id, capsuleInfoStruct] : cdbCapsuleInfos::getInstance().getEntries())
 				{
 					if (total == m_maxCapsuleItems) break;
-					// assume max index = MP = 2
-					//averageCosts[capsuleInfoStruct.gi_type] += capsuleInfoStruct.gi_price;
 					++totalCapsuleTypesByCurrency[capsuleInfoStruct.gi_type];
 				}
 				averageCosts[0] /= totalCapsuleTypesByCurrency[0];
@@ -313,6 +301,14 @@ namespace Main
 				const std::optional<T> entry = cdb.getEntry("ii_id", itemId);
 				if (entry == std::nullopt) return std::nullopt;
 				return entry->ii_durable_value;
+			}
+
+			template<typename T>
+			std::optional<std::uint16_t> getRefundValue(const Common::ConstantDatabase::Cdb<T>& cdb) const
+			{
+				const std::optional<T> entry = cdb.getEntry("ii_id", itemId);
+				if (entry == std::nullopt) return std::nullopt;
+				return entry->ii_sell_point;
 			}
 		};
 	}

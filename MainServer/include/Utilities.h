@@ -22,6 +22,17 @@ namespace Main
 			PLAYER_ITEMS_BROADCAST = 414,
 		};
 
+		template<typename T>
+		T parseData(const Common::Network::Packet& request, std::uint32_t offset = 0)
+		{
+			// this is not always necessarily true:
+			// assert(sizeof(T) == request.getDataSize());
+
+			T t;
+			std::memcpy(&t, request.getData() + offset, request.getDataSize());
+			return t;
+		}
+
 		inline void sendMessage(const std::string& message, Main::Network::Session& session)
 		{
 			Common::Network::Packet response;
@@ -35,13 +46,20 @@ namespace Main
 			session.asyncWrite(response);
 		}
 
+		inline void sendPlayerState(Main::Network::Session& session, Main::Structures::UniqueId uniqueId)
+		{
+			Common::Network::Packet response;
+			response.setTcpHeader(session.getId(), Common::Enums::USER_LARGE_ENCRYPTION);
+			response.setCommand(312, 0, 0, 2);
+			response.setData(reinterpret_cast<std::uint8_t*>(&uniqueId), sizeof(uniqueId));
+			session.asyncWrite(response);
+		}
+
 		inline void broadcastPlayerItems(Main::Classes::RoomsManager& roomsManager, Main::Network::Session& session, const Common::Network::Packet& request)
 		{
-			auto foundRoom = roomsManager.getRoomByNumber(session.getRoomNumber());
-			if (foundRoom)
+			if (Main::Classes::Room* room = roomsManager.getRoomByNumber(session.getRoomNumber()))
 			{
-				auto& room = foundRoom->get();
-				room.updatePlayerInfo(&session);
+				room->updatePlayerInfo(&session);
 
 				using setItems = Common::ConstantDatabase::CdbSingleton<Common::ConstantDatabase::SetItemInfo>;
 				struct Resp
@@ -67,17 +85,12 @@ namespace Main
 						{
 							for (auto currentTypeNotNull : Common::Utils::getPartTypesWhereSetItemInfoTypeNotNull(*entry))
 							{
-								std::cout << "(in set) Item found for type: " << type << '\n';
 								resp.items[currentTypeNotNull].equippedItemId = item.id;
 								resp.items[currentTypeNotNull].type = currentTypeNotNull;
 							}
 						}
 					}
-					else
-					{
-						std::cout << "Item found for type: " << type << '\n';
-						resp.items[type] = item;
-					}
+					else resp.items[type] = item;
 				}
 
 				Common::Network::Packet response;

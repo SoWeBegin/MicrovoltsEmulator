@@ -16,7 +16,6 @@ namespace Main
 		inline void handleCapsuleReq(const Common::Network::Packet& request, Main::Network::Session& session, Main::Classes::RoomsManager& roomsManager)
 		{
 			// capsules are all completely client sided
-
 			Common::Network::Packet response;
 			response.setTcpHeader(request.getSession(), Common::Enums::USER_LARGE_ENCRYPTION);
 			response.setOrder(83);

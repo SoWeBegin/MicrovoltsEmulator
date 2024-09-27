@@ -121,20 +121,6 @@ namespace Cast
             }
             
             roomsManager.broadcastToRoomExceptSelf(session.getId(), response);
-
-            response.setOrder(284);
-            response.setMission(0);
-            response.setOption(0);
-            response.setExtra(52);
-            struct Nickname
-            {
-                char nick[16] = "test1";
-            } nick;
-            response.setData(reinterpret_cast<std::uint8_t*>(&nick),sizeof(nick));
-            if (session.getId() == 500)
-            {
-                roomsManager.broadcastToRoomExceptSelf(session.getId(), response);
-            }
         }
     }
 }

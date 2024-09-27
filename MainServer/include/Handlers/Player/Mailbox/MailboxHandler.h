@@ -16,11 +16,11 @@ namespace Main
 	namespace Handlers
 	{
 		inline void handleMailboxCommunication(const Common::Network::Packet& request, Main::Network::Session& session, Main::Network::SessionsManager& sessionsManager,
-			Main::Persistence::PersistentDatabase& database)
+			Main::Persistence::PersistentDatabase& database, const Main::ClientData::MailboxMessage& mailboxData)
 		{
 			const auto& accountInfo = session.getAccountInfo();
-			const auto* const data = request.getData();
 			constexpr const std::uint32_t maxMailboxes = 100;
+			constexpr const std::uint32_t nicknameSize = 16;
 
 			Common::Network::Packet response;
 			response.setTcpHeader(request.getSession(), Common::Enums::USER_LARGE_ENCRYPTION);
@@ -35,16 +35,14 @@ namespace Main
 					return;
 				}
 
-				constexpr std::size_t nicknameSize = 16;
-				char nickname[nicknameSize]{};
-				std::memcpy(nickname, data, 16);
-				auto* targetSession = sessionsManager.findSessionByName(nickname);
+				
+				auto* targetSession = sessionsManager.findSessionByName(mailboxData.nickname);
 				if (!targetSession)
 				{
 					Main::Structures::Mailbox mailbox;
 					mailbox.timestamp = static_cast<__time32_t>(std::time(0));
-					std::memcpy(mailbox.nickname, nickname, nicknameSize);
-					std::memcpy(mailbox.message, data + nicknameSize, request.getDataSize() - nicknameSize);
+					std::memcpy(mailbox.nickname, mailboxData.nickname, nicknameSize);
+					std::memcpy(mailbox.message, mailboxData.message, request.getDataSize() - nicknameSize);
 					auto res = database.storeOfflineMailbox(mailbox, accountInfo.nickname);
 
 					if (!res)
@@ -56,7 +54,7 @@ namespace Main
 					else
 					{
 						mailbox.accountId = accountInfo.accountID;
-						std::memcpy(mailbox.nickname, nickname, nicknameSize);
+						std::memcpy(mailbox.nickname, mailboxData.nickname, nicknameSize);
 						session.addMailboxSent(mailbox);
 					}
 				}
@@ -86,7 +84,7 @@ namespace Main
 						Main::Structures::Mailbox mailbox{ targetAccountInfo.accountID, static_cast<__time32_t>(std::time(0)) };
 						constexpr std::size_t nicknameSize = 16;
 						std::memcpy(mailbox.nickname, accountInfo.nickname, nicknameSize);
-						std::memcpy(mailbox.message, data + nicknameSize, request.getDataSize() - nicknameSize);
+						std::memcpy(mailbox.message, mailboxData.message, request.getDataSize() - nicknameSize);
 						targetSession->addMailboxReceived(mailbox);
 
 						mailbox.accountId = accountInfo.accountID;

@@ -16,7 +16,7 @@ namespace Main
 	namespace Handlers
 	{
 		inline void handleGeneralItem(const Common::Network::Packet& request, Main::Network::Session& session, Main::Persistence::PersistentDatabase& db,
-			const std::unordered_map<std::uint32_t, std::unique_ptr<Main::Box::IBox>>& m_boxes)
+			const std::unordered_map<std::uint32_t, std::unique_ptr<Main::Box::IBox>>& m_boxes, const Main::Structures::ItemSerialInfo& openedItemSerialInfo)
 		{
 			if (request.getMission() == 2) // capsule spin
 			{
@@ -24,20 +24,15 @@ namespace Main
 			}
 			else
 			{
-				Main::Structures::ItemSerialInfo openedItemSerialInfo;
-				std::memcpy(&openedItemSerialInfo, request.getData(), request.getDataSize());
 				const auto& userItems = session.getItems();
 
 				auto response = request;
-				response.setOption(1);
 
 				if (userItems.contains(openedItemSerialInfo.itemNumber))
 				{
 					const auto& item = userItems.at(openedItemSerialInfo.itemNumber);
 					if (m_boxes.contains(item.id))
 					{
-						auto response = request;
-
 						if (item.id >= Main::Enums::MP_100 && item.id <= Main::Enums::MP_500000)
 						{ // mp box
 							response.setMission(1);
@@ -53,6 +48,7 @@ namespace Main
 							boxItem.itemId = m_boxes.at(item.id)->get();
 							boxItem.serialInfo = wonItemSerialInfo;
 
+							response.setOption(1); 
 							response.setData(reinterpret_cast<std::uint8_t*>(&boxItem), sizeof(boxItem));
 							session.asyncWrite(response);
 							session.deleteItem(openedItemSerialInfo); // Delete the box / item that was just opened
@@ -69,6 +65,7 @@ namespace Main
 
 						Main::Structures::ItemSerialInfo wonItemSerialInfo;
 						wonItemSerialInfo.itemNumber = session.getLatestItemNumber() + 1;
+						response.setOption(1);
 						Main::Structures::BoxItem boxItem;
 
 						switch (item.id)

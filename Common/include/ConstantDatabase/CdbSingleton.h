@@ -56,10 +56,6 @@ namespace Common
                 auto entries = cdbWeapon.getEntries();
                 for (const auto& [id, structType] : entries)
                 {
-                    if (m_itemByType.contains(structType.ii_id))
-                    {
-                        std::cout << "Item Already Contained in FirstLoop\n";
-                    }
                     m_itemByType[structType.ii_id] = structType.ii_type;
                 }
 
@@ -68,10 +64,6 @@ namespace Common
                 auto entries2 = cdbItem.getEntries();
                 for (const auto& [id, structType] : entries2)
                 {
-                    if (m_itemByType.contains(structType.ii_id))
-                    {
-                        std::cout << "Item Already Contained in SecondLoop\n";
-                    }
                     m_itemByType[structType.ii_id] = structType.ii_type;
                 }
             }

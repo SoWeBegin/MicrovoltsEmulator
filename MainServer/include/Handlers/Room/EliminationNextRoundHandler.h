@@ -39,108 +39,89 @@ namespace Main
 			roomsManager.broadcastToRoomExceptSelf(session.getRoomNumber(), session.getAccountInfo().uniqueId, const_cast<Common::Network::Packet&>(request));
 
 			// Next, specific ending info for each session
-			const auto& roomOpt = roomsManager.getRoomByNumber(session.getRoomNumber());
-			if (roomOpt == std::nullopt) return;
-			auto& room = roomOpt->get();
-
-			const Main::ConstantDatabase::CdbUtil cdbUtil;
-			const auto rewardInfo = cdbUtil.getRewardInfoForMode(room.getRoomSettings().mode);
-			if (!rewardInfo.has_value())
+			if (Main::Classes::Room* room = roomsManager.getRoomByNumber(session.getRoomNumber()))
 			{
-				std::cerr << "Error: RewardInfo was nullopt!\n";
-				return;
-			}
-
-			Common::Network::Packet response;
-			for (std::size_t i = 0; i < request.getOption(); ++i)
-			{
-				// IMPORTANT: EXP and MP will be given even if the match was played for 1 second!
-				// TODO: Add matchStartTime to Room class, and here check whether at least 60 seconds passed. Otherwise don't give anything to the players! (FARM prevention)
-				Main::Structures::ClientEndingMatchNotification finalScoreGivenByClient;
-				std::memcpy(&finalScoreGivenByClient, request.getData() 
-					+ sizeof(finalScoreGivenByClient) * i + sizeof(ClientEndingMatchNotificationHeader), sizeof(finalScoreGivenByClient));
-				finalScoreGivenByClient.uniqueId.server = 4;
-				Main::Structures::ScoreboardResponse responseStruct(finalScoreGivenByClient);
-
-				auto* targetSession = room.getPlayer(finalScoreGivenByClient.uniqueId);
-				if (!targetSession) continue;
-				response.setTcpHeader(targetSession->getId(), Common::Enums::USER_LARGE_ENCRYPTION);
-				std::cout << "EndMatch: Taking care of SessionID: " << targetSession->getId() << '\n';
-
-				// Calculate new EXP
-				auto targetAccountInfo = room.getAccountInfoFor(finalScoreGivenByClient.uniqueId);
-				responseStruct.newTotalEXP = targetAccountInfo.experience
-					+ rewardInfo->ri_exp_base + rewardInfo->ri_exp_kill * responseStruct.totalKills * 2 + rewardInfo->ri_exp_death * responseStruct.deaths
-					+ rewardInfo->ri_exp_assist * responseStruct.assists;
-
-				// Calculate new MP
-				responseStruct.newTotalMP = targetAccountInfo.microPoints
-					+ rewardInfo->ri_poi_base + rewardInfo->ri_poi_kill * responseStruct.totalKills * 2 + rewardInfo->ri_poi_death * responseStruct.deaths
-					+ rewardInfo->ri_poi_assist * responseStruct.assists;
-
-				// Check if player leveled up
-				auto gradeInfo = cdbUtil.getGradeInfoForLevel(targetAccountInfo.playerLevel + 1);
-				if (gradeInfo != std::nullopt)
+				const Main::ConstantDatabase::CdbUtil cdbUtil;
+				const auto rewardInfo = cdbUtil.getRewardInfoForMode(room->getRoomSettings().mode);
+				if (!rewardInfo.has_value())
 				{
-					if (responseStruct.newTotalEXP >= gradeInfo->gi_exp)
+					return;
+				}
+
+				Common::Network::Packet response;
+				for (std::size_t i = 0; i < request.getOption(); ++i)
+				{
+					// TODO: Add matchStartTime to Room class, and here check whether at least 60 seconds passed. Otherwise don't give anything to the players! (FARM prevention)
+					Main::Structures::ClientEndingMatchNotification finalScoreGivenByClient;
+					std::memcpy(&finalScoreGivenByClient, request.getData()
+						+ sizeof(finalScoreGivenByClient) * i + sizeof(ClientEndingMatchNotificationHeader), sizeof(finalScoreGivenByClient));
+					finalScoreGivenByClient.uniqueId.server = 4;
+					Main::Structures::ScoreboardResponse responseStruct(finalScoreGivenByClient);
+
+					auto* targetSession = room->getPlayer(finalScoreGivenByClient.uniqueId);
+					if (!targetSession) continue;
+					response.setTcpHeader(targetSession->getId(), Common::Enums::USER_LARGE_ENCRYPTION);
+					std::cout << "EndMatch: Taking care of SessionID: " << targetSession->getId() << '\n';
+
+					// Calculate new EXP
+					auto targetAccountInfo = room->getAccountInfoFor(finalScoreGivenByClient.uniqueId);
+					responseStruct.newTotalEXP = targetAccountInfo.experience
+						+ rewardInfo->ri_exp_base + rewardInfo->ri_exp_kill * responseStruct.totalKills * 2 + rewardInfo->ri_exp_death * responseStruct.deaths
+						+ rewardInfo->ri_exp_assist * responseStruct.assists;
+
+					// Calculate new MP
+					responseStruct.newTotalMP = targetAccountInfo.microPoints
+						+ rewardInfo->ri_poi_base + rewardInfo->ri_poi_kill * responseStruct.totalKills * 2 + rewardInfo->ri_poi_death * responseStruct.deaths
+						+ rewardInfo->ri_poi_assist * responseStruct.assists;
+
+					// Check if player leveled up
+					auto gradeInfo = cdbUtil.getGradeInfoForLevel(targetAccountInfo.playerLevel + 1);
+					if (gradeInfo != std::nullopt)
 					{
-						responseStruct.newTotalMP += gradeInfo->gi_reward_point; 
-						room.storeEndMatchStatsFor(finalScoreGivenByClient.uniqueId, responseStruct,
-							clientEndMatchNotificationHeader.blueScore, clientEndMatchNotificationHeader.redScore, true);
-
-						const auto newPlayerLevel = targetAccountInfo.playerLevel + 1;
-						// Level up packet
-						response.setOrder(311); 
-						response.setExtra(1);
-						response.setOption(newPlayerLevel); 
-						response.setData(reinterpret_cast<std::uint8_t*>(&finalScoreGivenByClient.uniqueId), sizeof(finalScoreGivenByClient.uniqueId));
-						room.broadcastToRoomExceptSelf(response, finalScoreGivenByClient.uniqueId);
-
-						// Spawn won item
-						if (targetSession)
+						if (responseStruct.newTotalEXP >= gradeInfo->gi_exp)
 						{
-							/*
-							Main::Structures::SpawnedItem spawnedItem{};
-							spawnedItem.itemId = gradeInfo->gi_reward_item;
-							spawnedItem.serialInfo.itemNumber = session.getLatestItemNumber() + 1;
-							targetSession->spawnItem(gradeInfo->gi_reward_item, spawnedItem.serialInfo);
-							targetSession->setLatestItemNumber(spawnedItem.serialInfo.itemNumber);
-							*/
+							responseStruct.newTotalMP += gradeInfo->gi_reward_point;
+							room->storeEndMatchStatsFor(finalScoreGivenByClient.uniqueId, responseStruct,
+								clientEndMatchNotificationHeader.blueScore, clientEndMatchNotificationHeader.redScore, true);
 
-							// Give MP proportionally to the new level
-							targetSession->setAccountMicroPoints(targetAccountInfo.microPoints + (newPlayerLevel * 700));
+							const auto newPlayerLevel = targetAccountInfo.playerLevel + 1;
+							response.setCommand(311, 0, 1, newPlayerLevel); // level up packet
+							response.setData(reinterpret_cast<std::uint8_t*>(&finalScoreGivenByClient.uniqueId), sizeof(finalScoreGivenByClient.uniqueId));
+							room->broadcastToRoomExceptSelf(response, finalScoreGivenByClient.uniqueId);
+
+							if (targetSession)
+							{ 
+								// todo: spawn won item
+								// Give MP proportionally to the new level
+								targetSession->setAccountMicroPoints(targetAccountInfo.microPoints + (newPlayerLevel * 700));
+							}
+						}
+						else
+						{
+							room->storeEndMatchStatsFor(finalScoreGivenByClient.uniqueId, responseStruct,
+								clientEndMatchNotificationHeader.blueScore, clientEndMatchNotificationHeader.redScore, false);
 						}
 					}
 					else
 					{
-						room.storeEndMatchStatsFor(finalScoreGivenByClient.uniqueId, responseStruct,
+						room->storeEndMatchStatsFor(finalScoreGivenByClient.uniqueId, responseStruct,
 							clientEndMatchNotificationHeader.blueScore, clientEndMatchNotificationHeader.redScore, false);
 					}
+
+					// TODO: THE SIZE OF THIS PACKET CAN BE >= 1440 BYTES IF THERE ARE MAX NUM OF PLAYERS + MAX NUM OF OBS PLAYERS!
+					// BUT ARE OBS PLAYERS EVEN COUNTED???
+					response.setCommand(request.getOrder(), 0, 1, 0);
+					response.setData(reinterpret_cast<std::uint8_t*>(&responseStruct), sizeof(responseStruct));
+					room->sendTo(finalScoreGivenByClient.uniqueId, response);
 				}
-				else
-				{
-					room.storeEndMatchStatsFor(finalScoreGivenByClient.uniqueId, responseStruct,
-						clientEndMatchNotificationHeader.blueScore, clientEndMatchNotificationHeader.redScore, false);
-				}
-				
-				// TODO: THE SIZE OF THIS PACKET CAN BE >= 1440 BYTES IF THERE ARE MAX NUM OF PLAYERS + MAX NUM OF OBS PLAYERS!
-				// BUT ARE OBS PLAYERS EVEN COUNTED???
-				response.setOrder(request.getOrder());
-				response.setExtra(1);
-				response.setMission(0); 
-				response.setData(reinterpret_cast<std::uint8_t*>(&responseStruct), sizeof(responseStruct));
-				room.sendTo(finalScoreGivenByClient.uniqueId, response);
+
+				room->endMatch();
+
+				// Notify client about match leave, MVR does this as well
+				response.setCommand(256, 0, 33, 0);
+				response.setData(nullptr, 0);
+				session.asyncWrite(response);
 			}
-
-			room.endMatch();
-
-			// Notify client about match leave, MVR does this as well
-			response.setMission(0);
-			response.setOption(0);
-			response.setExtra(33); // match leave
-			response.setOrder(256); // Match leave
-			response.setData(nullptr, 0);
-			session.asyncWrite(response);
 		}
 	}
 }

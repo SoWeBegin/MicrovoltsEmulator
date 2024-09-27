@@ -5,7 +5,6 @@
 #include "../../Classes/RoomsManager.h"
 #include "Network/Packet.h"
 #include "../../Network/MainSessionManager.h"
-#include "Utils/Logger.h"
 
 namespace Main
 {
@@ -13,48 +12,33 @@ namespace Main
 	{	
 		inline void handleMatchLeave(const Common::Network::Packet& request, Main::Network::Session& session, Main::Network::SessionsManager& sessionsManager, Main::Classes::RoomsManager& roomsManager)
 		{
-			Utils::Logger& logger = Utils::Logger::getInstance();
-
-			auto foundRoom = roomsManager.getRoomByNumber(session.getRoomNumber());
-			if (foundRoom == std::nullopt) 
+			if (Main::Classes::Room* room = roomsManager.getRoomByNumber(session.getRoomNumber()))
 			{
-				logger.log("Room not found by number!, Utils::LogType::Error, Main::handleMatchLeave");
-				return;
-			}
-			auto& room = foundRoom->get();
-
-			if (room.isHost(session.getAccountInfo().uniqueId))
-			{
-				logger.log("The host " + session.getPlayerInfoAsString() + " is attempting to leave the match. " + room.getRoomInfoAsString(),
-					Utils::LogType::Normal, "Main::handleMatchLeave");
-
-				if (room.removeHostFromMatch())
+				if (room->isHost(session.getAccountInfo().uniqueId))
 				{
-					logger.log("Attempting to close the room " + room.getRoomInfoAsString(),
-						Utils::LogType::Normal, "Main::handleMatchLeave");
-
-					roomsManager.removeRoom(room.getRoomNumber());
+					if (room->removeHostFromMatch())
+					{
+						roomsManager.removeRoom(room->getRoomNumber());
+					}
+					else
+					{
+						// handle error?
+					}
 				}
-			}
-			else
-			{
-				logger.log("The player " + session.getPlayerInfoAsString() + " is attempting to leave the match. " + room.getRoomInfoAsString(),
-					Utils::LogType::Normal, "Main::handleMatchLeave");
+				else
+				{
+					// Send leave match packet to client 
+					auto uniqueId = session.getAccountInfo().uniqueId;
+					Common::Network::Packet response;
+					response.setTcpHeader(request.getSession(), Common::Enums::USER_LARGE_ENCRYPTION);
+					response.setCommand(request.getOrder(), 0, 0, 0);
+					response.setData(reinterpret_cast<std::uint8_t*>(&uniqueId), sizeof(uniqueId));
+					roomsManager.broadcastToRoom(room->getRoomNumber(), response);
 
-				// Send leave match packet to client 
-				auto uniqueId = session.getAccountInfo().uniqueId;
-				Common::Network::Packet response;
-				response.setTcpHeader(request.getSession(), Common::Enums::USER_LARGE_ENCRYPTION);
-				response.setCommand(request.getOrder(), 0, 0, 0);
-				response.setData(reinterpret_cast<std::uint8_t*>(&uniqueId), sizeof(uniqueId));
-				roomsManager.broadcastToRoom(room.getRoomNumber(), response);
-
-				// Update server status for this player
-				session.setIsInMatch(false);
-				room.setStateFor(session.getAccountInfo().uniqueId, Common::Enums::STATE_WAITING);
-
-				logger.log("The player " + session.getPlayerInfoAsString() + " has left the match. " + room.getRoomInfoAsString(),
-					Utils::LogType::Normal, "Main::handleMatchLeave");
+					// Update server status for this player
+					session.setIsInMatch(false);
+					room->setStateFor(session.getAccountInfo().uniqueId, Common::Enums::STATE_WAITING);
+				}
 			}
 		}
 	}

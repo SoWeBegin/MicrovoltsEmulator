@@ -78,7 +78,6 @@ namespace Cast
 
 		void Session::setIsInMatch(bool val)
 		{
-			std::cout << "Set Is In Match set to: " << val << " for sessionID: " << m_id << '\n';
 			m_isInMatch = val;
 		}
 	};

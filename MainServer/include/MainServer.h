@@ -47,18 +47,6 @@ namespace Main
 		void asyncAcceptAuthServer();
 		void initializeAllCommands();
 		void initializeBoxes();
-
-		template<typename T>
-		T parseData(const Common::Network::Packet& request)
-		{
-			assert(sizeof(T) == request.getDataSize());
-
-			T t;
-			std::memcpy(&t, request.getData(), request.getDataSize());
-			return t;
-		}
-
-
 	};
 }
 

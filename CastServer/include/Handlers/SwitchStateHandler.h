@@ -13,7 +13,6 @@ namespace Cast
         inline void leaveRoom(const Common::Network::Packet& request, Cast::Network::Session& session, Cast::Classes::RoomsManager& roomsManager)
         {
             roomsManager.switchRoomJoinOrExit(session);
-          //  roomsManager.printRoomInfo(session.getRoomId(), "After switch state handler");
         }
     }
 }

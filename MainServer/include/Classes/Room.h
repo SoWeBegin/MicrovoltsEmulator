@@ -23,6 +23,12 @@ namespace Main
 		class Room
 		{
 		private:
+			struct MapValue
+			{
+				Main::Network::Session* session;
+				Main::Structures::RoomPlayerInfo* playerInfo;
+			};
+
 			inline static std::uint16_t idCounter{};
 
 			std::uint64_t m_tick{};
@@ -35,6 +41,8 @@ namespace Main
 			Main::Structures::RoomSettings m_settings{};
 			std::vector<std::pair<Main::Structures::RoomPlayerInfo, Main::Network::Session*>> m_players{};
 			std::vector<std::pair<Main::Structures::RoomPlayerInfo, Main::Network::Session*>> m_observerPlayers{};
+			std::unordered_map<std::uint32_t, std::size_t> m_playerSessionIdToVecIdx{};
+			std::unordered_map<std::uint32_t, std::size_t> m_obsPlayerSessionIdToVecIdx{};
 			std::vector<std::uint32_t> m_kickedPlayerAccountIds{};
 
 			// Points
@@ -43,6 +51,9 @@ namespace Main
 
 			// Other
 			bool m_isMuted = false;
+
+		private:
+			Main::Structures::RoomPlayerInfo createRoomPlayerInfo(Main::Network::Session* session, std::uint32_t team) const;
 
 		public:
 			Room() = default;
@@ -54,124 +65,72 @@ namespace Main
 					+ ", TotalPlayers: " + std::to_string(m_players.size()) + ", TotalObserverPlayers: " + std::to_string(m_observerPlayers.size()) + ")";
 			}
 
-			Main::Network::Session* getHost() { return m_players[0].second; }
-			Main::Network::Session* getPlayer(const Main::Structures::UniqueId& uniqueId);
-			void addObserverPlayer(Main::Network::Session* session);
+			// Setters
 			void addPlayer(Main::Network::Session* session, std::uint32_t team);
+			void addObserverPlayer(Main::Network::Session* session);
+			void removeAllPlayers();
+			void updatePlayerInfo(Main::Network::Session* session);
+			void addKickedPlayer(std::uint32_t accountId);
+			bool removeHostFromMatch();
+			bool removePlayer(Main::Network::Session* session, std::uint32_t extra);
+			void breakroom();
+			bool changeHost(std::size_t newHostIdx);
+			void updatePlayersTeamToTeamBased();
+			void updatePlayersTeamToNonTeamBased();
+			void setStateFor(const Main::Structures::UniqueId& uniqueId, const Common::Enums::PlayerState& playerState);
+			void setPlayersPerTeam(std::uint16_t playersPerTeam);
+			bool kickPlayer(const std::string& name);
+			void startMatch(const Main::Structures::UniqueId& uniqueId);
+			void endMatch();
+			void updateMap(std::uint16_t newMap);
+			void updateRoomSettings(const Main::Structures::RoomSettingsUpdateBase& newRoomSettings, std::uint16_t newMode);
+			void updateTitle(const std::string& newTitle);
+			void updatePassword(const std::string& newPassword);
+			void setPassword(const std::string& password);
+			void addPoint(std::uint32_t team);
+			void sendTo(const Main::Structures::UniqueId& uniqueId, const Common::Network::Packet& packet);
+			void storeEndMatchStatsFor(const Main::Structures::UniqueId& uniqueId, const Main::Structures::ScoreboardResponse& stats,
+				std::uint32_t blueScore, std::uint32_t redScore, bool hasLeveledUp);
+			void setSpecificSetting(std::uint8_t setting);
+			void setTime(std::uint16_t time);
+			std::optional<std::uint32_t> changePlayerTeam(const Main::Structures::UniqueId& uniqueId, std::uint32_t newTeam);
 
 			void muteRoom();
-
-			void unmuteRoom();
-
+			void unmuteRoom();	
 			bool isMuted() const;
 
-			void removeAllPlayers();
-
+			Main::Network::Session* getPlayer(const Main::Structures::UniqueId& uniqueId);
 			std::uint32_t getBestMsIndexExceptSelf(bool checkIsInMatch, std::uint64_t selfId);
-
-			void setTick(std::uint64_t tick);
-
-			std::uint64_t getTick() const { return m_tick; }
-
 			std::uint32_t getPlayerIdx(std::uint64_t playerIndex) const;
-
-			void setPassword(const std::string& password);
-			
 			const std::string& getPassword() const;
-
 			std::uint16_t getRoomNumber() const;
-
-			void updatePlayerInfo(Main::Network::Session* session);
-
-			void addKickedPlayer(std::uint32_t accountId);
-
-			bool removeHostFromMatch();
-
-			bool removePlayer(Main::Network::Session* session, std::uint32_t extra);
-
-			bool changeHostByNickname(const std::string&);
-
 			std::vector<Main::Structures::RoomPlayerInfo> getAllPlayers() const;
-
-
 			Main::Structures::SingleRoom getRoomInfo() const;
-
 			const Main::Structures::RoomSettings& getRoomSettings() const;
-
 			Main::Structures::RoomJoin getRoomJoinInfo() const;
-
 			std::vector<Main::Structures::RoomPlayerItems> getPlayersItems() const;
-
 			std::vector<Main::Structures::PlayerClan> getPlayersClans() const;
-
-			void breakroom();
+			bool isHost(const Main::Structures::UniqueId& uniqueId) const;
+			Common::Enums::Team calculateNewPlayerTeam() const;
+			bool isModeTeamBased() const;
+			std::uint8_t getSpecificSetting() const;
+			const std::string& getRoomTitle() const;
+			bool isRoomFullObserverExcluded() const;
+			bool hasMatchStarted() const;
+			bool isObserverFull() const;
+			std::size_t getPlayersCount() const;
+			std::uint32_t getHostLevel() const;
+			bool wasPreviouslyKicked(std::uint32_t accountId) const;
+			Main::Structures::RoomSettingsUpdateTitlePassword getRoomSettingsUpdate() const;
+			Main::Network::Session::AccountInfo getAccountInfoFor(const Main::Structures::UniqueId& uniqueId) const;
 
 			void broadcastToRoom(Common::Network::Packet& packet);
-
-			void broadcastToReady(Common::Network::Packet& packet)
-			{
-				for (auto& [roomInfo, session] : m_players)
-				{
-					if (roomInfo.state == Common::Enums::STATE_READY)
-					{
-						packet.setTcpHeader(session->getSessionId(), Common::Enums::USER_LARGE_ENCRYPTION);
-						session->asyncWrite(packet);
-					}
-				}
-			}
-
 			void broadcastToRoomExceptSelf(Common::Network::Packet& packet, const Main::Structures::UniqueId& uniqueId);
-
 			// In-room chat messages
 			void broadcastToTeamExceptSelf(Common::Network::Packet& packet, const Main::Structures::UniqueId& uniqueId, bool inMatch);
 			void broadcastToMatchExceptSelf(Common::Network::Packet& packet, const Main::Structures::UniqueId& uniqueId, std::uint32_t extra);
 			void broadcastOutsideMatchExceptSelf(Common::Network::Packet& packet, const Main::Structures::UniqueId& selfUniqueId, std::uint32_t extra);
 
-			bool changeHost(std::size_t newHostIdx);
-
-			void setCurrentHostAsOriginalHost();
-
-			bool isHost(const Main::Structures::UniqueId& uniqueId) const;
-
-			void setSpecificSetting(std::uint8_t setting);
-
-			void setTime(std::uint16_t time);
-
-			std::optional<std::uint32_t> changePlayerTeam(const Main::Structures::UniqueId& uniqueId, std::uint32_t newTeam);
-
-			void updatePlayersTeamToTeamBased();
-
-			void updatePlayersTeamToNonTeamBased();
-
-			Common::Enums::Team calculateNewPlayerTeam() const;
-
-			bool isModeTeamBased() const;
-
-			void setPlayersPerTeam(std::uint16_t playersPerTeam);
-
-			std::uint8_t getSpecificSetting() const;
-
-			const std::string& getRoomTitle() const;
-
-			bool kickPlayer(const std::string& name);
-
-			bool isRoomFullObserverExcluded() const;
-
-			void setStateFor(const Main::Structures::UniqueId& uniqueId, const Common::Enums::PlayerState& playerState);
-
-			void startMatch(const Main::Structures::UniqueId& uniqueId);
-
-			void endMatch();
-
-			bool hasMatchStarted() const;
-
-			bool isObserverFull() const;
-
-			std::size_t getPlayersCount() const;
-
-			std::uint32_t getHostLevel() const;
-
-			bool wasPreviouslyKicked(std::uint32_t accountId) const;
 
 			template<Main::Enums::RoomSimpleSetting T> requires (T == Main::Enums::SETTING_ITEM)
 			void switchSimpleSetting()
@@ -196,25 +155,6 @@ namespace Main
 			{
 				m_settings.isObserverModeOn = ~m_settings.isObserverModeOn;
 			}
-
-			void updateMap(std::uint16_t newMap);
-
-			void updateRoomSettings(const Main::Structures::RoomSettingsUpdateBase& newRoomSettings, std::uint16_t newMode);
-
-			Main::Structures::RoomSettingsUpdateTitlePassword getRoomSettingsUpdate() const;
-
-			void updateTitle(const std::string& newTitle);
-
-			void updatePassword(const std::string& newPassword);
-
-			void addPoint(std::uint32_t team);
-
-			void sendTo(const Main::Structures::UniqueId& uniqueId, const Common::Network::Packet& packet);
-
-			void storeEndMatchStatsFor(const Main::Structures::UniqueId& uniqueId, const Main::Structures::ScoreboardResponse& stats,
-				std::uint32_t blueScore, std::uint32_t redScore, bool hasLeveledUp);
-
-			Main::Network::Session::AccountInfo getAccountInfoFor(const Main::Structures::UniqueId& uniqueId) const;
 		};
 	}
 }

@@ -24,7 +24,7 @@ namespace Main
 
 			std::vector<Main::Structures::SingleRoom> getRoomsList() const;
 
-			std::optional<std::reference_wrapper<Main::Classes::Room>> getRoomByNumber(std::uint16_t roomNumber);
+			Main::Classes::Room* getRoomByNumber(std::uint16_t roomNumber);
 
 			void broadcastToRoom(std::uint16_t roomNumber, Common::Network::Packet& packet);
 

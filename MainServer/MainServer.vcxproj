@@ -267,7 +267,7 @@
     <ClInclude Include="include\Structures\AccountInfo\MainAccountInfo.h" />
     <ClInclude Include="include\Structures\AccountInfo\MainAccountUniqueId.h" />
     <ClInclude Include="include\Structures\AccountInfo\MuteInfo.h" />
-    <ClInclude Include="include\Structures\ClientData\PingData.h" />
+    <ClInclude Include="include\Structures\ClientData\Structures.h" />
     <ClInclude Include="include\Structures\PlayerLists\BlockedPlayer.h" />
     <ClInclude Include="include\Structures\Capsule\CapsuleList.h" />
     <ClInclude Include="include\Structures\Capsule\CapsuleSpin.h" />

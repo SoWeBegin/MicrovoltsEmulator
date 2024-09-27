@@ -13,13 +13,12 @@ namespace Main
 			m_roomByNumber.emplace(room.getRoomNumber(), room);
 		}
 
-		void RoomsManager::removeRoom(std::uint16_t roomNum) 
+		void RoomsManager::removeRoom(std::uint16_t roomNum)
 		{
-			if (m_roomByNumber.contains(roomNum)) 
-			{
-				m_roomByNumber[roomNum].removeAllPlayers();
-				m_roomByNumber.erase(roomNum);
-			}
+			auto it = m_roomByNumber.find(roomNum);
+			if (it == m_roomByNumber.end()) return;  
+			it->second.removeAllPlayers();  
+			m_roomByNumber.erase(it);    
 		}
 
 		std::size_t RoomsManager::getTotalRooms() const
@@ -30,6 +29,7 @@ namespace Main
 		std::vector<Main::Structures::SingleRoom> RoomsManager::getRoomsList() const
 		{
 			std::vector<Main::Structures::SingleRoom> roomsList;
+			roomsList.reserve(m_roomByNumber.size());
 			for (const auto& [roomNumber, room] : m_roomByNumber)
 			{
 				roomsList.push_back(room.getRoomInfo());
@@ -37,41 +37,43 @@ namespace Main
 			return roomsList;
 		}
 
-		std::optional<std::reference_wrapper<Main::Classes::Room>> RoomsManager::getRoomByNumber(std::uint16_t roomNumber)
+		Main::Classes::Room* RoomsManager::getRoomByNumber(std::uint16_t roomNumber)
 		{
-			if (m_roomByNumber.contains(roomNumber))
+			auto it = m_roomByNumber.find(roomNumber);
+			if (it != m_roomByNumber.end())
 			{
-				return std::ref(m_roomByNumber[roomNumber]);
+				return &it->second; 
 			}
-			return std::nullopt;
+			return nullptr;
 		}
 
 		void RoomsManager::broadcastToRoom(std::uint16_t roomNumber, Common::Network::Packet& packet)
 		{
-			if (!m_roomByNumber.contains(roomNumber)) return;
-			auto& room = m_roomByNumber[roomNumber];
-			room.broadcastToRoom(packet);
+			auto it = m_roomByNumber.find(roomNumber);
+			if (it == m_roomByNumber.end()) return;  
+			it->second.broadcastToRoom(packet);  
 		}
 
 		void RoomsManager::broadcastToRoomExceptSelf(std::uint16_t roomNumber, const Main::Structures::UniqueId& selfUniqueId, Common::Network::Packet& packet)
 		{
-			if (!m_roomByNumber.contains(roomNumber)) return;
-			auto& room = m_roomByNumber[roomNumber];
-			room.broadcastToRoomExceptSelf(packet, selfUniqueId);
+			auto it = m_roomByNumber.find(roomNumber);
+			if (it == m_roomByNumber.end()) return;  
+			it->second.broadcastToRoomExceptSelf(packet, selfUniqueId);  
 		}
 
 		void RoomsManager::broadcastToMatchExceptSelf(std::uint16_t roomNumber, const Main::Structures::UniqueId& selfUniqueId, Common::Network::Packet& packet, std::uint32_t extra)
 		{
-			if (!m_roomByNumber.contains(roomNumber)) return;
-			auto& room = m_roomByNumber[roomNumber];
-			room.broadcastToMatchExceptSelf(packet, selfUniqueId, extra);
+			auto it = m_roomByNumber.find(roomNumber);
+			if (it == m_roomByNumber.end()) return;  
+			it->second.broadcastToMatchExceptSelf(packet, selfUniqueId, extra); 
 		}
 
 		void RoomsManager::broadcastOutsideMatchExceptSelf(std::uint16_t roomNumber, const Main::Structures::UniqueId& selfUniqueId, Common::Network::Packet& packet, std::uint32_t extra)
 		{
-			if (!m_roomByNumber.contains(roomNumber)) return;
-			auto& room = m_roomByNumber[roomNumber];
-			room.broadcastOutsideMatchExceptSelf(packet, selfUniqueId, extra);
+			auto it = m_roomByNumber.find(roomNumber);
+			if (it == m_roomByNumber.end()) return;  
+			it->second.broadcastOutsideMatchExceptSelf(packet, selfUniqueId, extra);  
 		}
+
 	};
 }

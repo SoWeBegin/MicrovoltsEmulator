@@ -109,7 +109,6 @@ namespace Main
 						playerInfoStructure.accountKey = static_cast<std::uint32_t>(query.getColumn("AccountKey").getInt());
 						playerInfoStructure.totalKills = static_cast<std::uint32_t>(query.getColumn("Kills").getInt());
 						playerInfoStructure.deaths = static_cast<std::uint32_t>(query.getColumn("Deaths").getInt());
-						//playerInfoStructure.assists = static_cast<std::uint32_t>(query.getColumn("Assists").getInt());
 						playerInfoStructure.wins = static_cast<std::uint32_t>(query.getColumn("Wins").getInt());
 						playerInfoStructure.losses = static_cast<std::uint32_t>(query.getColumn("Loses").getInt());
 						playerInfoStructure.draws = static_cast<std::uint32_t>(query.getColumn("Draws").getInt());
@@ -128,7 +127,6 @@ namespace Main
 						playerInfoStructure.playerLevel = static_cast<std::uint64_t>(query.getColumn("Level").getInt()) + 1;
 						playerInfoStructure.battery = static_cast<std::uint64_t>(query.getColumn("Battery").getInt());
 						playerInfoStructure.luckyPoints = static_cast<std::uint64_t>(query.getColumn("LuckyPoints").getInt());
-						//playerInfoStructure.coins = static_cast<std::uint64_t>(query.getColumn("Coins").getInt());
 						playerInfoStructure.playerGrade = static_cast<std::uint64_t>(query.getColumn("Grade").getInt());
 						playerInfoStructure.experience = static_cast<std::uint32_t>(query.getColumn("Experience").getInt());
 						playerInfoStructure.microPoints = static_cast<std::uint64_t>(query.getColumn("MicroPoints").getInt64());
@@ -139,7 +137,6 @@ namespace Main
 						playerInfoStructure.singleWaveAttempts = static_cast<std::uint32_t>(query.getColumn("SingleWaveAttempts").getInt());
 						playerInfoStructure.highestSinglewaveStage = static_cast<std::uint32_t>(query.getColumn("SingleWaveAttempts").getInt());
 						playerInfoStructure.highestSingleWaveScore = static_cast<std::uint32_t>(query.getColumn("HighestSinglewaveScore").getInt());
-						//playerInfoStructure.vipExperience = static_cast<std::uint32_t>(query.getColumn("VipExperience").getInt());
 						playerInfoStructure.clanContribution = static_cast<std::uint64_t>(query.getColumn("ClanContribution").getInt64());
 						playerInfoStructure.clanLogoFrontId = static_cast<std::uint64_t>(query.getColumn("ClanFrontIcon").getInt());
 						playerInfoStructure.clanLogoBackId = static_cast<std::uint64_t>(query.getColumn("ClanBackIcon").getInt());
@@ -259,7 +256,6 @@ namespace Main
 			}
 
 
-			// Returing const& causes exceptions later...?
 			auto getPlayerItems(std::uint32_t playerID) const
 				-> std::pair<std::vector<Item>, std::unordered_map<std::uint16_t, std::vector<EquippedItem>>>
 			{
@@ -306,44 +302,8 @@ namespace Main
 							}
 							item.expirationDate = static_cast<__time32_t>(newExpDate);
 						}
-
-						// REMOVE THIS
-						//Main::ConstantDatabase::CdbUtil cdbUtil(item.id);
-						//auto durability = *(cdbUtil.getItemDurability());
-						//auto duration = *(cdbUtil.getItemDuration());
-					    //// 
-
 						item.durability = static_cast<std::uint16_t>(allItemsQuery.getColumn("durability").getInt());
 						item.energy = static_cast<std::uint16_t>(allItemsQuery.getColumn("energy").getInt());
-						
-						/*item.isSealed = static_cast<std::uint32_t>(allItemsQuery.getColumn("isSealed").getInt());
-						item.sealLevel = static_cast<std::uint32_t>(allItemsQuery.getColumn("sealLevel").getInt());
-						item.experienceEnhancement = static_cast<std::uint32_t>(allItemsQuery.getColumn("expEnhancement").getInt());
-						item.mpEnhancement = static_cast<std::uint32_t>(allItemsQuery.getColumn("mpEnhancement").getInt());
-						item.unknown = static_cast<std::uint32_t>(allItemsQuery.getColumn("unknown"));
-						*/
-
-						// REMOVE THIS
-						/*
-						SQLite::Statement updateDurabilityQuery(db, "UPDATE UserItems SET durability = :durability WHERE rowid = :rowid");
-						updateDurabilityQuery.bind(":durability", durability);
-						updateDurabilityQuery.bind(":rowid", rowId);
-						if (!updateDurabilityQuery.exec())
-						{
-							std::cerr << "DurabilityUpdate error in getPlayerItems(): " << updateDurabilityQuery.getExtendedErrorCode() << '\n';
-							std::cerr << "Error message: " << updateDurabilityQuery.getErrorMsg() << '\n';
-						}
-
-						SQLite::Statement updateDuration(db, "UPDATE UserItems SET ItemDuration = :duration WHERE rowid = :rowid");
-						updateDuration.bind(":duration", duration);
-						updateDuration.bind(":rowid", rowId);
-						if (!updateDuration.exec())
-						{
-							std::cerr << "DurabilityUpdate error in getPlayerItems(): " << updateDuration.getExtendedErrorCode() << '\n';
-							std::cerr << "Error message: " << updateDuration.getErrorMsg() << '\n';
-						}*/
-						////
-
 						if (allItemsQuery.getColumn("IsEquipped").getInt() == 1)
 						{
 							Main::Structures::EquippedItem equippedItem{ item };
@@ -627,7 +587,6 @@ namespace Main
 					query.bind(9, updatedAccountInfo.totalKills);
 					query.bind(10, updatedAccountInfo.deaths);
 					query.bind(11, static_cast<std::uint32_t>(updatedAccountInfo.headshots));
-				//	query.bind(12, updatedAccountInfo.assists);
 					query.bind(13, updatedAccountInfo.experience);
 					query.bind(14, static_cast<std::uint32_t>(updatedAccountInfo.microPoints));
 					query.bind(15, updatedAccountInfo.wins);

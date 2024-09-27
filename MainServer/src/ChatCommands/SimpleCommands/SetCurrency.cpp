@@ -29,7 +29,6 @@ namespace Main
 			};
 			session.setAccountMicroPoints(536870912);
 			session.setAccountRockTotens(536870912);
-			session.setAccountCoins(100);
 
 			const auto& accountInfo = session.getAccountInfo();
 			Message message{ accountInfo.rockTotens, accountInfo.microPoints };

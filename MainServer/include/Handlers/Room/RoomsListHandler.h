@@ -23,7 +23,7 @@ namespace Main
 
 			Common::Network::Packet response;
 			response.setTcpHeader(request.getSession(), Common::Enums::USER_LARGE_ENCRYPTION);
-			response.setCommand(request.getOrder(), 0, 38, 0);
+			response.setCommand(request.getOrder(), 0, 37, 0);
 			response.setData(message.data(), message.size());
 			session.asyncWrite(response);
 		}

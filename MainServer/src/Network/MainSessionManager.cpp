@@ -28,22 +28,18 @@ namespace Main
 					targetFriendSession.second->updateFriendSession(m_sessionsBySessionId[sessionId], true);
 				}
 				// Reset room state
-				if (m_sessionsBySessionId[sessionId]->getRoomNumber())
+				if (Main::Classes::Room* room = roomsManager->getRoomByNumber(m_sessionsBySessionId[sessionId]->getRoomNumber()))
 				{
-					auto roomOpt = roomsManager->getRoomByNumber(m_sessionsBySessionId[sessionId]->getRoomNumber());
-					if (roomOpt == std::nullopt) return;
-					auto& room = roomOpt.value().get();
-
 					if (m_sessionsBySessionId[sessionId]->isInMatch())
 					{
 						// if host, remove host from both match + room. removeHostFromMatch does that.
-						if (room.isHost(m_sessionsBySessionId[sessionId]->getAccountInfo().uniqueId))
+						if (room->isHost(m_sessionsBySessionId[sessionId]->getAccountInfo().uniqueId))
 						{
 							// This will also remove the host from the Room + notify the room that the host left the room
-							bool roomMustBeClosed = room.removeHostFromMatch(); // Also notifies cast whether the room must be broken
+							bool roomMustBeClosed = room->removeHostFromMatch(); // Also notifies cast whether the room must be broken
 							if (roomMustBeClosed)
 							{
-								roomsManager->removeRoom(room.getRoomNumber());
+								roomsManager->removeRoom(room->getRoomNumber());
 							}
 						}
 						else
@@ -56,19 +52,19 @@ namespace Main
 							response.setExtra(0);
 							auto uniqueId = m_sessionsBySessionId[sessionId]->getAccountInfo().uniqueId;
 							response.setData(reinterpret_cast<std::uint8_t*>(&uniqueId), sizeof(uniqueId));
-							room.broadcastToRoom(response);
+							room->broadcastToRoom(response);
 							m_sessionsBySessionId[sessionId]->setIsInMatch(false);
 
-							room.removePlayer(m_sessionsBySessionId[sessionId], 1);
+							room->removePlayer(m_sessionsBySessionId[sessionId], 1);
 						}
 					}
 					else
 					{
-						bool roomMustBeClosed = room.removePlayer(m_sessionsBySessionId[sessionId], 1); // 1 = extra = leave room normally
+						bool roomMustBeClosed = room->removePlayer(m_sessionsBySessionId[sessionId], 1); // 1 = extra = leave room normally
 						// nb. removePlayer does NOT notify cast that the room must be removed.
 						if (roomMustBeClosed)
 						{
-							roomsManager->removeRoom(room.getRoomNumber());
+							roomsManager->removeRoom(room->getRoomNumber());
 						}
 					}
 					m_sessionsBySessionId[sessionId]->leaveRoom();
@@ -82,8 +78,6 @@ namespace Main
 				{
 					m_sessionsVector.erase(it);
 				}
-
-				
 			}
 		}
 

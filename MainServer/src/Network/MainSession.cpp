@@ -309,13 +309,6 @@ namespace Main
 				m_player.getAccountID(), mp, Main::Enums::ItemCurrencyType::ITEM_MP);
 		}
 
-		void Session::setAccountCoins(std::uint16_t coins)
-		{
-			m_player.setAccountCoins(coins);
-			m_scheduler.addCallback(m_player.getAccountID(), 3, &Main::Persistence::PersistentDatabase::updatePlayerCurrencyByType,
-				m_player.getAccountID(), coins, Main::Enums::ItemCurrencyType::ITEM_COIN);
-		}
-
 		void Session::setAccountLatestCharacterSelected(std::uint16_t latestCharacterSelected)
 		{
 			m_player.setAccountLatestCharacterSelected(latestCharacterSelected);
@@ -343,7 +336,6 @@ namespace Main
 				m_player.getAccountID(), static_cast<std::uint32_t>(itemSerialInfo.itemNumber), result->first, static_cast<std::uint32_t>(result->second));
 			return true;
 		}
-
 
 		void Session::addFriend(const Main::Structures::Friend& ffriend)
 		{
@@ -401,7 +393,6 @@ namespace Main
 				m_scheduler.addRepetitiveCallback(m_player.getAccountID(), &Main::Persistence::PersistentDatabase::removePlayerItem,
 					m_player.getAccountID(), static_cast<std::uint32_t>(itemSerialInfoToDelete.itemNumber));
 			}
-			std::cout << "Was removed? " << std::boolalpha << removed << '\n';
 			response.setExtra(removed ? 1 : 0);
 			asyncWrite(response);
 			return removed;
@@ -421,7 +412,6 @@ namespace Main
 			Message message{ accountInfo.rockTotens, accountInfo.microPoints + mpToAdd };
 			response.setData(reinterpret_cast<std::uint8_t*>(&message), sizeof(message));
 			asyncWrite(response);
-
 			setAccountMicroPoints(accountInfo.microPoints + mpToAdd);
 		}
 
@@ -447,17 +437,11 @@ namespace Main
 			return m_player.getEquippedItemsSeparated();
 		}
 
-		void Session::setIsInLobby(bool val)
-		{
-			m_player.setIsInLobby(val);
-		}
-
 		bool Session::isInLobby() const
 		{
 			return m_player.isInLobby();
 		}
 
-	
 		void Session::switchItemEquip(std::uint32_t characterId, std::uint64_t itemNumber)
 		{
 			if (!m_player.unequipItemIfEquipped(itemNumber, characterId, m_scheduler))
@@ -570,10 +554,6 @@ namespace Main
 
 		void Session::setRoomNumber(std::uint16_t roomNumber)
 		{
-			if (roomNumber)
-			{
-				m_player.setIsInLobby(false);
-			}
 			m_player.setRoomNumber(roomNumber);
 		}
 
@@ -594,7 +574,6 @@ namespace Main
 
 		void Session::setIsInMatch(bool val)
 		{
-			std::cout << "Set Is In Match set to: " << val << '\n';
 			m_player.setIsInMatch(val);
 		}
 
@@ -610,7 +589,7 @@ namespace Main
 
 		void Session::sendBattery(std::uint32_t battery)
 		{
-			// currently does not work:
+			// todo: recheck whether this works
 			Common::Network::Packet response;
 			response.setTcpHeader(getId(), Common::Enums::USER_LARGE_ENCRYPTION);
 			response.setOrder(89);
@@ -638,7 +617,6 @@ namespace Main
 			previousAccountInfo.totalKills += stats.totalKills;
 			previousAccountInfo.deaths += stats.deaths;
 			previousAccountInfo.headshots += stats.headshots;
-			//previousAccountInfo.assists += stats.assists;
 			previousAccountInfo.experience = stats.newTotalEXP;
 			previousAccountInfo.microPoints = stats.newTotalMP;
 			if (matchEnd == Main::Enums::MATCH_WON) previousAccountInfo.wins += 1;

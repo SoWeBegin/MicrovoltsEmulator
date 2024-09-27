@@ -41,23 +41,15 @@ namespace Cast
             
             const auto targetSessionId = playerRespawnPosition.targetUniqueId.session;
             roomsManager.broadcastToRoom(session.getId(), response);
-
-           // roomsManager.printRoomInfo(session.getRoomId(), "After handle Player Respawn");
         }
 
         // Non host client requests host to respawn them
         inline void handlePlayerRespawnRequest(const Common::Network::Packet& request, Cast::Network::Session& session, Cast::Classes::RoomsManager& roomsManager)
         {
-            auto& logger = ::Utils::Logger::getInstance(true);
-            logger.log("Respawning player", ::Utils::LogType::Info, "handlePlayerRespawnRequest");
-
             const auto roomHostSessionId = request.getSession();
             const auto selfSessionId = session.getId();
 
             roomsManager.playerForwardToHost(roomHostSessionId, selfSessionId, const_cast<Common::Network::Packet&>(request));
-
-            //roomsManager.printRoomInfo(session.getRoomId(), "After handle Player Respawn Req");
-
         }
     }
 }

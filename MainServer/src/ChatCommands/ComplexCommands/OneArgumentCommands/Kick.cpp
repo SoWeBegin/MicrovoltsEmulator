@@ -27,26 +27,26 @@ namespace Main
 				return;
 			}
 
-			auto roomOpt = roomsManager.getRoomByNumber(session.getRoomNumber());
-			if (roomOpt == std::nullopt)
+			if (Main::Classes::Room* room = roomsManager.getRoomByNumber(session.getRoomNumber()))
+			{
+				if (!room->kickPlayer(m_value.c_str()))
+				{
+					this->m_confirmationMessage += "Error: the player is either not in the room or they're >= MOD grade.";
+					sendConfirmation(response, session);
+					return;
+				}
+				else
+				{
+					this->m_confirmationMessage += "success";
+					sendConfirmation(response, session);
+				}
+			}
+			else
 			{
 				this->m_confirmationMessage += "You must be inside a room to kick a player.";
 				sendConfirmation(response, session);
 				return;
 			}
-
-			Main::Classes::Room& room = roomOpt.value().get();
-			const bool kicked = room.kickPlayer(m_value.c_str());
-
-			if (!kicked)
-			{
-				this->m_confirmationMessage += "Error: the player is either not in the room or they're >= MOD grade.";
-				sendConfirmation(response, session);
-				return;
-			}
-
-			this->m_confirmationMessage += "success";
-			sendConfirmation(response, session);
 		}
 
 		void KickPlayer::getCommandUsage(Main::Network::Session& session, Common::Network::Packet& response)

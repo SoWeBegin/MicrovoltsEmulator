@@ -14,15 +14,10 @@ namespace Cast
         // This is a request from the client to get the Room Info (e.g. how many wins in which team, etc)
         inline void roomInfoHandler(const Common::Network::Packet& request, Cast::Network::Session& session, Cast::Classes::RoomsManager& roomsManager)
         {
-            auto& logger = ::Utils::Logger::getInstance();
-            logger.log("Room Info Handler...", ::Utils::LogType::Info, "roomInfoHandler");
-
             const auto roomHostSessionId = request.getSession();
             const auto selfSessionId = session.getId();
             // roomsManager.playerForwardToHost(session.getRoomId(), selfSessionId, const_cast<Common::Network::Packet&>(request));
             // This command does NOT exist in the client! [order = 255]
-
-           // roomsManager.printRoomInfo(session.getRoomId(), "After room info handler");
         }
     }
 }

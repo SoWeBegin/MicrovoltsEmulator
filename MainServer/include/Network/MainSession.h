@@ -121,8 +121,6 @@ namespace Main
 
 			void setAccountMicroPoints(std::uint32_t mp);
 
-			void setAccountCoins(std::uint16_t coins);
-
 			void setAccountLatestCharacterSelected(std::uint16_t latestCharacterSelected);
 
 			void setLevel(std::uint16_t level);
@@ -130,7 +128,6 @@ namespace Main
 			void setPlayerName(const char* playerName);
 
 			bool addEnergyToItem(const Main::Structures::ItemSerialInfo& itemSerialInfo, std::uint32_t energyAdded);
-
 
 			void addFriend(const Main::Structures::Friend& ffriend);
 
@@ -149,8 +146,6 @@ namespace Main
 			void sendMp(std::uint32_t mptoAdd);
 
 			std::pair<std::array<std::uint32_t, 10>, std::array<std::uint32_t, 7>> getEquippedItemsSeparated() const;
-
-			void setIsInLobby(bool val);
 
 			bool isInLobby() const;
 
@@ -183,7 +178,6 @@ namespace Main
 			void setPlayerState(Common::Enums::PlayerState playerState);
 
 			Common::Enums::PlayerState getPlayerState() const;
-
 
 			void addLuckyPoints(std::uint32_t points);
 

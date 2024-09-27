@@ -22,20 +22,13 @@ namespace Main
 		void Breakroom::execute(Main::Network::Session& session, Main::Classes::RoomsManager& roomsManager, std::size_t roomNumber, Common::Network::Packet& response)
 		{
 			this->m_confirmationMessage += "success";
-
 			response.setOrder(137);
 			response.setExtra(0x1B);
 
-			auto foundRoom = roomsManager.getRoomByNumber(roomNumber);
-			if (foundRoom == std::nullopt)
+			if (Main::Classes::Room* room = roomsManager.getRoomByNumber(roomNumber))
 			{
-				this->m_confirmationMessage += "error";
-			}
-			else
-			{
-				auto& room = foundRoom.value().get();
 				// kick whole room
-				room.broadcastToRoom(response);
+				room->broadcastToRoom(response);
 
 				// notify room
 				response.setOrder(316);
@@ -45,11 +38,15 @@ namespace Main
 				message += "The room has been closed by a MOD/GM";
 				response.setData(reinterpret_cast<std::uint8_t*>(message.data()), message.size());
 				response.setOption(message.size());
-				room.broadcastToRoom(response);
+				room->broadcastToRoom(response);
 
 				// delete the room
-				room.breakroom();
+				room->breakroom();
 				roomsManager.removeRoom(roomNumber);
+			}
+			else
+			{
+				this->m_confirmationMessage += "error";
 			}
 			sendConfirmation(response, session);
 		}

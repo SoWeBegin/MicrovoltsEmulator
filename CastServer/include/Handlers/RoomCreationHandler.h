@@ -17,8 +17,6 @@ namespace Cast
             // Create a room, add the player to id (sessionID=>Session pair).
             // Then, add the room to roomsManager. Pass the room and the sessionID of the player. Don't keep track that it's the host: the client does this for us in P2P.
             roomsManager.addRoom(std::make_shared<Cast::Classes::Room>(session.getId(), &session), session.getId());
-
-          //  roomsManager.printRoomInfo(session.getRoomId(), "After RoomCreation");
         }
     }
 }

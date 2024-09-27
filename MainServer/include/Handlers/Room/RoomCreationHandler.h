@@ -22,7 +22,8 @@ namespace Main
 			CREATION_BOTBATTLE = 61,
 		};
 
-		inline void handleRoomCreation(const Common::Network::Packet& request, Main::Network::Session& session, Main::Classes::RoomsManager& roomsManager)
+		inline void handleRoomCreation(const Common::Network::Packet& request, Main::Network::Session& session, Main::Classes::RoomsManager& roomsManager,
+			const Main::Structures::CompleteRoomInfo& completeRoomInfo)
 		{
 			if (request.getFullSize() == sizeof(Common::Protocol::TcpHeader) + sizeof(Common::Protocol::CommandHeader)) return;
 
@@ -42,9 +43,6 @@ namespace Main
 			roomCreator.team = Common::Enums::TEAM_BLUE;
 
 			// request.getOption() ==> server/channel ID
-			Main::Structures::CompleteRoomInfo completeRoomInfo;
-			std::memcpy(&completeRoomInfo, request.getData(), sizeof(completeRoomInfo));
-
 			Main::Classes::Room room{ completeRoomInfo.title, completeRoomInfo.roomSettings, roomCreator, &session };
 			if (request.getDataSize() >= sizeof(Main::Structures::CompleteRoomInfo))
 			{
@@ -79,16 +77,11 @@ namespace Main
 				session.asyncWrite(response);
 				room.setStateFor(session.getAccountInfo().uniqueId, Common::Enums::STATE_WAITING);
 				session.setRoomNumber(room.getRoomNumber());
-				session.setIsInLobby(false);
-
 
 				// Disable Team balance for now: it causes issues such as team bugs.
 				if (room.isModeTeamBased())
 				{
-					response.setOrder(121);
-					response.setMission(0);
-					response.setExtra(0);
-					response.setOption(room.getRoomSettings().mode);
+					response.setCommand(121, 0, 0, room.getRoomSettings().mode);
 					auto settings = room.getRoomSettingsUpdate();
 					response.setData(reinterpret_cast<std::uint8_t*>(&settings), sizeof(settings));
 					session.asyncWrite(response);

@@ -207,17 +207,13 @@ namespace Main
 
 			if (request.getExtra() != Enums::ChatExtra::CLAN)
 			{
-				auto room = roomsManager.getRoomByNumber(session.getRoomNumber());
-				if (!room) return;
-				auto& actualRoom = room->get();
-
-				if (actualRoom.isMuted() && session.getAccountInfo().playerGrade < Common::Enums::GRADE_MOD)
+				if (Main::Classes::Room* room = roomsManager.getRoomByNumber(session.getRoomNumber()))
 				{
-					Details::sendMessage("the room is currently muted", session);
-				}
-				else
-				{
-					if (session.isInMatch())
+					if (room->isMuted() && session.getAccountInfo().playerGrade < Common::Enums::GRADE_MOD)
+					{
+						Details::sendMessage("the room is currently muted", session);
+					}
+					else if (session.isInMatch())
 					{
 						roomsManager.broadcastToMatchExceptSelf(session.getRoomNumber(), session.getAccountInfo().uniqueId, response, request.getExtra());
 					}
@@ -225,7 +221,6 @@ namespace Main
 					{
 						roomsManager.broadcastOutsideMatchExceptSelf(session.getRoomNumber(), session.getAccountInfo().uniqueId, response, request.getExtra());
 					}
-					return;
 				}
 			}
 			else

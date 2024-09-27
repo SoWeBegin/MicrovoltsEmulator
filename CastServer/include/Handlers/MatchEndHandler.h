@@ -11,8 +11,6 @@ namespace Cast
         inline void handleMatchEnd(const Common::Network::Packet& request, Cast::Network::Session& session, Cast::Classes::RoomsManager& roomsManager)
         {
             roomsManager.endMatch(session.getId());
-
-           // roomsManager.printRoomInfo(session.getRoomId(), "After HandleMatchEnd");
         }
     }
 }

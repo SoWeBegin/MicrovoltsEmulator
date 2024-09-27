@@ -19,22 +19,21 @@ namespace Main
 
 		inline void handleHostChange(const Common::Network::Packet& request, Main::Network::Session& session, Main::Classes::RoomsManager& roomsManager)
 		{			
-			auto foundRoom = roomsManager.getRoomByNumber(session.getRoomNumber());
-			if (foundRoom == std::nullopt) return;
-			auto& room = foundRoom.value().get();
-
-			const bool changed = room.changeHost(request.getOption());
-			if (!changed)
+			if (Main::Classes::Room* room = roomsManager.getRoomByNumber(session.getRoomNumber()))
 			{
-				Common::Network::Packet response;
-				response.setTcpHeader(request.getSession(), Common::Enums::USER_LARGE_ENCRYPTION);
-				response.setCommand(request.getOrder(), 0, RoomChangeHostExtra::CHANGE_HOST_SUCCESS, request.getOption());
-				response.setExtra(RoomChangeHostExtra::CHANGE_HOST_DOESNT_EXIST);
-				session.asyncWrite(response);
-			}
-			else
-			{
-				room.broadcastToRoom(const_cast<Common::Network::Packet&>(request));
+				const bool changed = room->changeHost(request.getOption());
+				if (!changed)
+				{
+					Common::Network::Packet response;
+					response.setTcpHeader(request.getSession(), Common::Enums::USER_LARGE_ENCRYPTION);
+					response.setCommand(request.getOrder(), 0, RoomChangeHostExtra::CHANGE_HOST_SUCCESS, request.getOption());
+					response.setExtra(RoomChangeHostExtra::CHANGE_HOST_DOESNT_EXIST);
+					session.asyncWrite(response);
+				}
+				else
+				{
+					room->broadcastToRoom(const_cast<Common::Network::Packet&>(request));
+				}
 			}
 		}
 	}

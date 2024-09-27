@@ -100,11 +100,6 @@ namespace Main
 			m_accountInfo.microPoints = mp;
 		}
 
-		void Player::setAccountCoins(std::uint16_t coins)
-		{
-			//m_accountInfo.coins = coins;
-		}
-
 		void Player::setAccountLatestCharacterSelected(std::uint16_t latestCharacterSelected)
 		{
 			m_accountInfo.latestSelectedCharacter = latestCharacterSelected;
@@ -135,14 +130,10 @@ namespace Main
 			return m_playerState;
 		}
 
-		void Player::setIsInLobby(bool val)
-		{
-			m_isInLobby = val;
-		}
-
+	
 		bool Player::isInLobby() const
 		{
-			return m_isInLobby;
+			return m_roomNumber == 0;
 		}
 
 		Main::Structures::MuteInfo Player::getMuteInfo() const
@@ -413,15 +404,11 @@ namespace Main
 		{
 			auto& itemMap = m_equippedItemByCharacter[character == -1 ? m_accountInfo.latestSelectedCharacter : character];
 			if (!itemMap.contains(itemType)) return;
-			std::cout << "Unequipping for Character: " << m_accountInfo.latestSelectedCharacter << '\n';
 
 			auto itemNumber = itemMap.at(itemType).serialInfo.itemNumber;
 			m_itemsByItemNumber[itemNumber] = Item{ itemMap.at(itemType) };
 			itemMap.erase(itemType);
 			--m_totalEquippedItems;
-
-			std::cout << "Item Unequipped with Type: " << itemType << '\n';
-
 			scheduler.addRepetitiveCallback(m_accountInfo.accountID, &Main::Persistence::PersistentDatabase::unequipItem,
 				m_accountInfo.accountID, static_cast<std::uint64_t>(itemNumber));
 		}
@@ -444,7 +431,6 @@ namespace Main
 				{
 					for (auto currentTypeNotNull : Common::Utils::getPartTypesWhereSetItemInfoTypeNotNull(*entry))
 					{
-						std::cout << "Set Part Found. Unequipping (Type: " << currentTypeNotNull << ")\n";
 						unequipItemImpl(currentTypeNotNull, scheduler, character);
 					}
 				}
@@ -455,7 +441,6 @@ namespace Main
 			// Again, special case: the user has an already equipped set. We need to unequip it if the user is now equipping a part type that is already present in said set.
 			if (itemMap.contains(Common::Enums::ItemType::SET))
 			{
-				std::cout << "User has a Set Equipped. Unequipping the set before equipping the parts...\n";
 				using setItems = Common::ConstantDatabase::CdbSingleton<Common::ConstantDatabase::SetItemInfo>;
 				const auto entry = setItems::getInstance().getEntry("si_id", itemMap[Common::Enums::ItemType::SET].id >> 1);
 
@@ -465,7 +450,6 @@ namespace Main
 					{
 						if (equippedItem.type == currentTypeNotNull)
 						{
-							std::cout << "Set Found. Unequipping...\n";
 							unequipItemImpl(Common::Enums::SET, scheduler, character);
 							break;
 						}
@@ -479,8 +463,6 @@ namespace Main
 			// now proceed normally: check if equippedItems already has such a type
 			if (itemMap.contains(equippedItem.type))
 			{
-				std::cout << "Unequipping Item...\n";
-
 				auto toUnequipItemNumber = itemMap.at(equippedItem.type).serialInfo.itemNumber;
 				m_itemsByItemNumber[toUnequipItemNumber] = Item{ itemMap.at(equippedItem.type) };
 				itemMap.erase(equippedItem.type);
@@ -508,7 +490,6 @@ namespace Main
 
 			if (!itemMap.contains(itemType))
 			{
-				std::cout << "Item NOT unequipped!\n";
 				return std::nullopt;
 			}
 			std::uint64_t itemNumber = itemMap.at(itemType).serialInfo.itemNumber;
@@ -516,7 +497,6 @@ namespace Main
 			m_itemsByItemNumber[itemNumber] = Item{ itemMap.at(itemType) };
 			itemMap.erase(itemType);
 			--m_totalEquippedItems;
-			std::cout << "Item Unequipped\n";
 			return itemNumber;
 		}
 
@@ -539,7 +519,6 @@ namespace Main
 		{
 			if (!m_equippedItemByCharacter.contains(characterId))
 			{
-				std::cout << "Char Not Found [unequip]\n";
 				return false;
 			}
 			auto& itemMap = m_equippedItemByCharacter.at(characterId);
@@ -551,7 +530,6 @@ namespace Main
 					return true;
 				}
 			}
-			std::cout << "Item not found [unequip]\n";
 			return false;
 		}
 
@@ -559,7 +537,6 @@ namespace Main
 		{
 			if (!m_equippedItemByCharacter.contains(characterId))
 			{
-				std::cout << "Char Not Found [equip]\n";
 				return;
 			}
 			auto& itemMap = m_equippedItemByCharacter.at(characterId);
@@ -567,7 +544,6 @@ namespace Main
 			{
 				if (equippedItem.serialInfo.itemNumber == itemNumber)
 				{
-					std::cout << "itemnumber found in equipped, no need to re-equip [requip]\n";
 					return; 
 				}
 			}
@@ -735,7 +711,6 @@ namespace Main
 		void Player::leaveRoom()
 		{
 			setRoomNumber(0);
-		    setIsInLobby(true);
 			setIsInMatch(false);
 			m_batteryObtainedInMatch = 0;
 		}

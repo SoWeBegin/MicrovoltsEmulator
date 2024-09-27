@@ -40,38 +40,39 @@ namespace Main
 		}
 
 		inline void handleRoomLeave(const Common::Network::Packet& request, Main::Network::Session& session, Main::Network::SessionsManager& sessionsManager,
-			Main::Classes::RoomsManager& roomsManager, std::uint32_t serverId)
+			Main::Classes::RoomsManager& roomsManager, std::uint32_t serverId, const Main::Structures::UniqueId& uniqueId)
 		{
 			auto roomOpt = roomsManager.getRoomByNumber(session.getRoomNumber());
-			if (roomOpt == std::nullopt)
+			if (Main::Classes::Room* room = roomsManager.getRoomByNumber(session.getRoomNumber()))
+			{
+				if (request.getExtra() == ClientExtra::KICK_PLAYER)
+				{
+					auto uid = uniqueId;
+					uid.server = serverId;
+					auto* targetSession = sessionsManager.getSessionBySessionId(uid.session);
+					if (targetSession)
+					{
+						if (targetSession->getAccountInfo().playerGrade >= session.getAccountInfo().playerGrade) return; // Add error messages, i.e. "cannot kick same or higher grade account"
+						room->addKickedPlayer(targetSession->getAccountInfo().accountID);
+						room->removePlayer(targetSession, RoomLeaveExtra::LEAVE_KICKED_BY_HOST); // RemovePlayer also takes care of sending the packet to the client.
+					}
+				}
+				else
+				{
+					// If there are no players left after this player left, or if there were errors while switching to a new host, just close the room to avoid further issues.
+					if (room->removePlayer(&session, RoomLeaveExtra::LEAVE_NORMAL))
+					{
+						roomsManager.removeRoom(room->getRoomNumber());
+					}
+				}
+			}
+			else
 			{
 				Common::Network::Packet response;
 				response.setTcpHeader(request.getSession(), Common::Enums::USER_LARGE_ENCRYPTION);
 				response.setCommand(request.getOrder(), 0, RoomLeaveExtra::LEAVE_ERROR, 0);
 				session.asyncWrite(response);
 				return;
-			};
-			auto& room = roomOpt->get();
-			if (request.getExtra() == ClientExtra::KICK_PLAYER)
-			{
-				Main::Structures::UniqueId uniqueId;
-				std::memcpy(&uniqueId, request.getData(), sizeof(uniqueId));
-				uniqueId.server = serverId;
-				auto* targetSession = sessionsManager.getSessionBySessionId(uniqueId.session);
-				if (targetSession)
-				{
-					if (targetSession->getAccountInfo().playerGrade >= session.getAccountInfo().playerGrade) return; // Add error messages, i.e. "cannot kick same or higher grade account"
-					room.addKickedPlayer(targetSession->getAccountInfo().accountID);
-					room.removePlayer(targetSession, RoomLeaveExtra::LEAVE_KICKED_BY_HOST); // RemovePlayer also takes care of sending the packet to the client.
-				}
-			}
-			else
-			{
-				// If there are no players left after this player left, or if there were errors while switching to a new host, just close the room to avoid further issues.
-				if (room.removePlayer(&session, RoomLeaveExtra::LEAVE_NORMAL))
-				{
-					roomsManager.removeRoom(room.getRoomNumber());
-				}
 			}
 		}
 	}
