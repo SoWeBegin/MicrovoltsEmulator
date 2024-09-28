@@ -42,25 +42,22 @@ Most dependencies are already provided inside the `vcpkg.json` file. Instruction
 - N.B only `release` mode has all relative (necessary) paths. If you want to use `debug` mode, you'll need to copy paste the paths from the `release` one.
 
 ## Client Version
-The emulator is targeted for the client version: ENG_1.1.1.158 (Surge). (Constant database password: `!dptmzpdl@xmfkdlvhtm@goqm!`) </br>
-It may or may not work completely for other older or newer versions.</br>
+The emulator is targeted for two main versions.
+- ENG_0.8_13.37: This is the client that is still being worked on. (Constant database password: `??KVM-7400-$PETER$??`) </br>
+- ENG_1.1.1.158 (Surge): This is currently not worked on (discontinued). (Constant database password: `!dptmzpdl@xmfkdlvhtm@goqm!`) </br>
+For other versions, the emulator may not work correctly.</br>
 *Note: The client will not be published here and you're required to find it on your own.*
 
 # Current state in brief
 It is hard to give an in-depth overview of what works and what doesn't. But in brief:
 ## Authentication server
 Almost completely works. 
-Some things may be done differently, e.g. when one user enters an account that is busy, one could decide to kick the player who's currently in that account from the server.
 ## Main Server
 Overall at a good point. 
-Missing: Clan support, Mailbox support, Joining rooms through the "Join" button, Boxes and special items support.
-Bugs: Equipping a set inside a room sometimes fails to work correctly (i.e. other players don't see the new set). There are other minor bugs here and there.
-Possible improvements: Rooms have a few minor bugs that can benefit from further fixes.
+Missing: Clan support, Room invites, and some other stuff.
+Bugs: See "Issues".
 ## Cast Server
-This is the one that requires the most work. Overall the multiplayer works, but there are known bugs that need to be addressed, for example:
-- Switching the host sometimes causes cast-server crashes.
-That is the worst one we have faced during our test phase.
-Also, important things are still missing, like complete handling of the ending scoreboard, and persistence-related stuff to matches.
+This is the one that requires the most work. Overall the multiplayer works, but there are known bugs that need to be addressed. See "Issues".
 
 
 # Contributors
