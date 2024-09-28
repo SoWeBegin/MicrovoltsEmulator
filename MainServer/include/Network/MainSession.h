@@ -38,6 +38,12 @@ namespace Main
 		public:
 			explicit Session(Main::Persistence::MainScheduler& scheduler, tcp::socket&& socket, std::function<void(std::size_t)> fnct);
 
+			~Session()
+			{
+				m_scheduler.immediatePersist(m_player.getAccountID(), &Main::Persistence::PersistentDatabase::updateOfflineStatus, m_player.getAccountID());
+				m_scheduler.persistFor(m_player.getAccountID());
+			}
+
 			std::size_t getSessionId() const;
 
 			void onPacket(std::vector<std::uint8_t>& data) override;

@@ -7,6 +7,8 @@
 #include "Classes/RoomsManager.h"
 #include "Network/Packet.h"
 
+#include <chrono>
+
 namespace Main
 {
 	namespace Details
@@ -46,13 +48,19 @@ namespace Main
 			session.asyncWrite(response);
 		}
 
-		inline void sendPlayerState(Main::Network::Session& session, Main::Structures::UniqueId uniqueId)
+		inline void sendPlayerState(Main::Network::Session& session, Main::Structures::UniqueId uniqueId, Main::Classes::Room& room, std::uint32_t state = 11)
 		{
 			Common::Network::Packet response;
 			response.setTcpHeader(session.getId(), Common::Enums::USER_LARGE_ENCRYPTION);
-			response.setCommand(312, 0, 0, 2);
+			response.setCommand(312, 0, 0, state);
 			response.setData(reinterpret_cast<std::uint8_t*>(&uniqueId), sizeof(uniqueId));
-			session.asyncWrite(response);
+			room.broadcastToRoom(response);
+		}
+
+		inline std::uint64_t getUtcTimeMs()
+		{
+			const auto durationSinceEpoch = std::chrono::system_clock::now().time_since_epoch();
+			return static_cast<std::uint64_t>(duration_cast<std::chrono::milliseconds>(durationSinceEpoch).count());
 		}
 
 		inline void broadcastPlayerItems(Main::Classes::RoomsManager& roomsManager, Main::Network::Session& session, const Common::Network::Packet& request)

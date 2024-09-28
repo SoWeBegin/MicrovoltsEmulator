@@ -30,6 +30,7 @@
     <ClInclude Include="include\ConstantDatabase\Structures\CdbCapsuleDisplay.h" />
     <ClInclude Include="include\ConstantDatabase\Structures\CdbCapsuleInfo.h" />
     <ClInclude Include="include\ConstantDatabase\Structures\CdbItemInfo.h" />
+    <ClInclude Include="include\ConstantDatabase\Structures\CdbItemsInfo.h" />
     <ClInclude Include="include\ConstantDatabase\Structures\CdbMapInfo.h" />
     <ClInclude Include="include\ConstantDatabase\Structures\CdbUpgradeInfo.h" />
     <ClInclude Include="include\ConstantDatabase\Structures\CdbWeaponsInfo.h" />

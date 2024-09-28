@@ -18,6 +18,8 @@ namespace Main
 			std::vector<Main::Network::Session*> m_sessionsVector{};
 			Main::Classes::RoomsManager* roomsManager;
 
+			Common::Network::Packet prepareMessage(const std::string& message) const;
+
 		public:
 			void setRoomsManager(Main::Classes::RoomsManager* roomsManager);
 
@@ -36,6 +38,9 @@ namespace Main
 			void broadcastToLobbyExceptSelf(std::size_t selfSessionId, const Common::Network::Packet& message) const;
 
 			void broadcastToClan(std::uint64_t selfSessionId, const Common::Network::Packet& message) const;
+
+			void broadcastMessage(const std::string& message) const;
+			void broadcastMessageExceptSelf(std::size_t selfSessionId, const std::string& message) const;
 
 			Main::Network::Session* findSessionByName(const char* nickname);
 

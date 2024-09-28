@@ -93,7 +93,7 @@ namespace Main
 				session.setAccountMicroPoints(accountInfo.microPoints - *mpNeededForUpgrade);
 				session.sendCurrency();
 			}
-			else if (request.getExtra() == 55)
+			else if (request.getExtra() == 53)
 			{
 				// Item Reset
 			}

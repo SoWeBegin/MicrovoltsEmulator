@@ -111,6 +111,9 @@
     <ClInclude Include="include\ConstantDatabase\Structures\CdbCapsuleDisplay.h">
       <Filter>File di intestazione</Filter>
     </ClInclude>
+    <ClInclude Include="include\ConstantDatabase\Structures\CdbItemsInfo.h">
+      <Filter>File di intestazione</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Cryptography\Crypt.cpp">

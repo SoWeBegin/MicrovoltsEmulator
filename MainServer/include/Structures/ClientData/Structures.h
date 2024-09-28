@@ -44,7 +44,7 @@ namespace Main
 		struct RoomInfo
 		{
 			std::uint16_t roomNumber{};
-			std::uint16_t unknown{};
+			std::uint16_t unknown{2}; // seemingly always 2 for some reason
 			char password[8]{};
 		};
 #pragma pack(pop)

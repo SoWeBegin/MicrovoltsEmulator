@@ -540,11 +540,13 @@ namespace Main
 		void Session::addLuckyPoints(std::uint32_t points)
 		{
 			m_player.addLuckyPoints(points);
+			m_scheduler.immediatePersist(m_player.getAccountID(), &Persistence::PersistentDatabase::updatePlayerLuckyPoints, m_player.getAccountID(), m_player.getLuckyPoints());
 		}
 
 		void Session::setLuckyPoints(std::uint32_t points)
 		{
 			m_player.setLuckyPoints(points);
+			m_scheduler.immediatePersist(m_player.getAccountID(), &Persistence::PersistentDatabase::updatePlayerLuckyPoints, m_player.getAccountID(), m_player.getLuckyPoints());
 		}
 
 		std::uint32_t Session::getLuckyPoints() const

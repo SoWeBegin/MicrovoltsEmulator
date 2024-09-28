@@ -232,6 +232,7 @@ namespace Main
 					m_players[bestMsPlayerIdxInMatch].second->asyncWrite(removePlayerFromRoomServerRequest);
 					m_players[bestMsPlayerIdxInMatch].second->leaveRoom();
 					broadcastToRoomExceptSelf(removePlayerFromMatchServerRequest, originalHostUniqueId);
+
 					// NOTE: This decrements all player indexes inside the client! Call it ONLY AFTER sending the packet to change the host!
 					Main::Handlers::notifyRoomPlayerLeaves(originalHostUniqueId, *this);
 
@@ -372,12 +373,13 @@ namespace Main
 
 				// Remove the player from the room
 				playerIter->second->asyncWrite(removePlayerFromRoomServerRequest);
-				playerIter->second->leaveRoom();		
+				playerIter->second->leaveRoom();	
+
 				// NOTE: This decrements all player indexes in the client! Do it always after sending the change host packet!
 				Main::Handlers::notifyRoomPlayerLeaves(playerIter->second->getAccountInfo().uniqueId, *this);
 				m_players.erase(playerIter);
 
-				// unmap original host
+				// unmap
 				m_playerSessionIdToVecIdx.erase(originalSessionId);
 
 				logger.log("Removed player from room. " + playerIter->second->getPlayerInfoAsString(),
@@ -649,7 +651,7 @@ namespace Main
 
 		bool Room::isHost(const Main::Structures::UniqueId& uniqueId) const
 		{
-			return m_players[0].first.uniqueId == uniqueId;
+			return m_players[0].first.uniqueId.session == uniqueId.session;
 		}
 
 		void Room::setSpecificSetting(std::uint8_t setting)
@@ -784,6 +786,7 @@ namespace Main
 
 		void Room::setStateFor(const Main::Structures::UniqueId& uniqueId, const Common::Enums::PlayerState& playerState) 
 		{
+			std::cout << "Changing Player State of SessionID: " << uniqueId.session << " to state: " << (uint32_t)playerState << '\n';
 			auto playerIt = m_playerSessionIdToVecIdx.find(uniqueId.session);
 			if (playerIt != m_playerSessionIdToVecIdx.end())
 			{
@@ -801,36 +804,23 @@ namespace Main
 			}
 		}
 
+		// ABSOLUTELY DO NOT MODIFY THIS!
 		void Room::startMatch(const Main::Structures::UniqueId& uniqueId)
 		{
-			if (m_hasMatchStarted)
+			m_players[0].second->setIsInMatch(true);
+			setStateFor(uniqueId, static_cast<Common::Enums::PlayerState>(11));
+			Details::sendPlayerState(*m_players[0].second, m_players[0].second->getAccountInfo().uniqueId, *this);
+
+			for (auto& [roomInfo, session] : ranges::views::concat(m_players, m_observerPlayers))
 			{
-				for (auto& [roomInfo, session] : ranges::views::concat(m_players, m_observerPlayers))
+				if (roomInfo.state == Common::Enums::STATE_READY)
 				{
-					if (roomInfo.uniqueId == uniqueId)
-					{
-						Main::Details::sendPlayerState(*session, uniqueId);
-						setStateFor(uniqueId, static_cast<Common::Enums::PlayerState>(2));
-						session->setIsInMatch(true);
-						return;
-					}
+					Main::Details::sendPlayerState(*session, uniqueId, *this);
+					setStateFor(roomInfo.uniqueId, static_cast<Common::Enums::PlayerState>(11));
+					session->setIsInMatch(true);
 				}
 			}
-			else
-			{
-				m_players[0].first.state = Common::Enums::STATE_PLAYING;
-				m_players[0].second->setIsInMatch(true);
-				for (auto& [roomInfo, session] : ranges::views::concat(m_players, m_observerPlayers))
-				{
-					if (roomInfo.state == Common::Enums::STATE_READY)
-					{
-						Main::Details::sendPlayerState(*session, uniqueId);
-						setStateFor(uniqueId, static_cast<Common::Enums::PlayerState>(2));
-						session->setIsInMatch(true);
-					}
-				}
-				m_hasMatchStarted = true;
-			}
+			m_hasMatchStarted = true;
 		}
 
 		bool Room::isObserverFull() const

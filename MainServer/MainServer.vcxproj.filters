@@ -34,6 +34,7 @@
     <ClCompile Include="src\ChatCommands\SimpleRoomCommands\Muteroom.cpp" />
     <ClCompile Include="src\ChatCommands\SimpleRoomCommands\UnmuteRoom.cpp" />
     <ClCompile Include="src\ChatCommands\ComplexCommands\OneArgumentCommands\ChangeHost.cpp" />
+    <ClCompile Include="src\Classes\CapsuleManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\ChatCommands\AllCommandsIncludes.h" />
@@ -135,5 +136,7 @@
     <ClInclude Include="include\Handlers\CapsuleReqHandler.h" />
     <ClInclude Include="include\Structures\ClientData\Structures.h" />
     <ClInclude Include="include\Handlers\Item\ItemAndCapsuleHandler.h" />
+    <ClInclude Include="include\Handlers\Room\RoomInviteJoin.h" />
+    <ClInclude Include="include\Classes\CapsuleManager.h" />
   </ItemGroup>
 </Project>

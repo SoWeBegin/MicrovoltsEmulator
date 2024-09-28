@@ -109,6 +109,7 @@ namespace Main
 						playerInfoStructure.accountKey = static_cast<std::uint32_t>(query.getColumn("AccountKey").getInt());
 						playerInfoStructure.totalKills = static_cast<std::uint32_t>(query.getColumn("Kills").getInt());
 						playerInfoStructure.deaths = static_cast<std::uint32_t>(query.getColumn("Deaths").getInt());
+						//playerInfoStructure.assists = static_cast<std::uint32_t>(query.getColumn("Assists").getInt());
 						playerInfoStructure.wins = static_cast<std::uint32_t>(query.getColumn("Wins").getInt());
 						playerInfoStructure.losses = static_cast<std::uint32_t>(query.getColumn("Loses").getInt());
 						playerInfoStructure.draws = static_cast<std::uint32_t>(query.getColumn("Draws").getInt());
@@ -127,6 +128,7 @@ namespace Main
 						playerInfoStructure.playerLevel = static_cast<std::uint64_t>(query.getColumn("Level").getInt()) + 1;
 						playerInfoStructure.battery = static_cast<std::uint64_t>(query.getColumn("Battery").getInt());
 						playerInfoStructure.luckyPoints = static_cast<std::uint64_t>(query.getColumn("LuckyPoints").getInt());
+						//playerInfoStructure.coins = static_cast<std::uint64_t>(query.getColumn("Coins").getInt());
 						playerInfoStructure.playerGrade = static_cast<std::uint64_t>(query.getColumn("Grade").getInt());
 						playerInfoStructure.experience = static_cast<std::uint32_t>(query.getColumn("Experience").getInt());
 						playerInfoStructure.microPoints = static_cast<std::uint64_t>(query.getColumn("MicroPoints").getInt64());
@@ -137,6 +139,7 @@ namespace Main
 						playerInfoStructure.singleWaveAttempts = static_cast<std::uint32_t>(query.getColumn("SingleWaveAttempts").getInt());
 						playerInfoStructure.highestSinglewaveStage = static_cast<std::uint32_t>(query.getColumn("SingleWaveAttempts").getInt());
 						playerInfoStructure.highestSingleWaveScore = static_cast<std::uint32_t>(query.getColumn("HighestSinglewaveScore").getInt());
+						//playerInfoStructure.vipExperience = static_cast<std::uint32_t>(query.getColumn("VipExperience").getInt());
 						playerInfoStructure.clanContribution = static_cast<std::uint64_t>(query.getColumn("ClanContribution").getInt64());
 						playerInfoStructure.clanLogoFrontId = static_cast<std::uint64_t>(query.getColumn("ClanFrontIcon").getInt());
 						playerInfoStructure.clanLogoBackId = static_cast<std::uint64_t>(query.getColumn("ClanBackIcon").getInt());
@@ -207,7 +210,7 @@ namespace Main
 					SQLite::Transaction transaction(db);
 					SQLite::Statement query(db, queryStr);
 					query.bind(1, nickname);
-					
+
 					if (!query.exec())
 					{
 						std::cerr << "[Main::Database::UnbanPlayer] Error executing query: " << query.getExpandedSQL() << '\n';
@@ -256,6 +259,7 @@ namespace Main
 			}
 
 
+			// Returing const& causes exceptions later...?
 			auto getPlayerItems(std::uint32_t playerID) const
 				-> std::pair<std::vector<Item>, std::unordered_map<std::uint16_t, std::vector<EquippedItem>>>
 			{
@@ -281,7 +285,7 @@ namespace Main
 						item.serialInfo.itemNumber = ++itemNum;
 						SQLite::Statement updateItemNumberQuery(db, "UPDATE UserItems SET ItemNumber = :itemNumber WHERE rowid = :rowid");
 						updateItemNumberQuery.bind(":itemNumber", static_cast<std::int64_t>(item.serialInfo.itemNumber));
-				        updateItemNumberQuery.bind(":rowid" ,rowId);
+						updateItemNumberQuery.bind(":rowid", rowId);
 						if (!updateItemNumberQuery.exec())
 						{
 							std::cerr << "ItemNumberUpdate error in getPlayerItems(): " << updateItemNumberQuery.getExtendedErrorCode() << '\n';
@@ -302,8 +306,44 @@ namespace Main
 							}
 							item.expirationDate = static_cast<__time32_t>(newExpDate);
 						}
+
+						// REMOVE THIS
+						//Main::ConstantDatabase::CdbUtil cdbUtil(item.id);
+						//auto durability = *(cdbUtil.getItemDurability());
+						//auto duration = *(cdbUtil.getItemDuration());
+						//// 
+
 						item.durability = static_cast<std::uint16_t>(allItemsQuery.getColumn("durability").getInt());
 						item.energy = static_cast<std::uint16_t>(allItemsQuery.getColumn("energy").getInt());
+
+						/*item.isSealed = static_cast<std::uint32_t>(allItemsQuery.getColumn("isSealed").getInt());
+						item.sealLevel = static_cast<std::uint32_t>(allItemsQuery.getColumn("sealLevel").getInt());
+						item.experienceEnhancement = static_cast<std::uint32_t>(allItemsQuery.getColumn("expEnhancement").getInt());
+						item.mpEnhancement = static_cast<std::uint32_t>(allItemsQuery.getColumn("mpEnhancement").getInt());
+						item.unknown = static_cast<std::uint32_t>(allItemsQuery.getColumn("unknown"));
+						*/
+
+						// REMOVE THIS
+						/*
+						SQLite::Statement updateDurabilityQuery(db, "UPDATE UserItems SET durability = :durability WHERE rowid = :rowid");
+						updateDurabilityQuery.bind(":durability", durability);
+						updateDurabilityQuery.bind(":rowid", rowId);
+						if (!updateDurabilityQuery.exec())
+						{
+							std::cerr << "DurabilityUpdate error in getPlayerItems(): " << updateDurabilityQuery.getExtendedErrorCode() << '\n';
+							std::cerr << "Error message: " << updateDurabilityQuery.getErrorMsg() << '\n';
+						}
+
+						SQLite::Statement updateDuration(db, "UPDATE UserItems SET ItemDuration = :duration WHERE rowid = :rowid");
+						updateDuration.bind(":duration", duration);
+						updateDuration.bind(":rowid", rowId);
+						if (!updateDuration.exec())
+						{
+							std::cerr << "DurabilityUpdate error in getPlayerItems(): " << updateDuration.getExtendedErrorCode() << '\n';
+							std::cerr << "Error message: " << updateDuration.getErrorMsg() << '\n';
+						}*/
+						////
+
 						if (allItemsQuery.getColumn("IsEquipped").getInt() == 1)
 						{
 							Main::Structures::EquippedItem equippedItem{ item };
@@ -332,7 +372,7 @@ namespace Main
 				}
 			}
 
-			void replaceItem(std::uint32_t accountID, std::uint32_t itemNum, const Main::Structures::ItemSerialInfo& newSerialInfo, 
+			void replaceItem(std::uint32_t accountID, std::uint32_t itemNum, const Main::Structures::ItemSerialInfo& newSerialInfo,
 				std::uint64_t newExpiration)
 			{
 				try
@@ -572,8 +612,8 @@ namespace Main
 				try
 				{
 					SQLite::Transaction transaction(db);
-					SQLite::Statement query(db, "UPDATE Users SET MeleeKills = ?, RifleKills = ?, ShotgunKills = ?, SniperKills = ?, GatlingKills = ?, " 
-						 "BazookaKills = ? , GrenadeKills = ? , HighestKillstreak = ? , Kills = ? , Deaths = ? , Headshots = ? , Assists = ?, "
+					SQLite::Statement query(db, "UPDATE Users SET MeleeKills = ?, RifleKills = ?, ShotgunKills = ?, SniperKills = ?, GatlingKills = ?, "
+						"BazookaKills = ? , GrenadeKills = ? , HighestKillstreak = ? , Kills = ? , Deaths = ? , Headshots = ? , Assists = ?, "
 						" Experience = ?, MicroPoints = ?, Wins = ?, Loses = ?, Draws = ?, Level = ? WHERE AccountID = ?");
 
 					query.bind(1, updatedAccountInfo.meleeKills);
@@ -587,6 +627,7 @@ namespace Main
 					query.bind(9, updatedAccountInfo.totalKills);
 					query.bind(10, updatedAccountInfo.deaths);
 					query.bind(11, static_cast<std::uint32_t>(updatedAccountInfo.headshots));
+					//	query.bind(12, updatedAccountInfo.assists);
 					query.bind(13, updatedAccountInfo.experience);
 					query.bind(14, static_cast<std::uint32_t>(updatedAccountInfo.microPoints));
 					query.bind(15, updatedAccountInfo.wins);
@@ -1152,7 +1193,7 @@ namespace Main
 						std::cerr << "[Main::Database::addPendingFriendRequestFor] Error message: " << findPlayerByAccountId.getErrorMsg() << '\n';
 						return Main::Enums::AddFriendServerExtra::TARGET_NOT_FOUND;
 					}
-					
+
 					// 2. Check if the target player has less than 30 friends.
 					SQLite::Statement findTotalFriends(db, "SELECT * FROM Friendlist WHERE AccountID = ?");
 					findTotalFriends.bind(1, targetAid);
@@ -1163,7 +1204,7 @@ namespace Main
 						std::cerr << "[Main::Database::addPendingFriendRequestFor::findTotalFriends] Error message: " << findTotalFriends.getErrorMsg() << '\n';
 						totalCount = 0;
 					}
-					else 
+					else
 					{
 						totalCount = 1;
 						while (findTotalFriends.executeStep())
@@ -1313,14 +1354,14 @@ namespace Main
 			{
 				try
 				{
-					std::uint32_t accountId = 0; 
+					std::uint32_t accountId = 0;
 					const std::string retrieveAccountIdQuery = "SELECT AccountID FROM Users WHERE Nickname = ?";
 					SQLite::Statement retrieveQuery(db, retrieveAccountIdQuery);
 					retrieveQuery.bind(1, mailbox.nickname);
 
 					if (retrieveQuery.executeStep())
 					{
-						accountId = retrieveQuery.getColumn("AccountID").getInt(); 
+						accountId = retrieveQuery.getColumn("AccountID").getInt();
 					}
 					else
 					{
@@ -1337,7 +1378,7 @@ namespace Main
 					//query.bind(3, mailbox.uniqueId); 
 					query.bind(4, senderNickname);
 					query.bind(5, mailbox.message);
-					query.bind(6, false); 
+					query.bind(6, false);
 					query.bind(7, true);
 
 					if (!query.exec())
@@ -1491,6 +1532,73 @@ namespace Main
 				}
 			}
 
+			void updatePlayerLuckyPoints(std::uint32_t accountID, std::uint32_t luckyPoints)
+			{
+				try
+				{
+					std::string updateLevelQuery = "UPDATE Users SET LuckyPoints = ? WHERE AccountID = ?";
+					SQLite::Transaction transaction(db);
+					SQLite::Statement query(db, updateLevelQuery);
+					query.bind(1, luckyPoints);
+					query.bind(2, accountID);
+
+					if (!query.exec())
+					{
+						std::cerr << "[Main::Database::updatePlayerLuckyPoints] Error executing query: " << query.getExpandedSQL() << '\n';
+						std::cerr << "[Main::Database::updatePlayerLuckyPoints] Error message: " << query.getErrorMsg() << '\n';
+						return;
+					}
+
+					transaction.commit();
+				}
+				catch (const std::exception& e)
+				{
+					std::cerr << "[Main::Database::updatePlayerLuckyPoints] SQLite exception: " << e.what() << '\n';
+				}
+			}
+
+			uint32_t getCapsuleJackpot()
+			{
+				uint32_t jackpot = 0;
+				try
+				{
+					SQLite::Statement query(db, "SELECT Value FROM GameParameters WHERE Key = \"Jackpot\"");
+					if (query.executeStep())
+					{
+						jackpot = static_cast<std::uint32_t>(query.getColumn("Value").getInt());
+					}
+				}
+				catch (const std::exception& e)
+				{
+					std::cerr << "[Main::Database::getCapsuleJackpot] SQLite exception: " << e.what() << '\n';
+				}
+
+				return jackpot;
+			}
+
+			void updateCapsuleJackpot(uint32_t jackpotValue)
+			{
+				try
+				{
+					std::string updateJackpotQuery("UPDATE GameParameters SET Value = ? WHERE Key = \"Jackpot\"");
+					SQLite::Transaction transaction(db);
+					SQLite::Statement query(db, updateJackpotQuery);
+					query.bind(1, jackpotValue);
+
+					if (!query.exec())
+					{
+						std::cerr << "[Main::Database::updateCapsuleJackpot] Error executing query: " << query.getExpandedSQL() << '\n';
+						std::cerr << "[Main::Database::updateCapsuleJackpot] Error message: " << query.getErrorMsg() << '\n';
+						return;
+					}
+
+					transaction.commit();
+				}
+				catch (const std::exception& e)
+				{
+					std::cerr << "[Main::Database::updateCapsuleJackpot] SQLite exception: " << e.what() << '\n';
+				}
+			}
 		};
 	}
 }

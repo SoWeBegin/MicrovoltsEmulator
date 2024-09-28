@@ -30,8 +30,8 @@ namespace Main
 			std::uint32_t itemId{};
 			std::uint32_t m_maxCapsuleItems{};
 
-			using cdbItems = Common::ConstantDatabase::CdbSingleton<Common::ConstantDatabase::CdbItemInfo>;
-			using cdbWeapons = Common::ConstantDatabase::CdbSingleton<Common::ConstantDatabase::CdbWeaponInfo>;
+			using cdbItems = Common::ConstantDatabase::CdbSingleton<Common::ConstantDatabase::CdbItemsInfoCMV>;
+			//using cdbWeapons = Common::ConstantDatabase::CdbSingleton<Common::ConstantDatabase::CdbWeaponInfo>;
 			using cdbUpgrades = Common::ConstantDatabase::CdbSingleton<Common::ConstantDatabase::CdbUpgradeInfo>;
 			using cdbCapsuleInfos = Common::ConstantDatabase::CdbSingleton<Common::ConstantDatabase::CdbCapsuleInfo>;
 			using cdbCapsulePackageInfos = Common::ConstantDatabase::CdbSingleton<Common::ConstantDatabase::CdbCapsulePackageInfo>;
@@ -68,32 +68,17 @@ namespace Main
 
 			std::optional<ItemTypePricePair> getItemPrice() const
 			{
-				const auto itemInfoMapPrice = getItemPriceInternal(cdbItems::getInstance());
-				if (itemInfoMapPrice == std::nullopt)
-				{
-					return getItemPriceInternal(cdbWeapons::getInstance());
-				}
-				return itemInfoMapPrice;
+				return getItemPriceInternal(cdbItems::getInstance());
 			}
 
 			std::optional<std::uint16_t> getItemDurability() const
 			{
-				const auto itemDurability = getDurabilityInternal(cdbItems::getInstance());
-				if (itemDurability == std::nullopt)
-				{
-					return getDurabilityInternal(cdbWeapons::getInstance());
-				}
-				return itemDurability;
+				return getDurabilityInternal(cdbItems::getInstance());
 			}
 
 			std::optional<std::uint16_t> getItemRefundPrice() const
 			{
-				const auto refundValue = getRefundValue(cdbItems::getInstance());
-				if (refundValue == std::nullopt)
-				{
-					return getRefundValue(cdbWeapons::getInstance());
-				}
-				return refundValue;
+				return getRefundValue(cdbItems::getInstance());
 			}
 
 			std::optional<Common::ConstantDatabase::CdbRewardInfo> getRewardInfoForMode(std::uint32_t mode) const
@@ -116,34 +101,14 @@ namespace Main
 				return entry;
 			}
 
-			std::optional<bool> isImmediatelySet() const
-			{
-				const auto isItemImmediatelySet = isImmediatelySetInternal(cdbItems::getInstance());
-				if (isItemImmediatelySet == std::nullopt)
-				{
-					return isImmediatelySetInternal(cdbWeapons::getInstance());
-				}
-				return isItemImmediatelySet;
-			}
-
 			std::optional<std::uint32_t> getItemDuration() const
 			{
-				const auto itemInfoMapExpiration = getItemDurationInternal(cdbItems::getInstance());
-				if (itemInfoMapExpiration == std::nullopt)
-				{
-					return getItemDurationInternal(cdbWeapons::getInstance());
-				}
-				return itemInfoMapExpiration;
+				return getItemDurationInternal(cdbItems::getInstance());
 			}
 
 			std::optional<std::uint32_t> getItemType() const
 			{
-				const auto itemType = getItemTypeInternal(cdbItems::getInstance());
-				if (itemType == std::nullopt)
-				{
-					return getItemTypeInternal(cdbWeapons::getInstance());
-				}
-				return itemType;
+				return getItemTypeInternal(cdbItems::getInstance());
 			}
 
 			std::optional<std::uint32_t> getBatteryNeededForUpgrade() const

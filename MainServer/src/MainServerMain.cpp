@@ -38,9 +38,9 @@ void initializeCdbFiles()
 	const std::string cdbRewardInfo = "rewardinfo.cdb";
 	const std::string cdbGradeInfo = "gradeinfo.cdb";
 
-	using cdbItems = Common::ConstantDatabase::CdbSingleton<Common::ConstantDatabase::CdbItemInfo>;
+	using cdbItems = Common::ConstantDatabase::CdbSingleton<Common::ConstantDatabase::CdbItemsInfoCMV>;
 	using setItems = Common::ConstantDatabase::CdbSingleton<Common::ConstantDatabase::SetItemInfo>;
-	using cdbWeapons = Common::ConstantDatabase::CdbSingleton<Common::ConstantDatabase::CdbWeaponInfo>;
+	//using cdbWeapons = Common::ConstantDatabase::CdbSingleton<Common::ConstantDatabase::CdbWeaponInfo>;
 	using upgradeInfos = Common::ConstantDatabase::CdbSingleton<Common::ConstantDatabase::CdbUpgradeInfo>;
 	using capsulePackageInfos = Common::ConstantDatabase::CdbSingleton<Common::ConstantDatabase::CdbCapsulePackageInfo>;
 	using capsuleInfos = Common::ConstantDatabase::CdbSingleton<Common::ConstantDatabase::CdbCapsuleInfo>;
@@ -52,7 +52,7 @@ void initializeCdbFiles()
 	cdbItems::initialize(cdbItemInfoPath, cdbItemInfoName);
 	cdbItems::initializeItemTypes(cdbItemInfoPath, cdbWeaponItemInfoName, cdbItemInfoName);
 	setItems::initialize(cdbItemInfoPath, cdbSetItemInfoName);
-	cdbWeapons::initialize(cdbItemInfoPath, cdbWeaponItemInfoName);
+	//cdbWeapons::initialize(cdbItemInfoPath, cdbWeaponItemInfoName);
 	upgradeInfos::initialize(cdbItemInfoPath, cdbUpgradeInfoName);
 	capsuleInfos::initialize(cdbItemInfoPath, cdbCapsuleInfoName);
 	capsulePackageInfos::initialize(cdbItemInfoPath, cdbCapsulePackageInfoName);

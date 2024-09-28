@@ -178,6 +178,7 @@
     <ClCompile Include="src\ChatCommands\SimpleCommands\Shutdown.cpp" />
     <ClCompile Include="src\ChatCommands\SimpleRoomCommands\BreakroomCommand.cpp" />
     <ClCompile Include="src\ChatCommands\SimpleRoomCommands\UnmuteRoom.cpp" />
+    <ClCompile Include="src\Classes\CapsuleManager.cpp" />
     <ClCompile Include="src\Classes\Player.cpp" />
     <ClCompile Include="src\Classes\Room.cpp" />
     <ClCompile Include="src\Classes\RoomsManager.cpp" />
@@ -214,6 +215,7 @@
     <ClInclude Include="include\ChatCommands\SimpleCommands\Shutdown.h" />
     <ClInclude Include="include\ChatCommands\SimpleRoomCommands\BreakroomCommand.h" />
     <ClInclude Include="include\ChatCommands\SimpleRoomCommands\UnmuteRoom.h" />
+    <ClInclude Include="include\Classes\CapsuleManager.h" />
     <ClInclude Include="include\Classes\Player.h" />
     <ClInclude Include="include\Classes\RoomsManager.h" />
     <ClInclude Include="include\Handlers\CapsuleReqHandler.h" />
@@ -233,6 +235,7 @@
     <ClInclude Include="include\Handlers\Room\EliminationNextRoundHandler.h" />
     <ClInclude Include="include\Handlers\Room\MatchLeaveHandler.h" />
     <ClInclude Include="include\Handlers\Room\RoomChangeHostHandler.h" />
+    <ClInclude Include="include\Handlers\Room\RoomInviteJoin.h" />
     <ClInclude Include="include\Handlers\Room\RoomJoinHandler.h" />
     <ClInclude Include="include\Handlers\Player\LobbyAccountInfoHandler.h" />
     <ClInclude Include="include\Handlers\Player\Mailbox\MailboxDeleteHandler.h" />

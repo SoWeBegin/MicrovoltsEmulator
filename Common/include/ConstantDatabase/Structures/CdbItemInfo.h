@@ -3,6 +3,7 @@
 
 #include "visit_struct/visit_struct.hpp"
 
+// This is used for MVSurge, refer to "CdbItemsInfo" for CMV
 namespace Common
 {
     namespace ConstantDatabase

@@ -48,6 +48,7 @@
 #include "../include/Boxes/MpBox.h"
 #include "../include/Network/AuthSession.h"
 #include "../include/Handlers/Item/ItemAndCapsuleHandler.h"
+#include "../include/Handlers/Room/RoomInviteJoin.h"
 
 
 namespace Main
@@ -58,7 +59,9 @@ namespace Main
 		, m_authServerAcceptor{ io_context, tcp::endpoint(tcp::v4(), authPort) }
 		, m_serverId{ serverId }
 		, m_database{ "../ExternalLibraries/Database/GameDatabase.db" }
-		, m_scheduler{ 5, m_database }
+		, m_scheduler{ 300, m_database }
+		, m_capsuleManager{ m_scheduler, m_database }
+
 	{
 		const auto durationSinceEpoch = std::chrono::system_clock::now().time_since_epoch();
 		m_timeSinceLastRestart = static_cast<std::uint64_t>(duration_cast<std::chrono::milliseconds>(durationSinceEpoch).count());
@@ -89,6 +92,8 @@ namespace Main
 			Main::Network::Session& session) { Main::Handlers::handlePing(request, session, m_roomsManager, Details::parseData<Main::ClientData::Ping>(request)); });
 		Common::Network::Session::addCallback<Main::Network::Session>(74, [&](const Common::Network::Packet& request,
 			Main::Network::Session& session) { Main::Handlers::handleCharacterSelection(request, session, m_roomsManager); });
+		Common::Network::Session::addCallback<Main::Network::Session>(83, [&](const Common::Network::Packet& request,
+			Main::Network::Session& session) { Main::Handlers::handleCapsuleReq(request, session, m_capsuleManager); });
 		Common::Network::Session::addCallback<Main::Network::Session>(84, [&](const Common::Network::Packet& request,
 			Main::Network::Session& session) { Main::Handlers::handleLobbyUserList(request, session, m_sessionsManager); });
 		Common::Network::Session::addCallback<Main::Network::Session>(85, [&](const Common::Network::Packet& request,
@@ -106,7 +111,8 @@ namespace Main
 		Common::Network::Session::addCallback<Main::Network::Session>(97, [&](const Common::Network::Packet& request,
 			Main::Network::Session& session) { Main::Handlers::handleItemUpgrade(request, session, Details::parseData<Main::ClientData::ItemUpgrade>(request)); });
 		Common::Network::Session::addCallback<Main::Network::Session>(98, [&](const Common::Network::Packet& request,
-			Main::Network::Session& session) { Main::Handlers::handleGeneralItem(request, session, m_database, m_boxes, Details::parseData<Main::Structures::ItemSerialInfo>(request)); });
+			Main::Network::Session& session) { Main::Handlers::handleGeneralItem(request, session, m_database, m_boxes, Details::parseData<Main::Structures::ItemSerialInfo>(request),
+			m_capsuleManager, m_sessionsManager); });
 		Common::Network::Session::addCallback<Main::Network::Session>(99, [&](const Common::Network::Packet& request,
 			Main::Network::Session& session) { Main::Handlers::handleMailboxDelete(request, session, Details::parseData<std::uint32_t>(request, 4)); });
 		Common::Network::Session::addCallback<Main::Network::Session>(100, [&](const Common::Network::Packet& request,
@@ -174,12 +180,11 @@ namespace Main
 			Main::Network::Session& session) { Main::Handlers::handleMapEvents(request, session, m_database); });
 		*/
 		
-		// These 2 following handlers must be fully implemented still. Also check whether they're related to Bomb Battle (for host side)!
-		// Also requires to be refactored
+		// Invites are currently not working correctly, + refactor this handler
 		Common::Network::Session::addCallback<Main::Network::Session>(156, [&](const Common::Network::Packet& request,
-			Main::Network::Session& session) { Main::Handlers::unknown(request, session, m_roomsManager, m_sessionsManager); });
+			Main::Network::Session& session) { Main::Handlers::handleJoinAndInvites(request, session, m_roomsManager, m_sessionsManager); });
 		Common::Network::Session::addCallback<Main::Network::Session>(159, [&](const Common::Network::Packet& request,
-			Main::Network::Session& session) { Main::Handlers::unknown(request, session, m_roomsManager, m_sessionsManager); });
+			Main::Network::Session& session) { Main::Handlers::handleJoinAndInvites(request, session, m_roomsManager, m_sessionsManager); });
 
 		
 		// This handler also needs to refactored + checked (not fully working, e.g. for level up, different match ending scoreboards, etc)

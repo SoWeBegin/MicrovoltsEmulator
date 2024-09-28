@@ -42,7 +42,6 @@ namespace Main
 		inline void handleRoomLeave(const Common::Network::Packet& request, Main::Network::Session& session, Main::Network::SessionsManager& sessionsManager,
 			Main::Classes::RoomsManager& roomsManager, std::uint32_t serverId, const Main::Structures::UniqueId& uniqueId)
 		{
-			auto roomOpt = roomsManager.getRoomByNumber(session.getRoomNumber());
 			if (Main::Classes::Room* room = roomsManager.getRoomByNumber(session.getRoomNumber()))
 			{
 				if (request.getExtra() == ClientExtra::KICK_PLAYER)
