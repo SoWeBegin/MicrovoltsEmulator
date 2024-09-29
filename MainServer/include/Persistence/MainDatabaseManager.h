@@ -176,16 +176,14 @@ namespace Main
 					Main::Structures::MuteInfo muteInfo;
 
 					SQLite::Statement query(db,
-						"SELECT Users.* FROM Users WHERE AccountID = ?");
+						"SELECT Users.*, (DATE(Users.MutedUntil) >= DATE('now')) AS IsMuted FROM Users WHERE AccountID = ?");
 
 					query.bind(1, playerID);
 
 					if (query.executeStep())
 					{
-						const std::string mutedUntil = query.getColumn("MutedUntil").getString(); // suspendedUntil uses UTC!
-						//auto const time = std::chrono::utc_clock::now();
-						//const std::string current_time = std::format("{:%Y-%m-%d %X}", time);
-						muteInfo.isMuted = false;//mutedUntil > current_time;
+						const std::string mutedUntil = query.getColumn("MutedUntil").getString();
+						muteInfo.isMuted = static_cast<bool> (query.getColumn("IsBanned").getInt());
 						muteInfo.reason = query.getColumn("MuteReason").getString();
 						muteInfo.mutedBy = query.getColumn("MutedBy").getString();
 						muteInfo.mutedUntil = mutedUntil;

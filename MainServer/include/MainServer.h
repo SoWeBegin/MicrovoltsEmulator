@@ -36,7 +36,7 @@ namespace Main
 
 
 	public:
-		MainServer(ioContext& io_context, std::uint16_t port, std::uint16_t serverId);
+		MainServer(ioContext& io_context, const std::string & db_path, std::uint16_t port, std::uint16_t serverId);
 		~MainServer() { for (std::thread &t : threads) t.join(); };
 		void asyncAccept();
 		void initializeAllCommands();

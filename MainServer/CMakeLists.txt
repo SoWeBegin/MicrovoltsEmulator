@@ -17,6 +17,7 @@ target_link_libraries(MainServer
         Common
         SQLiteCpp
         sqlite3
+        ${Boost_LIBRARIES}
 )
 
 if(WIN32)
