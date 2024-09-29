@@ -35,12 +35,15 @@ namespace Main
 
 			m_isTeamBalanceOn = false; // For now, team balance isn't supported as it causes issues e.g. team bug.
 			//m_isTeamBalanceOn = isModeTeamBased() ? true : false; // Team balance is by default on for team-based modes
+
+			m_originalHost = player;
 		}
 
 		void Room::setTick(std::uint32_t tick)
 		{
 			m_tick = tick;
 		}
+
 
 		std::uint32_t Room::getPlayerIdx(std::uint64_t playerId) const
 		{
@@ -335,6 +338,44 @@ namespace Main
 				logger.log(getRoomInfoAsString(), Utils::LogType::Normal, "Room::removeHostFromMatch");
 				return true;
 			}
+		}
+
+		void Room::changeHostTemporarilyToBestMs()
+		{
+			// todo
+		}
+
+		bool Room::changeHostByNickname(const std::string& newHostNickname)
+		{
+			// find player index inside the room through to their nickname
+			std::uint32_t targetIndex = 0;
+			std::uint32_t currentIndex = 0;
+			std::uint32_t sessionId = 0;
+			for (const auto& [roomInfo, session] : m_players)
+			{
+				if (std::strncmp(roomInfo.playerName, newHostNickname.c_str(), sizeof(roomInfo.playerName)) == 0)
+				{
+					targetIndex = currentIndex;
+					sessionId = roomInfo.uniqueId.session;
+					break;
+				}
+				else
+				{
+					++currentIndex;
+				}
+			}
+			if (currentIndex >= m_players.size()) return false; // player with target nickname not found
+			if (changeHost(targetIndex))
+			{
+				Common::Network::Packet hostChange;
+				hostChange.setTcpHeader(sessionId, Common::Enums::USER_LARGE_ENCRYPTION);
+				hostChange.setOrder(128);
+				hostChange.setOption(targetIndex);
+				hostChange.setExtra(Common::Enums::CHANGE_HOST_SUCCESS);
+				broadcastToRoom(hostChange);
+				return true;
+			}
+			return false;
 		}
 
 		// Returns true if the room must be also be closed (e.g. due to host-switch errors, or because no other player is inside the room), false otherwise.
@@ -648,6 +689,7 @@ namespace Main
 			m_hasMatchStarted = false;
 		}
 
+		// this is used by both (!) manual AND automatic host-changes
 		bool Room::changeHost(std::size_t newHostIdx)
 		{
 			Utils::Logger& logger = Utils::Logger::getInstance();
@@ -660,6 +702,11 @@ namespace Main
 			}
 			std::swap(m_players[0], m_players[newHostIdx]); 
 			return true;
+		}
+
+		void Room::setCurrentHostAsOriginalHost()
+		{
+			m_originalHost = m_players[0].first;
 		}
 
 		Main::Network::Session* Room::getPlayer(const Main::Structures::UniqueId& uniqueId)

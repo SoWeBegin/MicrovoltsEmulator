@@ -43,6 +43,7 @@ namespace Main
 
 			// Other
 			bool m_isMuted = false;
+			Main::Structures::RoomPlayerInfo m_originalHost{};
 
 		public:
 			Room() = default;
@@ -91,9 +92,12 @@ namespace Main
 
 			bool removePlayer(Main::Network::Session* session, std::uint32_t extra);
 
+			void changeHostTemporarilyToBestMs();
+
+			bool changeHostByNickname(const std::string&);
+
 			std::vector<Main::Structures::RoomPlayerInfo> getAllPlayers() const;
 
-			void removeHostIfAloneAndModeDoesntAllowIt();
 
 			Main::Structures::SingleRoom getRoomInfo() const;
 
@@ -102,10 +106,6 @@ namespace Main
 			Main::Structures::RoomJoin getRoomJoinInfo() const;
 
 			std::vector<Main::Structures::RoomPlayerItems> getPlayersItems() const;
-
-			void updatePlayerItems(Main::Network::Session* session);
-
-			Main::Structures::UniqueId getHostUniqueId() const;
 
 			std::vector<Main::Structures::PlayerClan> getPlayersClans() const;
 
@@ -121,6 +121,8 @@ namespace Main
 			void broadcastOutsideMatchExceptSelf(Common::Network::Packet& packet, const Main::Structures::UniqueId& selfUniqueId, std::uint32_t extra);
 
 			bool changeHost(std::size_t newHostIdx);
+
+			void setCurrentHostAsOriginalHost();
 
 			bool isHost(const Main::Structures::UniqueId& uniqueId) const;
 

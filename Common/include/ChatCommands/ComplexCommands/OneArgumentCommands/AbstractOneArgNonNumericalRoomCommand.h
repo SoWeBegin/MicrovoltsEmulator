@@ -17,7 +17,7 @@ namespace Common
 
 		public:
 			AbstractOneArgNonNumericalRoomCommand(Common::Enums::PlayerGrade requiredGrade)
-				: IComplexRoomCommand<SessionType, RoomsManagerType>{ "^([a-zA-Z]+)\\s([a-zA-Z]+)$", requiredGrade }
+				: IComplexRoomCommand<SessionType, RoomsManagerType>{ "^([a-zA-Z0-9]+)\\s([a-zA-Z0-9]+)$", requiredGrade }
 			{
 			}
 

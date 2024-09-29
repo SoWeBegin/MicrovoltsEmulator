@@ -14,6 +14,7 @@ namespace Cast
 		{
 		private:
 			std::unordered_map<std::uint64_t, Cast::Network::Session*> m_players{};
+			std::vector<Cast::Network::Session*> m_playersVec{};
 			std::uint32_t m_map{};
 			std::uint32_t m_mode{};
 			std::uint32_t m_tick{};
@@ -33,6 +34,7 @@ namespace Cast
 			// Debug
 			void printRoomState(const std::string& furtherInfo) const
 			{
+				/*
 				std::cout << "____________________________\n";
 				std::cout << furtherInfo << ":\n\n";
 				std::cout << "Room Information:\n";
@@ -46,6 +48,7 @@ namespace Cast
 						<< "\n    Is In Match: " << (currentPlayer.second->isInMatch() ? "Yes" : "No") << '\n';
 				}
 				std::cout << "____________________________\n";
+				*/
 			}
 
 

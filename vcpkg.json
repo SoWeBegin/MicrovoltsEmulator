@@ -8,6 +8,11 @@
       "version>=": "1.82.0#2"
     },
     {
+      "name": "cryptopp",
+      "version>=": "8.2.0-2#0",
+      "features": [ "pem-pack" ]
+    },
+    {
       "name": "boost-build",
       "version>=": "1.82.0#2"
     },
@@ -120,6 +125,10 @@
     {
       "name": "range-v3-vs2015",
       "version": "20151130-vcpkg5#1"
+    },
+    {
+      "name": "cryptopp",
+      "version": "8.9.0"
     }
   ]
 }

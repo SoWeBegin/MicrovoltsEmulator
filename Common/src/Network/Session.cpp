@@ -21,25 +21,18 @@ namespace Common
 	{
 		void Session::asyncWrite(const Common::Network::Packet& message)
 		{
-			std::optional<std::uint32_t> key = std::nullopt;
-			if (m_crypt.isUsed)
-			{
-				key = m_crypt.UserKey;
-			}
-
+			std::unique_lock lock(m_sendMutex);
+			std::optional<std::uint32_t> key = m_crypt.isUsed ? std::make_optional(m_crypt.UserKey) : std::nullopt;
 			std::vector<uint8_t> encryptedMessage = message.generateOutgoingPacket(key);
+			m_sendQueue.push(encryptedMessage);
+			lock.unlock();
 
-			if (message.getOrder() != 71 && message.getOrder() != 72) {
-                if (key == std::nullopt) {
-                    Common::Parser::parse_cast(encryptedMessage.data(), message.getFullSize(), 13006, "server",
-                                               "client");
-                } else {
-                    Common::Parser::parse(encryptedMessage.data(), message.getFullSize(), 13000, "server", "client",
-                                          m_crypt.UserKey);
-                }
-            }
-
-			asio::async_write(m_socket, asio::buffer(encryptedMessage.data(), message.getFullSize()),
+			bool expected = false, desired = true;
+			if (m_isInSend.compare_exchange_strong(expected, desired))
+			{
+				write();
+			}
+			/*asio::async_write(m_socket, asio::buffer(encryptedMessage.data(), message.getFullSize()),
 				[&, self = this->shared_from_this()](const asio::error_code& errorCode, std::size_t)
 				{
 					if (!errorCode)
@@ -49,7 +42,40 @@ namespace Common
 					else
 					{
 						std::printf("Failed to send server message: %s\n", errorCode.message().c_str());
-						//closeSocket();
+					}
+				});
+				*/
+		}
+
+		void Session::write()
+		{
+			std::unique_lock lock(m_sendMutex);
+			if (m_sendQueue.empty())
+			{
+				m_isInSend = false;
+				return;
+			}
+			if (!m_socket.is_open())
+			{
+				return;
+			}
+			auto& nextMessage = m_sendQueue.front();
+			lock.unlock();
+
+			asio::async_write(m_socket, asio::buffer(nextMessage.data(), nextMessage.size()),
+				[&, self = this->shared_from_this()](const asio::error_code& errorCode, std::size_t)
+				{
+					if (!errorCode)
+					{
+						std::unique_lock lock(m_sendMutex);
+						self->m_sendQueue.pop();
+						lock.unlock();
+						self->write();
+					}
+					else
+					{
+						self->closeSocket();
+						std::printf("Failed to send server message: %s\n", errorCode.message().c_str());
 					}
 				});
 		}

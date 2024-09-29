@@ -14,6 +14,7 @@
 
 #include "Packet.h"
 #include "SessionIdManager.h"
+#include <queue>
 
 
 namespace Common
@@ -27,6 +28,9 @@ namespace Common
 		protected:
 			tcp::socket m_socket;
 			std::array<std::uint8_t, 1024> m_buffer{};
+			std::queue<std::vector<std::uint8_t>> m_sendQueue;
+			std::atomic_bool m_isInSend;
+			std::mutex m_sendMutex;
 			std::vector<std::uint8_t> m_reader{};
 			Common::Cryptography::Crypt m_crypt{};
 			Common::Cryptography::Crypt m_defaultCrypt{};
@@ -67,6 +71,7 @@ namespace Common
 			}
 
 			void asyncWrite(const Common::Network::Packet& message);
+			void write();
 			void asyncRead();
 			void onRead(asio::error_code error, std::size_t bytes_transferred);
 			void closeSocket();

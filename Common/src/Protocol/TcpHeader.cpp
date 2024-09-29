@@ -18,7 +18,7 @@ namespace Common
 		{
 			setBogus(0);
 			setSessionId(sessionId);
-			setCrypt(crypt);
+			setCrypt(0 /*crypt*/); // temporarily disabled crypt to see whether there's any performance gains
 			setSize(size);
 		}
 

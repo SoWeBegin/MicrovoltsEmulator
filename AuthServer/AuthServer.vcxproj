@@ -77,7 +77,7 @@
     <VcpkgInstalledDir>..\ExternalLibraries\vcpkg\installed</VcpkgInstalledDir>
   </PropertyGroup>
   <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <VcpkgInstalledDir>..\ExternalLibraries\vcpkg\installed</VcpkgInstalledDir>
+    <VcpkgInstalledDir>..\ExternalLibraries\vcpkg\vcpkg_installed</VcpkgInstalledDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -108,14 +108,12 @@
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      
     </Link>
     <PostBuildEvent>
       <Command>xcopy "$(SolutionDir)SharedFiles\GameDatabase.db" "$(TargetDir)"</Command>

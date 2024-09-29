@@ -15,7 +15,8 @@ namespace Main
 	namespace Handlers
 	{
 		inline void handleAccountInformation(const Common::Network::Packet& request, Main::Network::Session& session,
-			Main::Network::SessionsManager& sessionsManager, Main::Persistence::PersistentDatabase& database, Main::Structures::AccountInfo& accountInfo, std::uint32_t extra = 1)
+			Main::Network::SessionsManager& sessionsManager, Main::Persistence::PersistentDatabase& database, Main::Structures::AccountInfo& accountInfo, 
+			std::uint64_t timeSinceLastServerRestart, std::uint32_t extra = 1)
 		{
 			Common::Network::Packet response;
 			response.setTcpHeader(request.getSession(), Common::Enums::USER_LARGE_ENCRYPTION);
@@ -34,7 +35,8 @@ namespace Main
 
 			accountInfo.uniqueId.session = session.getId();
 			accountInfo.uniqueId.server = 4; // currently hardcoded
-		    accountInfo.setServerTime();
+			accountInfo.serverTime = accountInfo.getUtcTimeMs() - timeSinceLastServerRestart;
+		   // accountInfo.setServerTime();
 
 			response.setData(reinterpret_cast<std::uint8_t*>(&accountInfo), sizeof(accountInfo));
 			session.asyncWrite(response);

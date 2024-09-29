@@ -10,6 +10,7 @@
 #include "ComplexCommands/OneArgumentCommands/SetNickname.h"
 #include "ComplexCommands/OneArgumentCommands/SpawnItem.h"
 #include "ComplexCommands/OneArgumentCommands/Kick.h"
+#include "ComplexCommands/OneArgumentCommands/ChangeHost.h"
 #include "ComplexCommands/OneArgumentCommands/CreateAnnouncement.h"
 #include "ComplexCommands/OneArgumentCommands/TiltClient.h"
 #include "ComplexCommands/ThreeArgumentCommands/BanPlayer.h"

@@ -11,6 +11,7 @@
 #include "Classes/RoomsManager.h"
 
 #include <iostream>
+
 namespace Main
 {
 	using tcp = asio::ip::tcp;
@@ -28,6 +29,11 @@ namespace Main
 		Main::Network::SessionsManager m_sessionsManager;
 		Main::Classes::RoomsManager m_roomsManager;
 		Main::Command::ChatCommands m_chatCommands;
+		std::uint64_t m_timeSinceLastRestart{};
+
+	public:
+		std::vector<std::jthread> threads;
+
 
 	public:
 		MainServer(ioContext& io_context, std::uint16_t port, std::uint16_t serverId);

@@ -15,6 +15,7 @@ namespace Cast
 		Room::Room(std::uint64_t hostSessionId, Cast::Network::Session* hostSession)
 		{
 			m_players.insert(std::pair{hostSessionId, hostSession});
+			m_playersVec.push_back(hostSession);
 			hostSession->setRoomId(hostSessionId);
 			m_roomNumber = ++idCounter;
 			hostSession->setRoomNumber(m_roomNumber);
@@ -32,9 +33,9 @@ namespace Cast
 		std::size_t Room::getTotalPlayersInMatch() const
 		{
 			std::size_t total = 0;
-			for (const auto& current : m_players)
+			for (const auto& current : m_playersVec)
 			{
-				if (current.second->isInMatch())
+				if (current->isInMatch())
 				{
 					++total;
 				}
@@ -44,11 +45,11 @@ namespace Cast
 
 		void Room::endMatch()
 		{
-			for (const auto& current : m_players)
+			for (auto& current : m_playersVec)
 			{
-				if (current.second->isInMatch())
+				if (current->isInMatch())
 				{
-					current.second->setIsInMatch(false);
+					current->setIsInMatch(false);
 				}
 			}
 		}
@@ -60,7 +61,7 @@ namespace Cast
 
 		void Room::removeAllPlayers()
 		{
-			for (const auto& currentPlayer : m_players)
+			for (auto& currentPlayer : m_players)
 			{
 				removePlayer(currentPlayer.second->getId());
 			}
@@ -79,6 +80,16 @@ namespace Cast
 				m_players[playerSessionId]->setIsInMatch(false);
 				m_players[playerSessionId]->setRoomNumber(-1);
 				m_players.erase(playerSessionId);
+
+				auto it = std::remove_if(m_playersVec.begin(), m_playersVec.end(),
+					[playerSessionId](const auto& player) 
+					{
+						return player->getId() == playerSessionId;
+					});
+				if (it != m_playersVec.end()) 
+				{
+					m_playersVec.erase(it, m_playersVec.end());
+				}
 			}
 			return m_players.empty();
 		}
@@ -96,36 +107,36 @@ namespace Cast
 			
 			// Check whether m_players or m_observerPlayers is full?
 			m_players[playerSession->getId()] = playerSession;
+			m_playersVec.push_back(playerSession);
 			playerSession->setRoomNumber(m_roomNumber);
 		}
 
 		void Room::broadcastToRoomExceptSelf(std::uint64_t selfSessionId, Common::Network::Packet& packet)
 		{
-			for (const auto& [sessionId, session] : m_players)
+			for (auto& currentPlayer : m_playersVec)
 			{
-				if (selfSessionId == sessionId) continue;
-				packet.setTcpHeader(sessionId, Common::Enums::NO_ENCRYPTION);
-				session->asyncWrite(packet);
+				auto currentSessionId = currentPlayer->getId();
+				if (currentSessionId == selfSessionId) continue;
+				packet.setTcpHeader(currentSessionId, Common::Enums::NO_ENCRYPTION);
+				currentPlayer->asyncWrite(packet);
 			}
 		}
 
 		void Room::broadcastToRoom(Common::Network::Packet& packet)
 		{
-			for (const auto& [sessionId, session] : m_players)
+			for (auto& currentPlayer : m_playersVec)
 			{
-				packet.setTcpHeader(sessionId, Common::Enums::NO_ENCRYPTION);
-				session->asyncWrite(packet);
+				packet.setTcpHeader(currentPlayer->getId(), Common::Enums::NO_ENCRYPTION);
+				currentPlayer->asyncWrite(packet);
 			}
 		}
 
 		bool Room::isInMatch(std::uint64_t playerSessionId) const
 		{
-			for (const auto& current : m_players)
+			auto it = m_players.find(playerSessionId);
+			if (it != m_players.end() && it->second->isInMatch())
 			{
-				if (current.second->getId() == playerSessionId && current.second->isInMatch())
-				{
-					return true;
-				}
+				return true;
 			}
 			return false;
 		}
@@ -191,10 +202,9 @@ namespace Cast
 		void Room::leaveAllPLayers()
 		{
 			std::uint32_t totalInMatch = 0;
-			// Count total players in match.
-			for (auto& player : m_players)
+			for (auto& player : m_playersVec)
 			{
-				if (player.second->isInMatch())
+				if (player->isInMatch())
 				{
 					++totalInMatch;
 				}
@@ -206,9 +216,9 @@ namespace Cast
 				{
 					return;
 				}
-				for (auto& player : m_players)
+				for (auto& player : m_playersVec)
 				{
-					player.second->setIsInMatch(false);
+					player->setIsInMatch(false);
 				}
 			}
 		}

@@ -23,7 +23,8 @@ namespace Common
 			{
 			}
 
-			virtual void execute(const std::string& providedCommand, SessionType& session, RoomManagerType& roomsManager, Common::Network::Packet& response) = 0;
+			virtual void execute(const std::string& providedCommand, SessionType& session, RoomManagerType& roomsManager,
+				Common::Network::Packet& response) = 0;
 			virtual ~IComplexRoomCommand() = default;
 			virtual bool parseCommand(const std::string& providedCommand) = 0;
 		};

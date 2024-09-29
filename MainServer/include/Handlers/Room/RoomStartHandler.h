@@ -21,7 +21,14 @@ namespace Main
 			START_SUCCESS = 38,
 		};
 
-		inline void handleRoomStart(const Common::Network::Packet& request, Main::Network::Session& session, Main::Classes::RoomsManager& roomsManager)
+		std::uint64_t getUtcTimeMs()
+		{
+			const auto durationSinceEpoch = std::chrono::system_clock::now().time_since_epoch();
+			return static_cast<std::uint64_t>(duration_cast<std::chrono::milliseconds>(durationSinceEpoch).count());
+		}
+
+		inline void handleRoomStart(const Common::Network::Packet& request, Main::Network::Session& session, Main::Classes::RoomsManager& roomsManager,
+			std::uint64_t timeSinceLastServerRestart)
 		{
 			Utils::Logger& logger = Utils::Logger::getInstance();
 
@@ -77,16 +84,17 @@ namespace Main
 			{
 				if (room.isHost(selfUniqueId))
 				{
+					room.setCurrentHostAsOriginalHost();
+
 					response.setOrder(258);
 					response.setExtra(1 /* 5 == infinite loading for host ??*/); 
 					response.setOption(0);
 					struct Response
 					{
-						std::uint64_t tick;
+						std::uint64_t tick = 0; 
 					};
 					Response respMessage;
-
-					respMessage.tick = session.getAccountInfo().serverTime;
+					respMessage.tick = getUtcTimeMs() - timeSinceLastServerRestart;
 					response.setData(reinterpret_cast<std::uint8_t*>(&respMessage), sizeof(respMessage));
 					room.broadcastToRoom(response);
 

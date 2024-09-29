@@ -80,7 +80,7 @@
     <VcpkgInstalledDir>..\ExternalLibraries\vcpkg\installed</VcpkgInstalledDir>
   </PropertyGroup>
   <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <VcpkgInstalledDir>..\ExternalLibraries\vcpkg\installed</VcpkgInstalledDir>
+    <VcpkgInstalledDir>..\ExternalLibraries\vcpkg\vcpkg_installed</VcpkgInstalledDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -106,14 +106,12 @@
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -173,6 +171,7 @@
     <ClCompile Include="src\ChatCommands\ComplexCommands\OneArgumentCommands\SetNickname.cpp" />
     <ClCompile Include="src\ChatCommands\ComplexCommands\OneArgumentCommands\SpawnItem.cpp" />
     <ClCompile Include="src\ChatCommands\ComplexCommands\OneArgumentCommands\TiltClient.cpp" />
+    <ClCompile Include="src\ChatCommands\ComplexCommands\OneArgumentCommands\ChangeHost.cpp" />
     <ClCompile Include="src\ChatCommands\DatabaseCommands\AddPlayer.cpp" />
     <ClCompile Include="src\ChatCommands\DatabaseCommands\UnbanPlayer.cpp" />
     <ClCompile Include="src\ChatCommands\SimpleRoomCommands\Muteroom.cpp" />
@@ -203,6 +202,7 @@
     <ClInclude Include="include\ChatCommands\ComplexCommands\ThreeArgumentCommands\BanPlayer.h" />
     <ClInclude Include="include\ChatCommands\ComplexCommands\ThreeArgumentCommands\MutePlayer.h" />
     <ClInclude Include="include\ChatCommands\ComplexCommands\OneArgumentCommands\UnmutePlayer.h" />
+    <ClInclude Include="include\ChatCommands\ComplexCommands\OneArgumentCommands\ChangeHost.h" />
     <ClInclude Include="include\ChatCommands\DatabaseCommands\AddPlayer.h" />
     <ClInclude Include="include\ChatCommands\DatabaseCommands\UnbanOfflinePlayer.h" />
     <ClInclude Include="include\ChatCommands\DatabaseCommands\UnmuteOfflinePlayer.h" />

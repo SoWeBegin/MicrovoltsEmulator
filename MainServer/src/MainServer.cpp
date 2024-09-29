@@ -63,7 +63,7 @@ namespace Main
 		, m_acceptor{ io_context, tcp::endpoint(tcp::v4(), port) }
 		, m_serverId{ serverId }
 		, m_database{ "../ExternalLibraries/Database/GameDatabase.db" }
-		, m_scheduler{ 10, m_database }
+		, m_scheduler{ 120, m_database }
 	{
 		initializeAllCommands();
 
@@ -92,7 +92,7 @@ namespace Main
 		Common::Network::Session::addCallback<Main::Network::Session>(67, Main::Handlers::handleMailboxGiftDisplay);
 
 		Common::Network::Session::addCallback<Main::Network::Session>(68, [&](const Common::Network::Packet& request, 
-			Main::Network::Session& session) { Main::Handlers::handleInitialPlayerInfos(request, session, m_sessionsManager, m_database); });
+			Main::Network::Session& session) { Main::Handlers::handleInitialPlayerInfos(request, session, m_sessionsManager, m_database, m_timeSinceLastRestart); });
 
 		Common::Network::Session::addCallback<Main::Network::Session>(71, [&](const Common::Network::Packet& request,
 			Main::Network::Session& session) { Main::Handlers::handlePing(request, session, m_roomsManager); });
@@ -133,7 +133,7 @@ namespace Main
 		Common::Network::Session::addCallback<Main::Network::Session>(106, Main::Handlers::handleMailboxDisplay);
 
 		Common::Network::Session::addCallback<Main::Network::Session>(107, [&](const Common::Network::Packet& request,
-			Main::Network::Session& session) { Main::Handlers::handleRoomStart(request, session, m_roomsManager); }); 
+			Main::Network::Session& session) { Main::Handlers::handleRoomStart(request, session, m_roomsManager, m_timeSinceLastRestart); }); 
 
 		Common::Network::Session::addCallback<Main::Network::Session>(124, [&](const Common::Network::Packet& request,
 			Main::Network::Session& session) { Main::Handlers::handleSimpleRoomSetting<Main::Enums::SETTING_ITEM>(request, session, m_roomsManager); }); // Item on/off
@@ -251,6 +251,9 @@ namespace Main
 		m_socket.emplace(m_io_context);
 		m_acceptor.async_accept(*m_socket, [&](asio::error_code error)
 			{
+				const auto durationSinceEpoch = std::chrono::system_clock::now().time_since_epoch();
+				m_timeSinceLastRestart = static_cast<std::uint64_t>(duration_cast<std::chrono::milliseconds>(durationSinceEpoch).count());
+
 				m_sessionsManager.setRoomsManager(&m_roomsManager);
 
 				auto client = std::make_shared<Main::Network::Session>(m_scheduler, std::move(*MainServer::m_socket),
@@ -278,6 +281,7 @@ namespace Main
 		m_chatCommands.addComplexCommand("getitem", std::make_unique<Main::Command::SpawnItem>(Common::Enums::GRADE_NORMAL));
 		m_chatCommands.addComplexRoomCommand("kick", std::make_unique<Main::Command::KickPlayer>(Common::Enums::GRADE_MOD));
 		m_chatCommands.addSimpleRoomCommand("breakroom", std::make_unique<Main::Command::Breakroom>(Common::Enums::GRADE_MOD));
+		m_chatCommands.addComplexRoomCommand("changehost", std::make_unique<Main::Command::ChangeHost>(Common::Enums::GRADE_TESTER));
 		m_chatCommands.addSimpleRoomCommand("muteroom", std::make_unique<Main::Command::Muteroom>(Common::Enums::GRADE_MOD));
 		m_chatCommands.addSimpleRoomCommand("unmuteroom", std::make_unique<Main::Command::UnmuteRoom>(Common::Enums::GRADE_MOD));
 		m_chatCommands.addDatabaseCommand("unban", std::make_unique<Main::Command::UnbanAccount>(Common::Enums::GRADE_TESTER));

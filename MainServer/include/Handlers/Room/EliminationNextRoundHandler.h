@@ -88,10 +88,11 @@ namespace Main
 						room.storeEndMatchStatsFor(finalScoreGivenByClient.uniqueId, responseStruct,
 							clientEndMatchNotificationHeader.blueScore, clientEndMatchNotificationHeader.redScore, true);
 
+						const auto newPlayerLevel = targetAccountInfo.playerLevel + 1;
 						// Level up packet
 						response.setOrder(311); 
 						response.setExtra(1);
-						response.setOption(targetAccountInfo.playerLevel + 1); // 1 to account for new level
+						response.setOption(newPlayerLevel); 
 						response.setData(reinterpret_cast<std::uint8_t*>(&finalScoreGivenByClient.uniqueId), sizeof(finalScoreGivenByClient.uniqueId));
 						room.broadcastToRoomExceptSelf(response, finalScoreGivenByClient.uniqueId);
 
@@ -105,7 +106,15 @@ namespace Main
 							targetSession->spawnItem(gradeInfo->gi_reward_item, spawnedItem.serialInfo);
 							targetSession->setLatestItemNumber(spawnedItem.serialInfo.itemNumber);
 							*/
+
+							// Give MP proportionally to the new level
+							targetSession->setAccountMicroPoints(targetAccountInfo.microPoints + (newPlayerLevel * 700));
 						}
+					}
+					else
+					{
+						room.storeEndMatchStatsFor(finalScoreGivenByClient.uniqueId, responseStruct,
+							clientEndMatchNotificationHeader.blueScore, clientEndMatchNotificationHeader.redScore, false);
 					}
 				}
 				else
@@ -114,7 +123,7 @@ namespace Main
 						clientEndMatchNotificationHeader.blueScore, clientEndMatchNotificationHeader.redScore, false);
 				}
 				
-				// TODO: THE SIZE OF THIS PACKET CAN BE >= 1440 BYTES IF THERE ARE MAX NUM OF PLAYERS + MAX NUM OF OBS PLAYERS!!!!!
+				// TODO: THE SIZE OF THIS PACKET CAN BE >= 1440 BYTES IF THERE ARE MAX NUM OF PLAYERS + MAX NUM OF OBS PLAYERS!
 				// BUT ARE OBS PLAYERS EVEN COUNTED???
 				response.setOrder(request.getOrder());
 				response.setExtra(1);
@@ -123,7 +132,6 @@ namespace Main
 				room.sendTo(finalScoreGivenByClient.uniqueId, response);
 			}
 
-			// Note: If something stops working when ending match, look at previous implementations of .endMatch()!!!
 			room.endMatch();
 
 			// Notify client about match leave, MVR does this as well

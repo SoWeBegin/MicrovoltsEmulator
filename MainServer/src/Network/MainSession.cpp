@@ -725,11 +725,8 @@ namespace Main
 				previousAccountInfo);
 
 			m_player.storeBatteryObtainedInMatch();
-
-			/*
 			m_scheduler.addRepetitiveCallback(m_player.getAccountID(), &Main::Persistence::PersistentDatabase::updateBattery, m_player.getAccountID(),
 				m_player.getAccountInfo().battery);
-				*/
 		}
 	};
 }
