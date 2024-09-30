@@ -1,0 +1,9 @@
+[submodule "SQLiteCpp"]
+	path = SQLiteCpp
+	url = https://github.com/SRombauts/SQLiteCpp.git
+[submodule "ExternalLibraries/DirectXMath"]
+	path = ExternalLibraries/DirectXMath
+	url = https://github.com/microsoft/DirectXMath.git
+[submodule "ExternalLibraries/asio"]
+	path = ExternalLibraries/asio
+	url = https://github.com/chriskohlhoff/asio.git

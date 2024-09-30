@@ -91,15 +91,15 @@ namespace Main
 				return zombieKills = desired * 3; 
 			}
 
-			std::uint64_t getUtcTimeMs() const
-			{
-				const auto durationSinceEpoch = std::chrono::system_clock::now().time_since_epoch();
-				return static_cast<std::uint64_t>(duration_cast<std::chrono::milliseconds>(durationSinceEpoch).count());
-			}
+            std::uint64_t getUtcTimeMs() const
+            {
+                const auto durationSinceEpoch = std::chrono::system_clock::now().time_since_epoch();
+                return static_cast<std::uint64_t>(duration_cast<std::chrono::milliseconds>(durationSinceEpoch).count());;
+            }
 
 			void setServerTime()
 			{
-				serverTime = 51877635; // getUtcTimeMs();
+				serverTime = getUtcTimeMs();
 			}
 
 		};

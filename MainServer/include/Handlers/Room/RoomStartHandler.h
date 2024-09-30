@@ -94,7 +94,6 @@ namespace Main
 						std::uint64_t tick = 0; 
 					};
 					Response respMessage;
-					respMessage.tick = getUtcTimeMs() - timeSinceLastServerRestart;
 					response.setData(reinterpret_cast<std::uint8_t*>(&respMessage), sizeof(respMessage));
 					room.broadcastToRoom(response);
 

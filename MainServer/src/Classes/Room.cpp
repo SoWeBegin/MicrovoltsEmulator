@@ -20,7 +20,6 @@
 #include <Utils/IPC_Structs.h>
 #include <Enums/PlayerEnums.h>
 #include <Utils/Logger.h>
-#include <range/v3/all.hpp>
 
 namespace Main
 {
@@ -105,7 +104,17 @@ namespace Main
 
 		void Room::updatePlayerInfo(Main::Network::Session* session) 
 		{
-			for (auto& [roomInfo, playerSession] : ranges::views::concat(m_players, m_observerPlayers))
+            for (auto& [roomInfo, playerSession] : m_players)
+            {
+                if (playerSession->getId() == session->getId())
+                {
+                    const auto& accountInfo = session->getAccountInfo();
+                    roomInfo.character = accountInfo.latestSelectedCharacter;
+                    roomInfo.level = accountInfo.playerLevel;
+                }
+            }
+
+			for (auto& [roomInfo, playerSession] : m_observerPlayers)
 			{
 				if (playerSession->getId() == session->getId())
 				{
@@ -528,7 +537,7 @@ namespace Main
 		std::vector<Main::Structures::RoomPlayerItems> Room::getPlayersItems() const
 		{
 			std::vector<Main::Structures::RoomPlayerItems> ret;
-			for (const auto& [roomInfo, session] : ranges::views::concat(m_players, m_observerPlayers))
+			for (const auto& [roomInfo, session] : m_players)
 			{
 				Main::Structures::RoomPlayerItems roomPlayerItems;
 				const auto separatedItems = session->getEquippedItemsSeparated(); 
@@ -537,13 +546,23 @@ namespace Main
 				roomPlayerItems.uniqueId = roomInfo.uniqueId;
 				ret.push_back(roomPlayerItems);
 			}
+
+            for (const auto& [roomInfo, session] : m_observerPlayers)
+            {
+                Main::Structures::RoomPlayerItems roomPlayerItems;
+                const auto separatedItems = session->getEquippedItemsSeparated();
+                roomPlayerItems.equippedItems = separatedItems.first;
+                roomPlayerItems.equippedWeapons = separatedItems.second;
+                roomPlayerItems.uniqueId = roomInfo.uniqueId;
+                ret.push_back(roomPlayerItems);
+            }
 			return ret;
 		}
 
 		std::vector<Main::Structures::PlayerClan> Room::getPlayersClans() const
 		{
 			std::vector<Main::Structures::PlayerClan> ret;
-			for (const auto& [roomInfo, session] : ranges::views::concat(m_players, m_observerPlayers))
+			for (const auto& [roomInfo, session] : m_players)
 			{
 				const auto& accountInfo = session->getAccountInfo();
 				Main::Structures::PlayerClan playerClan;
@@ -560,15 +579,38 @@ namespace Main
 				}
 				ret.push_back(playerClan);
 			}
+
+            for (const auto& [roomInfo, session] : m_observerPlayers)
+            {
+                const auto& accountInfo = session->getAccountInfo();
+                Main::Structures::PlayerClan playerClan;
+                if (accountInfo.clanId > 8)
+                {
+                    playerClan.clanLogoBackId = accountInfo.clanLogoBackId;
+                    playerClan.clanLogoFrontId = accountInfo.clanLogoFrontId;
+                    std::memcpy(playerClan.clanName, accountInfo.clanName, 16);
+                    playerClan.unknown2 = accountInfo.clanId;
+                }
+                else
+                {
+                    playerClan.unknown = 1;
+                }
+                ret.push_back(playerClan);
+            }
 			return ret;
 		}
 
 		void Room::breakroom()
 		{
-			for (auto& [unused, session] : ranges::views::concat(m_players, m_observerPlayers))
+			for (auto& [unused, session] : m_players)
 			{
 				session->leaveRoom();
 			}
+
+            for (auto& [unused, session] : m_observerPlayers)
+            {
+                session->leaveRoom();
+            }
 			m_players.clear();
 			m_observerPlayers.clear();
 		}
@@ -576,21 +618,34 @@ namespace Main
 		// Broadcasts to whole room (room + match)
 		void Room::broadcastToRoom(Common::Network::Packet& packet)
 		{
-			for (auto& [roomInfo, session] : ranges::views::concat(m_players, m_observerPlayers))
+			for (auto& [roomInfo, session] : m_players)
 			{
 				packet.setTcpHeader(session->getSessionId(), Common::Enums::USER_LARGE_ENCRYPTION);
 				session->asyncWrite(packet);
 			}
+
+            for (auto& [roomInfo, session] : m_observerPlayers)
+            {
+                packet.setTcpHeader(session->getSessionId(), Common::Enums::USER_LARGE_ENCRYPTION);
+                session->asyncWrite(packet);
+            }
 		}
 
 		void Room::broadcastToRoomExceptSelf(Common::Network::Packet& packet, const Main::Structures::UniqueId& uniqueId)
 		{
-			for (auto& currentPlayer : ranges::views::concat(m_players, m_observerPlayers))
+			for (auto& currentPlayer : m_players)
 			{
 				if (currentPlayer.first.uniqueId == uniqueId) continue;
 				packet.setTcpHeader(currentPlayer.second->getSessionId(), Common::Enums::USER_LARGE_ENCRYPTION);
 				currentPlayer.second->asyncWrite(packet);
 			}
+
+            for (auto& currentPlayer : m_observerPlayers)
+            {
+                if (currentPlayer.first.uniqueId == uniqueId) continue;
+                packet.setTcpHeader(currentPlayer.second->getSessionId(), Common::Enums::USER_LARGE_ENCRYPTION);
+                currentPlayer.second->asyncWrite(packet);
+            }
 		}
 
 		void Room::broadcastToTeamExceptSelf(Common::Network::Packet& packet, const Main::Structures::UniqueId& uniqueId, bool checkInsideMatch)
@@ -678,7 +733,7 @@ namespace Main
 
 		void Room::endMatch()
 		{
-			for (auto& [roomInfo, session] : ranges::views::concat(m_players, m_observerPlayers))
+			for (auto& [roomInfo, session] : m_players)
 			{
 				if (session->isInMatch())
 				{
@@ -686,6 +741,15 @@ namespace Main
 					session->setIsInMatch(false);
 				}
 			}
+
+            for (auto& [roomInfo, session] :m_observerPlayers)
+            {
+                if (session->isInMatch())
+                {
+                    roomInfo.state = Common::Enums::STATE_WAITING;
+                    session->setIsInMatch(false);
+                }
+            }
 			m_hasMatchStarted = false;
 		}
 
@@ -869,7 +933,7 @@ namespace Main
 
 		void Room::setStateFor(const Main::Structures::UniqueId& uniqueId, const Common::Enums::PlayerState& playerState)
 		{
-			for (auto& [roomInfo, session] : ranges::views::concat(m_players, m_observerPlayers))
+			for (auto& [roomInfo, session] : m_players)
 			{
 				if (roomInfo.uniqueId == uniqueId)
 				{
@@ -878,11 +942,22 @@ namespace Main
 					return;
 				}
 			}
+
+            for (auto& [roomInfo, session] : m_observerPlayers)
+            {
+                if (roomInfo.uniqueId == uniqueId)
+                {
+                    roomInfo.state = playerState;
+                    session->setPlayerState(playerState);
+                    return;
+                }
+            }
 		}
 
 		void Room::startMatch(const Main::Structures::UniqueId& uniqueId)
 		{
-			auto allPlayers = ranges::views::concat(m_players, m_observerPlayers);
+			auto allPlayers = m_players;
+            m_players.insert(m_players.end(), m_observerPlayers.begin(), m_observerPlayers.end());
 
 			if (m_hasMatchStarted)
 			{
@@ -917,7 +992,7 @@ namespace Main
 
 		bool Room::kickPlayer(const std::string& name)
 		{
-			for (auto& [roomInfo, session] : ranges::views::concat(m_players, m_observerPlayers))
+			for (auto& [roomInfo, session] : m_players)
 			{
 				if (std::string(session->getAccountInfo().nickname) == name)
 				{
@@ -933,6 +1008,23 @@ namespace Main
 					return true;
 				}
 			}
+
+            for (auto& [roomInfo, session] : m_observerPlayers)
+            {
+                if (std::string(session->getAccountInfo().nickname) == name)
+                {
+                    if (session->getAccountInfo().playerGrade >= Common::Enums::PlayerGrade::GRADE_MOD) return false;
+                    Common::Network::Packet response;
+                    response.setTcpHeader(session->getId(), Common::Enums::USER_LARGE_ENCRYPTION);
+                    response.setOrder(141);
+                    response.setExtra(0x23);
+                    session->asyncWrite(response);
+                    removePlayer(session, 0x23);
+                    addKickedPlayer(session->getAccountInfo().accountID);
+                    session->setIsInLobby(true);
+                    return true;
+                }
+            }
 			return false;
 		}
 
@@ -1011,7 +1103,7 @@ namespace Main
 
 		void Room::sendTo(const Main::Structures::UniqueId& uniqueId, const Common::Network::Packet& packet)
 		{
-			for (auto& [roomInfo, session] : ranges::views::concat(m_players, m_observerPlayers))
+			for (auto& [roomInfo, session] : m_players)
 			{
 				if (roomInfo.uniqueId == uniqueId)
 				{
@@ -1019,6 +1111,15 @@ namespace Main
 					return;
 				}
 			}
+
+            for (auto& [roomInfo, session] : m_observerPlayers)
+            {
+                if (roomInfo.uniqueId == uniqueId)
+                {
+                    session->asyncWrite(packet);
+                    return;
+                }
+            }
 		}
 
 		void Room::storeEndMatchStatsFor(const Main::Structures::UniqueId& uniqueId, const Main::Structures::ScoreboardResponse& stats, 
@@ -1051,13 +1152,21 @@ namespace Main
 
 		Main::Network::Session::AccountInfo Room::getAccountInfoFor(const Main::Structures::UniqueId& uniqueId) const
 		{
-			for (auto& [roomInfo, session] : ranges::views::concat(m_players, m_observerPlayers))
+			for (auto& [roomInfo, session] : m_players)
 			{
 				if (roomInfo.uniqueId == uniqueId)
 				{
 					return session->getAccountInfo();
 				}
 			}
+
+            for (auto& [roomInfo, session] : m_observerPlayers)
+            {
+                if (roomInfo.uniqueId == uniqueId)
+                {
+                    return session->getAccountInfo();
+                }
+            }
 		}
 	}
 }

@@ -4,6 +4,8 @@
 ## Get latest from https://github.com/github/gitignore/blob/main/VisualStudio.gitignore
 
 thirdparty
+.idea
+build
 
 # User-specific files
 *.rsuser
@@ -405,4 +407,4 @@ FodyWeavers.xsd
 *.sln.iml
 /AuthServer/src/AuthServer.cpp
 /CastServer/src/CastServer.cpp
-/ExternalLibraries/Database/GameDatabase.db
+/Database/GameDatabase.db

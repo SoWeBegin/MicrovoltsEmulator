@@ -1,17 +1,16 @@
 #include "../include/AuthServer.h"
 #include "../include/Network/AuthSession.h"
-#include "../include/Network/Session.h"
 #include "../include/Handlers/AuthAllHandlers.h"
 #include "../include/Structures/AuthConnection.h"
-#include "../include/Structures/AuthAccountInfo.h"
-#include "../include/Player/AuthPlayerManager.h"
+
 
 namespace Auth
 {
-	AuthServer::AuthServer(ioContext& io_context, std::uint16_t port)
+	AuthServer::AuthServer(ioContext& io_context, const std::string & path, std::uint16_t port = 13000)
 		: m_io_context(io_context)
-		, m_acceptor{ io_context, tcp::endpoint(asio::ip::address::from_string("127.0.0.1"), port) }
-		, m_database("../ExternalLibraries/Database/GameDatabase.db")
+		, m_acceptor{ io_context, tcp::endpoint(asio::ip::address::from_string("0.0.0.0"), port) }
+		//, m_database("../ExternalLibraries/Database/GameDatabase.db")
+		, m_database(path)
 	{
 		Common::Network::Session::addCallback<Auth::Network::Session>(22, [&](const Common::Network::Packet& request,
 			Auth::Network::Session& session) { Auth::Handlers::handleAuthUserInformation(request, session, m_database); });

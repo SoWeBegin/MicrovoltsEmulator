@@ -17,6 +17,7 @@ target_link_libraries(MainServer
         Common
         SQLiteCpp
         sqlite3
+        ${Boost_LIBRARIES}
 )
 
 if(WIN32)
@@ -24,4 +25,4 @@ if(WIN32)
 endif()
 
 set_property(TARGET MainServer PROPERTY POSITION_INDEPENDENT_CODE ON)
-set_target_properties(MainServer PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+set_target_properties(MainServer PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR})

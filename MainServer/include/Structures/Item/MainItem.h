@@ -2,7 +2,6 @@
 #ifndef MAIN_ITEM_INFO_H
 #define MAIN_ITEM_INFO_H
 
-#include <corecrt.h>
 #include <cstdint>
 #include "ConstantDatabase/CdbSingleton.h"
 #include "ConstantDatabase/Structures/CdbItemInfo.h"
@@ -52,7 +51,7 @@ namespace Main
 			}
 
 			explicit Item(const Main::Structures::EquippedItem& equippedItem)
-				: id{ equippedItem.id >> 1}, serialInfo{ equippedItem.serialInfo }, expirationDate{ equippedItem.expirationDate }
+				: id{ (uint32_t)equippedItem.id >> 1}, serialInfo{ equippedItem.serialInfo }, expirationDate{ equippedItem.expirationDate }
 				, durability{ equippedItem.durability }, isSealed{ equippedItem.isSealed }, sealLevel{ equippedItem.sealLevel }
 				, experienceEnhancement{ equippedItem.experienceEnhancement }, mpEnhancement{ equippedItem.mpEnhancement }
 				, energy{ equippedItem.energy }

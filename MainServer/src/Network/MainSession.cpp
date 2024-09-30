@@ -476,7 +476,7 @@ namespace Main
 				std::uint32_t unknown{};
 			};
 			const auto& accountInfo = m_player.getAccountInfo();
-			Message message{ accountInfo.rockTotens, accountInfo.microPoints, accountInfo.coins };
+			Message message{ (uint32_t)accountInfo.rockTotens, (uint32_t)accountInfo.microPoints, (uint32_t)accountInfo.coins };
 			response.setData(reinterpret_cast<std::uint8_t*>(&message), sizeof(message));
 			asyncWrite(response);
 		}
@@ -538,10 +538,16 @@ namespace Main
 		{
 			using namespace std::chrono;
 			using namespace std::literals;
-			zoned_time zt{ current_zone(), local_seconds{duration_cast<seconds>(system_clock::now().time_since_epoch()) + seconds(daysDuration * 24 * 60 * 60)} };
-			const std::string bannedUntil = std::format("{:%Y-%m-%d %H:%M:%S}", zt.get_sys_time());
+			auto now = system_clock::now();
+			auto futureTime = now + hours(24 * daysDuration);
+			std::time_t bannedUntil = system_clock::to_time_t(futureTime);
+			std::tm bannedUntil_tm = *std::localtime(&bannedUntil);
+			auto bannedUntil_s = std::put_time(&bannedUntil_tm, "%Y-%m-%d %H:%M:%S");
 
-			m_scheduler.immediatePersist(m_player.getAccountID(), &Main::Persistence::PersistentDatabase::updateSuspension, m_player.getAccountID(), bannedUntil, reason);
+			std::stringstream fmt;
+			fmt<<bannedUntil_s;
+
+			m_scheduler.immediatePersist(m_player.getAccountID(), &Main::Persistence::PersistentDatabase::updateSuspension, m_player.getAccountID(), fmt.str().c_str(), reason);
 
 			response.setOrder(73);
 			response.setExtra(1);
@@ -553,10 +559,18 @@ namespace Main
 		{
 			using namespace std::chrono;
 			using namespace std::literals;
-			zoned_time zt{ current_zone(), local_seconds{duration_cast<seconds>(system_clock::now().time_since_epoch()) + seconds(daysDuration * 24 * 60 * 60)} };
-			const std::string mutedUntil = std::format("{:%Y-%m-%d %H:%M:%S}", zt.get_sys_time());
-			m_player.mute(reason, mutedBy, mutedUntil);
-			m_scheduler.immediatePersist(m_player.getAccountID(), &Main::Persistence::PersistentDatabase::updateMute, m_player.getAccountID(), mutedUntil, reason, mutedBy);
+
+			auto now = system_clock::now();
+			auto futureTime = now + hours(24 * daysDuration);
+			std::time_t mutedUntil = system_clock::to_time_t(futureTime);
+			std::tm mutedUntil_tm = *std::localtime(&mutedUntil);
+			auto mutedUntil_s = std::put_time(&mutedUntil_tm, "%Y-%m-%d %H:%M:%S");
+
+			std::stringstream fmt;
+			fmt<<mutedUntil_s;
+
+			m_player.mute(reason, mutedBy, fmt.str().c_str());
+			m_scheduler.immediatePersist(m_player.getAccountID(), &Main::Persistence::PersistentDatabase::updateMute, m_player.getAccountID(), fmt.str().c_str(), reason, mutedBy);
 		}
 
 		void Session::unmuteAccount()

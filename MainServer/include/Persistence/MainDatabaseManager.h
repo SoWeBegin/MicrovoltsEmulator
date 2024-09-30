@@ -102,8 +102,8 @@ namespace Main
 
 					if (query.executeStep())
 					{
-						strcpy_s(playerInfoStructure.nickname, sizeof(playerInfoStructure.nickname), query.getColumn("Nickname").getString().c_str());
-						strcpy_s(playerInfoStructure.clanName, sizeof(playerInfoStructure.clanName), query.getColumn("Clanname").getString().c_str());
+						strncpy(playerInfoStructure.nickname, query.getColumn("Nickname").getString().c_str(), sizeof(playerInfoStructure.nickname));
+						strncpy(playerInfoStructure.clanName, query.getColumn("Clanname").getString().c_str(), sizeof(playerInfoStructure.clanName));
 
 						playerInfoStructure.accountID = playerID;
 						playerInfoStructure.accountKey = static_cast<std::uint32_t>(query.getColumn("AccountKey").getInt());
@@ -176,16 +176,14 @@ namespace Main
 					Main::Structures::MuteInfo muteInfo;
 
 					SQLite::Statement query(db,
-						"SELECT Users.* FROM Users WHERE AccountID = ?");
+						"SELECT Users.*, (DATE(Users.MutedUntil) >= DATE('now')) AS IsMuted FROM Users WHERE AccountID = ?");
 
 					query.bind(1, playerID);
 
 					if (query.executeStep())
 					{
-						const std::string mutedUntil = query.getColumn("MutedUntil").getString(); // suspendedUntil uses UTC!
-						auto const time = std::chrono::utc_clock::now();
-						const std::string current_time = std::format("{:%Y-%m-%d %X}", time);
-						muteInfo.isMuted = mutedUntil > current_time;
+						const std::string mutedUntil = query.getColumn("MutedUntil").getString();
+						muteInfo.isMuted = static_cast<bool> (query.getColumn("IsMuted").getInt());
 						muteInfo.reason = query.getColumn("MuteReason").getString();
 						muteInfo.mutedBy = query.getColumn("MutedBy").getString();
 						muteInfo.mutedUntil = mutedUntil;
