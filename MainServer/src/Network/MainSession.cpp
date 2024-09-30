@@ -542,7 +542,7 @@ namespace Main
 			auto futureTime = now + hours(24 * daysDuration);
 			std::time_t bannedUntil = system_clock::to_time_t(futureTime);
 			std::tm bannedUntil_tm = *std::localtime(&bannedUntil);
-			auto bannedUntil_s = std::put_time(&bannedUntil_tm, "{:%Y-%m-%d %H:%M:%S}");
+			auto bannedUntil_s = std::put_time(&bannedUntil_tm, "%Y-%m-%d %H:%M:%S");
 
 			std::stringstream fmt;
 			fmt<<bannedUntil_s;
@@ -564,7 +564,7 @@ namespace Main
 			auto futureTime = now + hours(24 * daysDuration);
 			std::time_t mutedUntil = system_clock::to_time_t(futureTime);
 			std::tm mutedUntil_tm = *std::localtime(&mutedUntil);
-			auto mutedUntil_s = std::put_time(&mutedUntil_tm, "{:%Y-%m-%d %H:%M:%S}");
+			auto mutedUntil_s = std::put_time(&mutedUntil_tm, "%Y-%m-%d %H:%M:%S");
 
 			std::stringstream fmt;
 			fmt<<mutedUntil_s;

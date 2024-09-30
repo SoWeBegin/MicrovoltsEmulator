@@ -14,4 +14,4 @@ add_executable(Cast ${CAST_SOURCES})
 target_link_libraries(Cast ${Boost_LIBRARIES} Common)
 
 set_property(TARGET Cast PROPERTY POSITION_INDEPENDENT_CODE ON)
-set_target_properties(Cast PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+set_target_properties(Cast PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR})

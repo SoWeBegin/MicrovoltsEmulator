@@ -183,7 +183,7 @@ namespace Main
 					if (query.executeStep())
 					{
 						const std::string mutedUntil = query.getColumn("MutedUntil").getString();
-						muteInfo.isMuted = static_cast<bool> (query.getColumn("IsBanned").getInt());
+						muteInfo.isMuted = static_cast<bool> (query.getColumn("IsMuted").getInt());
 						muteInfo.reason = query.getColumn("MuteReason").getString();
 						muteInfo.mutedBy = query.getColumn("MutedBy").getString();
 						muteInfo.mutedUntil = mutedUntil;
