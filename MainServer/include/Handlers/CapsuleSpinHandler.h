@@ -103,13 +103,6 @@ namespace Main
 			static std::random_device rd;
 			static std::mt19937 gen(rd());
 			int randomIndex = itemDistribution(gen);
-			for (int i = 0; i < itemProbabilities.size(); i++)
-			{
-				if (itemProbabilities[i].first.pi_id == SilverLuck)
-				{
-					randomIndex = i;
-				}
-			}
 			return itemProbabilities[randomIndex].first;
 		}
 
